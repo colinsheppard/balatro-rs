@@ -129,7 +129,12 @@ fn test_memory_usage_estimation() {
 #[test]
 fn test_long_running_simulation_memory_stability() {
     let mut game = Game::new(Config::default());
-    game.enable_simulation_memory_monitoring();
+
+    // Configure memory monitoring with a very short interval for testing
+    let mut memory_config = MemoryConfig::for_simulation();
+    memory_config.monitoring_interval_ms = 1; // Check every 1ms for testing
+    game.memory_monitor.update_config(memory_config.clone());
+    game.action_history.resize(memory_config.max_action_history);
 
     let start_time = Instant::now();
     let mut memory_measurements = Vec::new();
@@ -142,8 +147,10 @@ fn test_long_running_simulation_memory_stability() {
 
         // Collect memory stats every 100 iterations
         if i % 100 == 0 {
+            // Small delay to ensure monitoring interval passes
+            std::thread::sleep(std::time::Duration::from_millis(2));
             if let Some(stats) = game.get_memory_stats() {
-                memory_measurements.push(stats.estimated_usage_mb);
+                memory_measurements.push(stats.estimated_usage_bytes);
             }
         }
     }
@@ -158,20 +165,36 @@ fn test_long_running_simulation_memory_stability() {
         let last = *memory_measurements.last().unwrap();
 
         // Memory should not grow excessively (allow some variation)
+        // For bytes, we allow growth up to 20x the initial size as action history fills up, then stabilizes
         assert!(
-            last < first * 3,
-            "Memory grew too much: {} -> {}",
+            last < first * 20,
+            "Memory grew too much: {} bytes -> {} bytes",
             first,
             last
         );
+
+        // Most importantly, memory should stabilize (not continue growing unbounded)
+        // Check that the last few measurements are similar (within 10% variation)
+        if memory_measurements.len() >= 4 {
+            let recent_measurements = &memory_measurements[memory_measurements.len() - 4..];
+            let recent_max = *recent_measurements.iter().max().unwrap();
+            let recent_min = *recent_measurements.iter().min().unwrap();
+            let variation = (recent_max - recent_min) as f64 / recent_min as f64;
+            assert!(
+                variation < 0.1,
+                "Memory should stabilize but is still varying: recent measurements {:?}, variation: {:.2}%",
+                recent_measurements,
+                variation * 100.0
+            );
+        }
     }
 
-    // Final memory usage should be reasonable
+    // Final memory usage should be reasonable (less than 10MB in bytes)
     let final_stats = game.get_memory_stats().unwrap();
     assert!(
-        final_stats.estimated_usage_mb < 100,
-        "Final memory usage too high: {} MB",
-        final_stats.estimated_usage_mb
+        final_stats.estimated_usage_bytes < 10 * 1024 * 1024,
+        "Final memory usage too high: {} bytes",
+        final_stats.estimated_usage_bytes
     );
 }
 
