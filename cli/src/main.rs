@@ -6,7 +6,6 @@ use std::io::{self, Write};
 enum InputError {
     IoError(io::Error),
     TooManyAttempts,
-    InvalidInput,
 }
 
 impl From<io::Error> for InputError {
@@ -20,7 +19,7 @@ fn secure_input_loop(max: usize) -> Result<usize, InputError> {
     const MAX_INPUT_LENGTH: usize = 10;
     
     for attempt in 1..=MAX_ATTEMPTS {
-        print!("Enter choice (0-{}): ", max);
+        print!("Enter choice (0-{max}): ");
         io::stdout().flush()?;
         
         let mut input = String::new();
@@ -28,15 +27,15 @@ fn secure_input_loop(max: usize) -> Result<usize, InputError> {
         
         // Check input length to prevent memory attacks
         if input.trim().len() > MAX_INPUT_LENGTH {
-            println!("Input too long. Attempt {}/{}", attempt, MAX_ATTEMPTS);
+            println!("Input too long. Attempt {attempt}/{MAX_ATTEMPTS}");
             continue;
         }
         
         // Parse and validate input
         match input.trim().parse::<usize>() {
             Ok(i) if i <= max => return Ok(i),
-            Ok(_) => println!("Must be 0-{}. Attempt {}/{}", max, attempt, MAX_ATTEMPTS),
-            Err(_) => println!("Invalid number. Attempt {}/{}", attempt, MAX_ATTEMPTS),
+            Ok(_) => println!("Must be 0-{max}. Attempt {attempt}/{MAX_ATTEMPTS}"),
+            Err(_) => println!("Invalid number. Attempt {attempt}/{MAX_ATTEMPTS}"),
         }
     }
     
@@ -51,11 +50,7 @@ fn input_loop(max: usize) -> usize {
             std::process::exit(1);
         }
         Err(InputError::IoError(e)) => {
-            println!("IO error: {}. Exiting.", e);
-            std::process::exit(1);
-        }
-        Err(InputError::InvalidInput) => {
-            println!("Invalid input. Exiting for security.");
+            println!("IO error: {e}. Exiting.");
             std::process::exit(1);
         }
     }
