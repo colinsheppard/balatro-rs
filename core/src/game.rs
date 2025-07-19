@@ -437,21 +437,24 @@ impl Game {
                     }
                 }
 
-                // Generate debug message for each trigger
+                // Generate debug message for each trigger (optimized for minimal allocations)
+                #[cfg(debug_assertions)]
                 if trigger_num == 0 && (effect.chips != 0 || effect.mult != 0 || effect.money != 0)
                 {
-                    let debug_msg = format!(
-                        "Joker '{}': +{} chips, +{} mult, +{} money{}",
+                    use std::fmt::Write;
+                    let mut debug_msg = String::with_capacity(128); // Pre-allocate reasonable size
+                    
+                    write!(&mut debug_msg, "Joker '{}': +{} chips, +{} mult, +{} money", 
                         joker.name(),
                         effect.chips * total_triggers as i32,
                         effect.mult * total_triggers as i32,
-                        effect.money * total_triggers as i32,
-                        if effect.retrigger > 0 {
-                            format!(" (retrigger x{})", effect.retrigger)
-                        } else {
-                            String::new()
-                        }
-                    );
+                        effect.money * total_triggers as i32
+                    ).unwrap();
+                    
+                    if effect.retrigger > 0 {
+                        write!(&mut debug_msg, " (retrigger x{})", effect.retrigger).unwrap();
+                    }
+                    
                     messages.push(debug_msg);
                 }
             }
@@ -494,21 +497,24 @@ impl Game {
                             }
                         }
 
-                        // Generate debug message for first trigger only
+                        // Generate debug message for first trigger only (optimized)
+                        #[cfg(debug_assertions)]
                         if trigger_num == 0 {
-                            let debug_msg = format!(
-                                "Joker '{}' on card {}: +{} chips, +{} mult, +{} money{}",
+                            use std::fmt::Write;
+                            let mut debug_msg = String::with_capacity(128); // Pre-allocate reasonable size
+                            
+                            write!(&mut debug_msg, "Joker '{}' on card {}: +{} chips, +{} mult, +{} money",
                                 joker.name(),
                                 card,
                                 effect.chips * total_triggers as i32,
                                 effect.mult * total_triggers as i32,
-                                effect.money * total_triggers as i32,
-                                if effect.retrigger > 0 {
-                                    format!(" (retrigger x{})", effect.retrigger)
-                                } else {
-                                    String::new()
-                                }
-                            );
+                                effect.money * total_triggers as i32
+                            ).unwrap();
+                            
+                            if effect.retrigger > 0 {
+                                write!(&mut debug_msg, " (retrigger x{})", effect.retrigger).unwrap();
+                            }
+                            
                             messages.push(debug_msg);
                         }
                     }
@@ -625,12 +631,15 @@ impl Game {
         // Calculate final score
         let final_score = self.chips * self.mult;
 
-        // Log final breakdown if debug enabled
-        let msg = format!(
-            "Final score: {} chips × {} mult = {}",
-            self.chips, self.mult, final_score
-        );
-        self.add_debug_message(msg);
+        // Log final breakdown if debug enabled (optimized)
+        #[cfg(debug_assertions)]
+        {
+            use std::fmt::Write;
+            let mut msg = String::with_capacity(64);
+            write!(&mut msg, "Final score: {} chips × {} mult = {}", 
+                self.chips, self.mult, final_score).unwrap();
+            self.add_debug_message(msg);
+        }
 
         // Reset chips and mult to base values
         self.mult = self.config.base_mult as f64;
@@ -657,6 +666,8 @@ impl Game {
     }
 
     /// Add a debug message with automatic memory management
+    /// Only compiles in debug builds to eliminate overhead in release
+    #[cfg(debug_assertions)]
     fn add_debug_message(&mut self, message: String) {
         if self.debug_logging_enabled {
             self.debug_messages.push(message);
@@ -667,6 +678,13 @@ impl Game {
                     .drain(0..self.debug_messages.len() - MAX_DEBUG_MESSAGES);
             }
         }
+    }
+    
+    /// No-op version for release builds
+    #[cfg(not(debug_assertions))]
+    #[inline]
+    fn add_debug_message(&mut self, _message: String) {
+        // No-op in release builds
     }
 
     pub fn required_score(&self) -> f64 {
