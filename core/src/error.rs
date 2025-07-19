@@ -56,6 +56,16 @@ pub enum GameError {
     InvalidInput(String),
     #[error("Mutex poisoned")]
     MutexPoisoned,
+    #[error("Empty collection - cannot select random item")]
+    EmptyCollection,
+    #[error("Blind state missing when expected")]
+    MissingBlindState,
+    #[error("Empty iterator - cannot compute min/max")]
+    EmptyIterator,
+    #[error("Hand analysis failed: {0}")]
+    HandAnalysisFailed(String),
+    #[error("RNG operation failed: {0}")]
+    RngFailed(String),
 }
 
 impl std::convert::From<ActionSpaceError> for GameError {

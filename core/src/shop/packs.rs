@@ -224,8 +224,8 @@ impl Pack {
 
         for _ in 0..count {
             // Select random suit and value
-            let suit = *suits.choose(&mut rng).unwrap();
-            let value = *values.choose(&mut rng).unwrap();
+            let suit = *suits.choose(&mut rng).ok_or(GameError::EmptyCollection)?;
+            let value = *values.choose(&mut rng).ok_or(GameError::EmptyCollection)?;
 
             // Create card with potential enhancement (10% chance)
             let mut card = Card::new(value, suit);
@@ -238,7 +238,7 @@ impl Pack {
                     Enhancement::Glass,
                     Enhancement::Steel,
                 ];
-                card.enhancement = Some(*enhancements.choose(&mut rng).unwrap());
+                card.enhancement = Some(*enhancements.choose(&mut rng).ok_or(GameError::EmptyCollection)?);
             }
 
             let enhancement_prefix = match card.enhancement {
@@ -312,9 +312,9 @@ impl Pack {
 
             // Select joker based on rarity
             let joker_id = match selected_rarity {
-                JokerRarity::Common => *common_jokers.choose(&mut rng).unwrap(),
-                JokerRarity::Uncommon => *uncommon_jokers.choose(&mut rng).unwrap(),
-                JokerRarity::Rare => *rare_jokers.choose(&mut rng).unwrap(),
+                JokerRarity::Common => *common_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
+                JokerRarity::Uncommon => *uncommon_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
+                JokerRarity::Rare => *rare_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
                 JokerRarity::Legendary => JokerId::Joker, // Fallback to basic for legendary
             };
 
