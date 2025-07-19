@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub const DEFAULT_MAX_ACTIONS: usize = 10_000;
 
 /// Bounded circular buffer for action history to prevent memory leaks
-/// 
+///
 /// This replaces the unbounded Vec<Action> with a memory-efficient circular buffer
 /// that maintains only the most recent actions up to a configurable limit.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -38,7 +38,7 @@ impl BoundedActionHistory {
     }
 
     /// Add a new action to the history
-    /// 
+    ///
     /// If the history is at capacity, the oldest action will be evicted
     pub fn push(&mut self, action: Action) {
         if self.actions.len() >= self.max_size {
@@ -49,7 +49,7 @@ impl BoundedActionHistory {
     }
 
     /// Get all actions in the history as a Vec
-    /// 
+    ///
     /// This returns a clone of the current actions for compatibility with existing code
     /// Note: This method is expensive and should be used sparingly
     pub fn to_vec(&self) -> Vec<Action> {
@@ -103,7 +103,7 @@ impl BoundedActionHistory {
     }
 
     /// Resize the history capacity
-    /// 
+    ///
     /// If the new capacity is smaller than the current number of actions,
     /// the oldest actions will be evicted
     pub fn resize(&mut self, new_max_size: usize) {
@@ -123,8 +123,8 @@ impl BoundedActionHistory {
             current_actions: self.len(),
             max_capacity: self.capacity(),
             total_recorded: self.total_actions(),
-            estimated_bytes: self.len() * std::mem::size_of::<Action>() + 
-                           std::mem::size_of::<Self>(),
+            estimated_bytes: self.len() * std::mem::size_of::<Action>()
+                + std::mem::size_of::<Self>(),
         }
     }
 }
@@ -148,18 +148,14 @@ impl From<Vec<Action>> for BoundedActionHistory {
     fn from(actions: Vec<Action>) -> Self {
         let total_len = actions.len();
         let mut history = Self::with_capacity(DEFAULT_MAX_ACTIONS);
-        
+
         // If we have more actions than capacity, only keep the most recent ones
-        let start_idx = if total_len > DEFAULT_MAX_ACTIONS {
-            total_len - DEFAULT_MAX_ACTIONS
-        } else {
-            0
-        };
-        
+        let start_idx = total_len.saturating_sub(DEFAULT_MAX_ACTIONS);
+
         for action in actions.into_iter().skip(start_idx) {
             history.actions.push_back(action);
         }
-        
+
         history.total_actions = total_len;
         history
     }
@@ -173,10 +169,10 @@ mod tests {
     #[test]
     fn test_bounded_action_history_basic() {
         let mut history = BoundedActionHistory::with_capacity(3);
-        
+
         assert_eq!(history.len(), 0);
         assert!(history.is_empty());
-        
+
         history.push(Action::Play());
         history.push(Action::Discard());
         assert_eq!(history.len(), 2);
@@ -186,15 +182,15 @@ mod tests {
     #[test]
     fn test_bounded_action_history_overflow() {
         let mut history = BoundedActionHistory::with_capacity(2);
-        
+
         history.push(Action::Play());
         history.push(Action::Discard());
         history.push(Action::NextRound());
-        
+
         // Should only have 2 actions (most recent)
         assert_eq!(history.len(), 2);
         assert_eq!(history.total_actions(), 3);
-        
+
         let actions = history.to_vec();
         assert_eq!(actions, vec![Action::Discard(), Action::NextRound()]);
     }
@@ -204,7 +200,7 @@ mod tests {
         let mut history = BoundedActionHistory::with_capacity(5);
         history.push(Action::Play());
         history.push(Action::Discard());
-        
+
         history.clear();
         assert_eq!(history.len(), 0);
         assert_eq!(history.total_actions(), 0);
@@ -213,10 +209,10 @@ mod tests {
     #[test]
     fn test_resize() {
         let mut history = BoundedActionHistory::with_capacity(5);
-        for i in 0..5 {
+        for _ in 0..5 {
             history.push(Action::Play());
         }
-        
+
         // Resize to smaller capacity
         history.resize(3);
         assert_eq!(history.len(), 3);
@@ -227,7 +223,7 @@ mod tests {
     fn test_from_vec() {
         let actions = vec![Action::Play(), Action::Discard(), Action::NextRound()];
         let history = BoundedActionHistory::from(actions.clone());
-        
+
         assert_eq!(history.to_vec(), actions);
         assert_eq!(history.total_actions(), 3);
     }
@@ -235,12 +231,12 @@ mod tests {
     #[test]
     fn test_from_large_vec() {
         let mut actions = Vec::new();
-        for i in 0..15000 {
+        for _ in 0..15000 {
             actions.push(Action::Play());
         }
-        
+
         let history = BoundedActionHistory::from(actions);
-        
+
         // Should only keep the most recent DEFAULT_MAX_ACTIONS
         assert_eq!(history.len(), DEFAULT_MAX_ACTIONS);
         assert_eq!(history.total_actions(), 15000);

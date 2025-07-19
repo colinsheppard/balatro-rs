@@ -23,7 +23,7 @@ const MAX_CUSTOM_DATA_VALUE_LENGTH: usize = 8192;
 const MAX_SEARCH_QUERY_LENGTH: usize = 1024;
 
 /// Optimized game state snapshot that minimizes memory allocations
-/// 
+///
 /// This implementation stores scalar values immediately and uses OnceCell
 /// for lazy evaluation of expensive vector operations, reducing memory
 /// allocations for common use cases.
@@ -41,8 +41,9 @@ struct LazyGameStateSnapshot {
     money: f64,
     ante: Ante,
     is_over: bool,
+    #[allow(dead_code)]
     result: Option<End>,
-    
+
     // Lazily computed expensive fields
     action_history_cache: Arc<OnceLock<Vec<Action>>>,
     deck_cards_cache: Arc<OnceLock<Vec<Card>>>,
@@ -50,13 +51,13 @@ struct LazyGameStateSnapshot {
     available_cards_cache: Arc<OnceLock<Vec<Card>>>,
     discarded_cards_cache: Arc<OnceLock<Vec<Card>>>,
     joker_ids_cache: Arc<OnceLock<Vec<JokerId>>>,
-    
+
     // Weak references to game data for lazy loading
     // We store these as raw data needed for lazy evaluation
-    game_action_history: Vec<Action>,  // We need this for lazy cloning
+    game_action_history: Vec<Action>, // We need this for lazy cloning
     game_deck_cards: Vec<Card>,       // Pre-computed but stored for lazy access
     game_selected_cards: Vec<Card>,
-    game_available_cards: Vec<Card>, 
+    game_available_cards: Vec<Card>,
     game_discarded_cards: Vec<Card>,
     game_joker_ids: Vec<JokerId>,
 }
@@ -77,7 +78,7 @@ impl LazyGameStateSnapshot {
             ante: game.ante_current,
             is_over: game.is_over(),
             result: game.result(),
-            
+
             // Initialize lazy caches
             action_history_cache: Arc::new(OnceLock::new()),
             deck_cards_cache: Arc::new(OnceLock::new()),
@@ -85,7 +86,7 @@ impl LazyGameStateSnapshot {
             available_cards_cache: Arc::new(OnceLock::new()),
             discarded_cards_cache: Arc::new(OnceLock::new()),
             joker_ids_cache: Arc::new(OnceLock::new()),
-            
+
             // Store the source data for lazy computation
             // This is a one-time cost paid at snapshot creation
             game_action_history: game.action_history.to_vec(),
@@ -142,50 +143,45 @@ impl LazyGameStateSnapshot {
         self.is_over
     }
 
+    #[allow(dead_code)]
     fn result(&self) -> Option<End> {
         self.result
     }
 
     // Lazy access to expensive vector fields (computed only when needed)
     fn action_history(&self) -> &Vec<Action> {
-        self.action_history_cache.get_or_init(|| {
-            self.game_action_history.clone()
-        })
+        self.action_history_cache
+            .get_or_init(|| self.game_action_history.clone())
     }
 
     fn deck_cards(&self) -> &Vec<Card> {
-        self.deck_cards_cache.get_or_init(|| {
-            self.game_deck_cards.clone()
-        })
+        self.deck_cards_cache
+            .get_or_init(|| self.game_deck_cards.clone())
     }
 
     fn selected_cards(&self) -> &Vec<Card> {
-        self.selected_cards_cache.get_or_init(|| {
-            self.game_selected_cards.clone()
-        })
+        self.selected_cards_cache
+            .get_or_init(|| self.game_selected_cards.clone())
     }
 
     fn available_cards(&self) -> &Vec<Card> {
-        self.available_cards_cache.get_or_init(|| {
-            self.game_available_cards.clone()
-        })
+        self.available_cards_cache
+            .get_or_init(|| self.game_available_cards.clone())
     }
 
     fn discarded_cards(&self) -> &Vec<Card> {
-        self.discarded_cards_cache.get_or_init(|| {
-            self.game_discarded_cards.clone()
-        })
+        self.discarded_cards_cache
+            .get_or_init(|| self.game_discarded_cards.clone())
     }
 
     fn joker_ids(&self) -> &Vec<JokerId> {
-        self.joker_ids_cache.get_or_init(|| {
-            self.game_joker_ids.clone()
-        })
+        self.joker_ids_cache
+            .get_or_init(|| self.game_joker_ids.clone())
     }
 }
 
 /// Legacy GameStateSnapshot for backward compatibility during migration
-/// 
+///
 /// This maintains the old interface while internally using the new lazy implementation.
 /// This allows for a smooth transition without breaking existing code.
 #[derive(Clone)]
@@ -271,6 +267,7 @@ impl GameStateSnapshot {
         self.lazy_snapshot.is_over()
     }
 
+    #[allow(dead_code)]
     fn result(&self) -> Option<End> {
         self.lazy_snapshot.result()
     }
@@ -1339,9 +1336,10 @@ impl GameState {
 }
 
 /// Safely convert serde_json::Value to Python object using proper lifetime management
-/// 
+///
 /// This replaces the deprecated to_object() calls with a safer approach that avoids
 /// creating unnecessary Python object references that could cause memory leaks.
+#[allow(deprecated)] // TODO: Migrate to new PyO3 API in future version
 fn safe_json_to_py(py: Python, value: &serde_json::Value) -> PyResult<pyo3::PyObject> {
     match value {
         serde_json::Value::Null => Ok(py.None()),

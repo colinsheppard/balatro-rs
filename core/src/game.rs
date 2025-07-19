@@ -13,13 +13,13 @@ use crate::joker::{GameContext, Joker, JokerId, Jokers, OldJoker as OldJokerTrai
 use crate::joker_effect_processor::JokerEffectProcessor;
 use crate::joker_factory::JokerFactory;
 use crate::joker_state::{JokerState, JokerStateManager};
+use crate::memory_monitor::MemoryMonitor;
 use crate::rank::HandRank;
 use crate::shop::packs::{OpenPackState, Pack};
 use crate::shop::Shop;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::vouchers::VoucherCollection;
-use crate::memory_monitor::MemoryMonitor;
 
 // Re-export GameState for external use with qualified name to avoid Python bindings conflict
 pub use crate::vouchers::GameState as VoucherGameState;
@@ -682,7 +682,7 @@ impl Game {
     pub fn enable_rl_memory_monitoring(&mut self) {
         let config = crate::memory_monitor::MemoryConfig::for_rl_training();
         self.memory_monitor.update_config(config.clone());
-        
+
         // Update action history limit to match memory config
         self.action_history.resize(config.max_action_history);
     }
@@ -691,7 +691,7 @@ impl Game {
     pub fn enable_simulation_memory_monitoring(&mut self) {
         let config = crate::memory_monitor::MemoryConfig::for_simulation();
         self.memory_monitor.update_config(config.clone());
-        
+
         // Update action history limit to match memory config
         self.action_history.resize(config.max_action_history);
     }
@@ -720,31 +720,36 @@ impl Game {
     /// Estimate current memory usage in bytes
     fn estimate_memory_usage(&self) -> usize {
         let mut total = std::mem::size_of::<Self>();
-        
+
         // Action history
         total += self.action_history.memory_stats().estimated_bytes;
-        
+
         // Deck cards
         total += self.deck.cards().len() * std::mem::size_of::<crate::card::Card>();
-        
+
         // Available cards
         total += self.available.cards().len() * std::mem::size_of::<crate::card::Card>();
-        
+
         // Discarded cards
         total += self.discarded.len() * std::mem::size_of::<crate::card::Card>();
-        
+
         // Jokers (rough estimate)
         total += self.jokers.len() * 200; // Estimate 200 bytes per joker
-        
+
         // Hand type counts
-        total += self.hand_type_counts.len() * (std::mem::size_of::<crate::rank::HandRank>() + std::mem::size_of::<u32>());
-        
+        total += self.hand_type_counts.len()
+            * (std::mem::size_of::<crate::rank::HandRank>() + std::mem::size_of::<u32>());
+
         // Debug messages
-        total += self.debug_messages.iter().map(|msg| msg.len()).sum::<usize>();
-        
+        total += self
+            .debug_messages
+            .iter()
+            .map(|msg| msg.len())
+            .sum::<usize>();
+
         total
     }
-    
+
     /// Check if memory usage exceeds safe limits
     pub fn check_memory_safety(&mut self) -> bool {
         if let Some(stats) = self.get_memory_stats() {
