@@ -372,11 +372,7 @@ impl SelectHand {
             .into_iter()
             .find(|(_key, val)| val.len() >= 3);
         three.as_ref()?;
-        let three_val = three
-            .as_ref()?
-            .1
-            .first()?
-            .value;
+        let three_val = three.as_ref()?.1.first()?.value;
 
         // Next find 2ok that isn't same value as 3ok
         let two = self

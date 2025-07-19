@@ -238,7 +238,11 @@ impl Pack {
                     Enhancement::Glass,
                     Enhancement::Steel,
                 ];
-                card.enhancement = Some(*enhancements.choose(&mut rng).ok_or(GameError::EmptyCollection)?);
+                card.enhancement = Some(
+                    *enhancements
+                        .choose(&mut rng)
+                        .ok_or(GameError::EmptyCollection)?,
+                );
             }
 
             let enhancement_prefix = match card.enhancement {
@@ -312,9 +316,15 @@ impl Pack {
 
             // Select joker based on rarity
             let joker_id = match selected_rarity {
-                JokerRarity::Common => *common_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
-                JokerRarity::Uncommon => *uncommon_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
-                JokerRarity::Rare => *rare_jokers.choose(&mut rng).ok_or(GameError::EmptyCollection)?,
+                JokerRarity::Common => *common_jokers
+                    .choose(&mut rng)
+                    .ok_or(GameError::EmptyCollection)?,
+                JokerRarity::Uncommon => *uncommon_jokers
+                    .choose(&mut rng)
+                    .ok_or(GameError::EmptyCollection)?,
+                JokerRarity::Rare => *rare_jokers
+                    .choose(&mut rng)
+                    .ok_or(GameError::EmptyCollection)?,
                 JokerRarity::Legendary => JokerId::Joker, // Fallback to basic for legendary
             };
 
