@@ -321,9 +321,11 @@ mod performance_benchmarks {
         // In CI/high-load environments, we allow higher overhead
         // The important thing is that monitoring works, not specific performance
         let max_overhead = if std::env::var("CI").is_ok() { 30 } else { 25 };
-        assert!(with_monitoring_time < no_monitoring_time * max_overhead,
-                "Monitoring overhead too high: {}x (limit: {}x)", 
-                with_monitoring_time.as_nanos() / no_monitoring_time.as_nanos().max(1), 
-                max_overhead);
+        assert!(
+            with_monitoring_time < no_monitoring_time * max_overhead,
+            "Monitoring overhead too high: {}x (limit: {}x)",
+            with_monitoring_time.as_nanos() / no_monitoring_time.as_nanos().max(1),
+            max_overhead
+        );
     }
 }
