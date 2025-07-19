@@ -1010,7 +1010,7 @@ impl Game {
             }
         }
 
-        let blind = self.blind.expect("stage is blind");
+        let blind = self.blind.ok_or(GameError::MissingBlindState)?;
         // score exceeds blind (blind passed).
         // handle reward then progress to next stage.
         let reward = self.calc_reward(blind)?;
