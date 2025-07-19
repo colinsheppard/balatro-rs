@@ -117,6 +117,7 @@ impl MemoryStats {
 
 /// Memory monitoring and alerting system
 #[derive(Debug)]
+#[derive(Default)]
 pub struct MemoryMonitor {
     config: MemoryConfig,
     last_check: Option<Instant>,

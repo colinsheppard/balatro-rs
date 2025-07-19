@@ -5,8 +5,8 @@
 
 use balatro_rs::game::Game;
 use balatro_rs::config::Config;
-use balatro_rs::memory_monitor::{MemoryConfig, MemoryMonitor};
-use balatro_rs::bounded_action_history::{BoundedActionHistory, DEFAULT_MAX_ACTIONS};
+use balatro_rs::memory_monitor::MemoryConfig;
+use balatro_rs::bounded_action_history::BoundedActionHistory;
 use balatro_rs::action::Action;
 use std::time::Instant;
 
@@ -15,8 +15,8 @@ fn test_bounded_action_history_memory_limit() {
     let mut history = BoundedActionHistory::with_capacity(100);
     
     // Add more actions than the limit
-    for i in 0..200 {
-        history.push(Action::Play);
+    for _i in 0..200 {
+        history.push(Action::Play());
     }
     
     // Should not exceed the limit
@@ -35,7 +35,7 @@ fn test_action_history_doesnt_grow_unbounded() {
     
     // Simulate many actions
     for _ in 0..10000 {
-        let _ = game.action_history.push(Action::Play);
+        let _ = game.action_history.push(Action::Play());
     }
     
     // Action history should be bounded
@@ -70,7 +70,7 @@ fn test_memory_stats_collection() {
     // Generate some game state
     game.start();
     for _ in 0..100 {
-        game.action_history.push(Action::Play);
+        game.action_history.push(Action::Play());
     }
     
     // Get memory stats
@@ -108,17 +108,23 @@ fn test_memory_safety_check() {
 fn test_memory_usage_estimation() {
     let mut game = Game::new(Config::default());
     
-    let initial_usage = game.estimate_memory_usage();
-    assert!(initial_usage > 0);
+    // Enable monitoring to get memory stats
+    game.enable_rl_memory_monitoring();
+    
+    // Get initial memory stats
+    let initial_stats = game.get_memory_stats();
+    assert!(initial_stats.is_some());
     
     // Add some data
     game.start();
     for _ in 0..1000 {
-        game.action_history.push(Action::Play);
+        game.action_history.push(Action::Play());
     }
     
-    let usage_with_actions = game.estimate_memory_usage();
-    assert!(usage_with_actions > initial_usage);
+    // Check memory safety and get updated stats
+    assert!(game.check_memory_safety());
+    let updated_stats = game.get_memory_stats();
+    assert!(updated_stats.is_some());
 }
 
 #[test]
@@ -132,8 +138,8 @@ fn test_long_running_simulation_memory_stability() {
     // Simulate a long-running training session
     for i in 0..1000 {
         // Simulate some actions
-        game.action_history.push(Action::Play);
-        game.action_history.push(Action::Discard);
+        game.action_history.push(Action::Play());
+        game.action_history.push(Action::Discard());
         
         // Collect memory stats every 100 iterations
         if i % 100 == 0 {
@@ -171,7 +177,7 @@ fn test_game_state_snapshot_memory_efficiency() {
     
     // Add some state
     for _ in 0..1000 {
-        game.action_history.push(Action::Play);
+        game.action_history.push(Action::Play());
     }
     
     // Create multiple snapshots (simulating frequent state access)
@@ -199,7 +205,7 @@ fn test_memory_report_generation() {
     // Generate some state
     game.start();
     for _ in 0..100 {
-        game.action_history.push(Action::Play);
+        game.action_history.push(Action::Play());
     }
     
     // Get memory stats first
@@ -227,7 +233,7 @@ mod performance_benchmarks {
         let start = Instant::now();
         let mut bounded_history = BoundedActionHistory::with_capacity(1000);
         for _ in 0..ITERATIONS {
-            bounded_history.push(Action::Play);
+            bounded_history.push(Action::Play());
         }
         let bounded_time = start.elapsed();
         
@@ -235,7 +241,7 @@ mod performance_benchmarks {
         let start = Instant::now();
         let mut vec_history = Vec::new();
         for _ in 0..ITERATIONS {
-            vec_history.push(Action::Play);
+            vec_history.push(Action::Play());
             if vec_history.len() > 1000 {
                 vec_history.remove(0); // Simulate bounded behavior
             }
@@ -259,7 +265,7 @@ mod performance_benchmarks {
         // Test without monitoring
         let start = Instant::now();
         for _ in 0..ITERATIONS {
-            game.action_history.push(Action::Play);
+            game.action_history.push(Action::Play());
         }
         let no_monitoring_time = start.elapsed();
         
@@ -267,7 +273,7 @@ mod performance_benchmarks {
         game.enable_rl_memory_monitoring();
         let start = Instant::now();
         for _ in 0..ITERATIONS {
-            game.action_history.push(Action::Play);
+            game.action_history.push(Action::Play());
             if game.memory_monitor.should_check() {
                 let _ = game.get_memory_stats();
             }

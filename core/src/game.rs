@@ -19,7 +19,7 @@ use crate::shop::Shop;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::vouchers::VoucherCollection;
-use crate::memory_monitor::{MemoryMonitor, MemoryConfig};
+use crate::memory_monitor::MemoryMonitor;
 
 // Re-export GameState for external use with qualified name to avoid Python bindings conflict
 pub use crate::vouchers::GameState as VoucherGameState;

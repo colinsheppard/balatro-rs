@@ -177,8 +177,8 @@ mod tests {
         assert_eq!(history.len(), 0);
         assert!(history.is_empty());
         
-        history.push(Action::Play);
-        history.push(Action::Discard);
+        history.push(Action::Play());
+        history.push(Action::Discard());
         assert_eq!(history.len(), 2);
         assert_eq!(history.total_actions(), 2);
     }
@@ -187,23 +187,23 @@ mod tests {
     fn test_bounded_action_history_overflow() {
         let mut history = BoundedActionHistory::with_capacity(2);
         
-        history.push(Action::Play);
-        history.push(Action::Discard);
-        history.push(Action::SubmitHand);
+        history.push(Action::Play());
+        history.push(Action::Discard());
+        history.push(Action::NextRound());
         
         // Should only have 2 actions (most recent)
         assert_eq!(history.len(), 2);
         assert_eq!(history.total_actions(), 3);
         
         let actions = history.to_vec();
-        assert_eq!(actions, vec![Action::Discard, Action::SubmitHand]);
+        assert_eq!(actions, vec![Action::Discard(), Action::NextRound()]);
     }
 
     #[test]
     fn test_clear() {
         let mut history = BoundedActionHistory::with_capacity(5);
-        history.push(Action::Play);
-        history.push(Action::Discard);
+        history.push(Action::Play());
+        history.push(Action::Discard());
         
         history.clear();
         assert_eq!(history.len(), 0);
@@ -214,7 +214,7 @@ mod tests {
     fn test_resize() {
         let mut history = BoundedActionHistory::with_capacity(5);
         for i in 0..5 {
-            history.push(Action::Play);
+            history.push(Action::Play());
         }
         
         // Resize to smaller capacity
@@ -225,7 +225,7 @@ mod tests {
 
     #[test]
     fn test_from_vec() {
-        let actions = vec![Action::Play, Action::Discard, Action::SubmitHand];
+        let actions = vec![Action::Play(), Action::Discard(), Action::NextRound()];
         let history = BoundedActionHistory::from(actions.clone());
         
         assert_eq!(history.to_vec(), actions);
@@ -236,7 +236,7 @@ mod tests {
     fn test_from_large_vec() {
         let mut actions = Vec::new();
         for i in 0..15000 {
-            actions.push(Action::Play);
+            actions.push(Action::Play());
         }
         
         let history = BoundedActionHistory::from(actions);
