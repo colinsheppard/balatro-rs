@@ -17,20 +17,20 @@ impl From<io::Error> for InputError {
 fn secure_input_loop(max: usize) -> Result<usize, InputError> {
     const MAX_ATTEMPTS: usize = 3;
     const MAX_INPUT_LENGTH: usize = 10;
-    
+
     for attempt in 1..=MAX_ATTEMPTS {
         print!("Enter choice (0-{max}): ");
         io::stdout().flush()?;
-        
+
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
-        
+
         // Check input length to prevent memory attacks
         if input.trim().len() > MAX_INPUT_LENGTH {
             println!("Input too long. Attempt {attempt}/{MAX_ATTEMPTS}");
             continue;
         }
-        
+
         // Parse and validate input
         match input.trim().parse::<usize>() {
             Ok(i) if i <= max => return Ok(i),
@@ -38,7 +38,7 @@ fn secure_input_loop(max: usize) -> Result<usize, InputError> {
             Err(_) => println!("Invalid number. Attempt {attempt}/{MAX_ATTEMPTS}"),
         }
     }
-    
+
     Err(InputError::TooManyAttempts)
 }
 
