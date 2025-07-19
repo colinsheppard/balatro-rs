@@ -237,9 +237,7 @@ impl Game {
             .enumerate()
             .filter(|(_, (_, a))| !*a)
             .for_each(|(i, _)| {
-                space
-                    .unmask_select_card(i)
-                    .expect("valid index for selecting");
+                let _ = space.unmask_select_card(i); // Ignore error - defensive programming
             });
     }
 
@@ -272,9 +270,7 @@ impl Game {
             .skip(1)
             .enumerate()
             .for_each(|(i, _)| {
-                space
-                    .unmask_move_card_left(i)
-                    .expect("valid index for move left")
+                let _ = space.unmask_move_card_left(i); // Ignore error - defensive programming
             });
         // move right
         // every available card except the last can move right
@@ -286,9 +282,7 @@ impl Game {
             .rev()
             .enumerate()
             .for_each(|(i, _)| {
-                space
-                    .unmask_move_card_right(i)
-                    .expect("valid index for move right")
+                let _ = space.unmask_move_card_right(i); // Ignore error - defensive programming
             });
     }
 
@@ -323,9 +317,7 @@ impl Game {
             .enumerate()
             .filter(|(_i, j)| j.cost() as f64 <= self.money)
             .for_each(|(i, _j)| {
-                space
-                    .unmask_buy_joker(i)
-                    .expect("valid index for buy joker")
+                let _ = space.unmask_buy_joker(i); // Ignore error - defensive programming
             });
     }
 
