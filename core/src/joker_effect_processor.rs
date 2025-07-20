@@ -208,31 +208,10 @@ impl JokerEffectProcessor {
         base_processing_time: u64,
     ) -> ProcessingResult {
         let mut errors = Vec::new();
-        let mut retriggered_count = 0;
 
         // Handle retriggering
-        let mut i = 0;
-        let original_length = weighted_effects.len();
-        while i < original_length && retriggered_count < self.context.max_retriggered_effects {
-            let retrigger_count = weighted_effects[i].effect.retrigger;
-
-            // Process retriggers for this effect
-            for _ in 0..retrigger_count {
-                if retriggered_count >= self.context.max_retriggered_effects {
-                    errors.push(EffectProcessingError::TooManyRetriggers(
-                        self.context.max_retriggered_effects,
-                    ));
-                    break;
-                }
-
-                let mut retriggered_effect = weighted_effects[i].clone();
-                retriggered_effect.is_retriggered = true;
-                weighted_effects.push(retriggered_effect);
-                retriggered_count += 1;
-            }
-
-            i += 1;
-        }
+        let (retriggered_count, retrigger_errors) = self.process_retriggers(&mut weighted_effects);
+        errors.extend(retrigger_errors);
 
         // Sort by priority (higher priority applied later)
         weighted_effects.sort_by_key(|we| we.priority);
@@ -257,6 +236,51 @@ impl JokerEffectProcessor {
             processing_time_micros: base_processing_time
                 + std::time::Instant::now().elapsed().as_micros() as u64,
         }
+    }
+
+    /// Process retrigger effects for weighted effects
+    ///
+    /// This method handles the creation of retriggered copies of effects that have
+    /// retrigger counts. It enforces a maximum retrigger limit to prevent infinite loops.
+    ///
+    /// # Arguments
+    /// * `weighted_effects` - The vector of weighted effects to process retriggers for
+    ///
+    /// # Returns
+    /// A tuple containing:
+    /// * `u32` - The total number of retriggered effects created
+    /// * `Vec<EffectProcessingError>` - Any errors encountered during retrigger processing
+    fn process_retriggers(
+        &self,
+        weighted_effects: &mut Vec<WeightedEffect>,
+    ) -> (u32, Vec<EffectProcessingError>) {
+        let mut errors = Vec::new();
+        let mut retriggered_count = 0;
+
+        let mut i = 0;
+        let original_length = weighted_effects.len();
+        while i < original_length && retriggered_count < self.context.max_retriggered_effects {
+            let retrigger_count = weighted_effects[i].effect.retrigger;
+
+            // Process retriggers for this effect
+            for _ in 0..retrigger_count {
+                if retriggered_count >= self.context.max_retriggered_effects {
+                    errors.push(EffectProcessingError::TooManyRetriggers(
+                        self.context.max_retriggered_effects,
+                    ));
+                    break;
+                }
+
+                let mut retriggered_effect = weighted_effects[i].clone();
+                retriggered_effect.is_retriggered = true;
+                weighted_effects.push(retriggered_effect);
+                retriggered_count += 1;
+            }
+
+            i += 1;
+        }
+
+        (retriggered_count, errors)
     }
 
     /// Accumulate multiple effects into a single effect using the current resolution strategy
