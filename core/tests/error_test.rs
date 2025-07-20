@@ -1,7 +1,13 @@
 use balatro_rs::error::{
-    ActionSpaceError, GameError, PlayHandError, // Backward compatibility aliases
-    DeveloperActionSpaceError, DeveloperGameError, DeveloperPlayHandError,
-    UserError, ErrorSanitizer, ErrorDetailLevel,
+    ActionSpaceError,
+    DeveloperActionSpaceError,
+    DeveloperGameError,
+    DeveloperPlayHandError,
+    ErrorDetailLevel,
+    ErrorSanitizer,
+    GameError,
+    PlayHandError, // Backward compatibility aliases
+    UserError,
 };
 use std::error::Error;
 
@@ -457,7 +463,7 @@ mod security_error_tests {
 
         for error in user_errors {
             let message = format!("{}", error);
-            
+
             // Ensure messages are generic and don't contain sensitive keywords
             assert!(!message.to_lowercase().contains("internal"));
             assert!(!message.to_lowercase().contains("debug"));
@@ -465,14 +471,14 @@ mod security_error_tests {
             assert!(!message.to_lowercase().contains("path"));
             assert!(!message.to_lowercase().contains("file"));
             assert!(!message.to_lowercase().contains("line"));
-            
+
             // Special check for SystemError - it can contain "system" but should be generic
             if let UserError::SystemError = error {
                 assert_eq!(message, "System error occurred");
             } else {
                 assert!(!message.to_lowercase().contains("system"));
             }
-            
+
             // Messages should be short and generic
             assert!(message.len() < 50, "Error message too long: {}", message);
         }
@@ -482,10 +488,10 @@ mod security_error_tests {
     fn test_error_detail_level_default() {
         // Verify that default detail level is appropriate for build type
         let default_level = ErrorDetailLevel::default();
-        
+
         #[cfg(debug_assertions)]
         assert_eq!(default_level, ErrorDetailLevel::Development);
-        
+
         #[cfg(not(debug_assertions))]
         assert_eq!(default_level, ErrorDetailLevel::Production);
     }
@@ -493,12 +499,21 @@ mod security_error_tests {
     #[test]
     fn test_error_sanitizer_production_mode() {
         let sanitizer = ErrorSanitizer::new(ErrorDetailLevel::Production);
-        
+
         // Test various developer errors get sanitized to generic user errors
         let test_cases = vec![
-            (DeveloperGameError::JokerNotFound("SecretJoker".to_string()), UserError::NotFound),
-            (DeveloperGameError::InvalidInput("sensitive_data".to_string()), UserError::InvalidInput),
-            (DeveloperGameError::InvalidOperation("internal_state".to_string()), UserError::InvalidOperation),
+            (
+                DeveloperGameError::JokerNotFound("SecretJoker".to_string()),
+                UserError::NotFound,
+            ),
+            (
+                DeveloperGameError::InvalidInput("sensitive_data".to_string()),
+                UserError::InvalidInput,
+            ),
+            (
+                DeveloperGameError::InvalidOperation("internal_state".to_string()),
+                UserError::InvalidOperation,
+            ),
             (DeveloperGameError::NoCardMatch, UserError::NotFound),
             (DeveloperGameError::InvalidStage, UserError::InvalidState),
             (DeveloperGameError::MutexPoisoned, UserError::SystemError),
@@ -513,12 +528,21 @@ mod security_error_tests {
     #[test]
     fn test_error_sanitizer_development_mode() {
         let sanitizer = ErrorSanitizer::new(ErrorDetailLevel::Development);
-        
+
         // Development mode should still sanitize but can be slightly more specific
         let test_cases = vec![
-            (DeveloperGameError::NoRemainingDiscards, UserError::OperationFailed),
-            (DeveloperGameError::NoRemainingPlays, UserError::OperationFailed),
-            (DeveloperGameError::JokerNotFound("TestJoker".to_string()), UserError::NotFound),
+            (
+                DeveloperGameError::NoRemainingDiscards,
+                UserError::OperationFailed,
+            ),
+            (
+                DeveloperGameError::NoRemainingPlays,
+                UserError::OperationFailed,
+            ),
+            (
+                DeveloperGameError::JokerNotFound("TestJoker".to_string()),
+                UserError::NotFound,
+            ),
             (DeveloperGameError::InvalidStage, UserError::InvalidState),
         ];
 
@@ -531,7 +555,7 @@ mod security_error_tests {
     #[test]
     fn test_error_sanitizer_no_information_disclosure() {
         let sanitizer = ErrorSanitizer::new(ErrorDetailLevel::Production);
-        
+
         // Test that sensitive information is not disclosed in sanitized errors
         let sensitive_errors = vec![
             DeveloperGameError::JokerNotFound("/path/to/secret/file".to_string()),
@@ -544,7 +568,7 @@ mod security_error_tests {
         for sensitive_error in sensitive_errors {
             let sanitized = sanitizer.sanitize_game_error(&sensitive_error);
             let sanitized_msg = format!("{}", sanitized);
-            
+
             // Ensure no sensitive data leaks through
             assert!(!sanitized_msg.contains("secret"));
             assert!(!sanitized_msg.contains("password"));
@@ -567,7 +591,7 @@ mod security_error_tests {
 
         for error in detailed_errors {
             let error_msg = format!("{}", error);
-            
+
             // Developer errors should contain specific details
             match error {
                 DeveloperGameError::JokerNotFound(ref name) => {
@@ -612,23 +636,25 @@ mod python_security_tests {
         // Test that Python bindings automatically sanitize errors for security
         let sensitive_error = DeveloperGameError::JokerNotFound("internal_system_path".to_string());
         let py_err: PyErr = sensitive_error.into();
-        
+
         let error_string = py_err.to_string();
-        
+
         // Should not contain the sensitive path information
         assert!(!error_string.contains("internal_system_path"));
-        
+
         // Should contain a generic message instead
-        assert!(error_string.contains("Resource not found") || 
-                error_string.contains("not found") ||
-                error_string.contains("NotFound"));
+        assert!(
+            error_string.contains("Resource not found")
+                || error_string.contains("not found")
+                || error_string.contains("NotFound")
+        );
     }
 
     #[test]
     fn test_user_error_to_python() {
         let user_error = UserError::InvalidInput;
         let py_err: PyErr = user_error.into();
-        
+
         let error_string = py_err.to_string();
         assert!(error_string.contains("Invalid input provided"));
     }
@@ -645,7 +671,7 @@ mod python_security_tests {
         for error in errors {
             let py_err: PyErr = error.into();
             let error_string = py_err.to_string();
-            
+
             // Should not contain stack trace keywords
             assert!(!error_string.contains("backtrace"));
             assert!(!error_string.contains("frame"));
@@ -673,19 +699,42 @@ mod error_security_compliance_tests {
         ];
 
         let forbidden_patterns = vec![
-            "password", "token", "key", "secret", "private",
-            "internal", "debug", "trace", "stack", "frame",
-            "file", "path", "directory", "home", "user",
-            "database", "sql", "query", "connection",
-            "0x", ":::", "src/", "lib.rs", ".rs",
+            "password",
+            "token",
+            "key",
+            "secret",
+            "private",
+            "internal",
+            "debug",
+            "trace",
+            "stack",
+            "frame",
+            "file",
+            "path",
+            "directory",
+            "home",
+            "user",
+            "database",
+            "sql",
+            "query",
+            "connection",
+            "0x",
+            ":::",
+            "src/",
+            "lib.rs",
+            ".rs",
         ];
 
         for error in all_user_errors {
             let error_msg = format!("{}", error).to_lowercase();
-            
+
             for pattern in &forbidden_patterns {
-                assert!(!error_msg.contains(pattern), 
-                    "User error '{}' contains forbidden pattern '{}'", error_msg, pattern);
+                assert!(
+                    !error_msg.contains(pattern),
+                    "User error '{}' contains forbidden pattern '{}'",
+                    error_msg,
+                    pattern
+                );
             }
         }
     }
@@ -704,11 +753,15 @@ mod error_security_compliance_tests {
 
         for error in all_user_errors {
             let error_msg = format!("{}", error);
-            
+
             // User error messages should be short and generic
-            assert!(error_msg.len() <= 30, 
-                "User error message too long: '{}' (length: {})", error_msg, error_msg.len());
-            
+            assert!(
+                error_msg.len() <= 30,
+                "User error message too long: '{}' (length: {})",
+                error_msg,
+                error_msg.len()
+            );
+
             // Should not be empty
             assert!(!error_msg.is_empty(), "User error message is empty");
         }
@@ -717,7 +770,7 @@ mod error_security_compliance_tests {
     #[test]
     fn test_error_sanitizer_comprehensive_coverage() {
         let sanitizer = ErrorSanitizer::new(ErrorDetailLevel::Production);
-        
+
         // Test all possible DeveloperGameError variants get mapped
         let all_developer_errors = vec![
             DeveloperGameError::NoRemainingDiscards,

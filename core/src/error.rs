@@ -74,7 +74,7 @@
 //! Type aliases maintain compatibility with existing code:
 //! ```rust
 //! use balatro_rs::error::{DeveloperGameError, DeveloperPlayHandError, DeveloperActionSpaceError};
-//! 
+//!
 //! // These still work but are deprecated
 //! type GameError = DeveloperGameError;
 //! type PlayHandError = DeveloperPlayHandError;
@@ -233,11 +233,16 @@ impl ErrorSanitizer {
         match error {
             DeveloperGameError::InvalidInput(_) => UserError::InvalidInput,
             DeveloperGameError::InvalidOperation(_) => UserError::InvalidOperation,
-            DeveloperGameError::NoCardMatch | DeveloperGameError::NoJokerMatch 
-            | DeveloperGameError::JokerNotFound(_) | DeveloperGameError::JokerNotInShop => UserError::NotFound,
-            DeveloperGameError::InvalidHand(_) | DeveloperGameError::InvalidStage 
-            | DeveloperGameError::InvalidAction | DeveloperGameError::InvalidBlind 
-            | DeveloperGameError::InvalidBalance | DeveloperGameError::InvalidActionSpace
+            DeveloperGameError::NoCardMatch
+            | DeveloperGameError::NoJokerMatch
+            | DeveloperGameError::JokerNotFound(_)
+            | DeveloperGameError::JokerNotInShop => UserError::NotFound,
+            DeveloperGameError::InvalidHand(_)
+            | DeveloperGameError::InvalidStage
+            | DeveloperGameError::InvalidAction
+            | DeveloperGameError::InvalidBlind
+            | DeveloperGameError::InvalidBalance
+            | DeveloperGameError::InvalidActionSpace
             | DeveloperGameError::InvalidSlot => UserError::InvalidState,
             _ => UserError::SystemError,
         }
@@ -247,13 +252,20 @@ impl ErrorSanitizer {
         match error {
             DeveloperGameError::InvalidInput(_) => UserError::InvalidInput,
             DeveloperGameError::InvalidOperation(_) => UserError::InvalidOperation,
-            DeveloperGameError::NoCardMatch | DeveloperGameError::NoJokerMatch 
-            | DeveloperGameError::JokerNotFound(_) | DeveloperGameError::JokerNotInShop => UserError::NotFound,
-            DeveloperGameError::InvalidHand(_) | DeveloperGameError::InvalidStage 
-            | DeveloperGameError::InvalidAction | DeveloperGameError::InvalidBlind 
-            | DeveloperGameError::InvalidBalance | DeveloperGameError::InvalidActionSpace
+            DeveloperGameError::NoCardMatch
+            | DeveloperGameError::NoJokerMatch
+            | DeveloperGameError::JokerNotFound(_)
+            | DeveloperGameError::JokerNotInShop => UserError::NotFound,
+            DeveloperGameError::InvalidHand(_)
+            | DeveloperGameError::InvalidStage
+            | DeveloperGameError::InvalidAction
+            | DeveloperGameError::InvalidBlind
+            | DeveloperGameError::InvalidBalance
+            | DeveloperGameError::InvalidActionSpace
             | DeveloperGameError::InvalidSlot => UserError::InvalidState,
-            DeveloperGameError::NoRemainingDiscards | DeveloperGameError::NoRemainingPlays => UserError::OperationFailed,
+            DeveloperGameError::NoRemainingDiscards | DeveloperGameError::NoRemainingPlays => {
+                UserError::OperationFailed
+            }
             _ => UserError::SystemError,
         }
     }
