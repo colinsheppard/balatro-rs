@@ -239,20 +239,20 @@ impl JokerEffectProcessor {
     }
 
     /// Process retrigger effects for weighted effects
-    /// 
+    ///
     /// This method handles the creation of retriggered copies of effects that have
     /// retrigger counts. It enforces a maximum retrigger limit to prevent infinite loops.
-    /// 
+    ///
     /// # Arguments
     /// * `weighted_effects` - The vector of weighted effects to process retriggers for
-    /// 
+    ///
     /// # Returns
     /// A tuple containing:
     /// * `u32` - The total number of retriggered effects created
     /// * `Vec<EffectProcessingError>` - Any errors encountered during retrigger processing
     fn process_retriggers(
         &self,
-        weighted_effects: &mut Vec<WeightedEffect>
+        weighted_effects: &mut Vec<WeightedEffect>,
     ) -> (u32, Vec<EffectProcessingError>) {
         let mut errors = Vec::new();
         let mut retriggered_count = 0;
