@@ -2201,7 +2201,8 @@ mod tests {
 
         let result = game.handle_action(action);
         assert!(result.is_ok());
-        // Since the jokers vector is empty, specifying slot 5 will still append at the end (slot 0)
+        // Since the jokers vector is empty, specifying slot 5 will still append
+        // at the end (slot 0)
         assert_eq!(
             game.get_joker_at_slot(0).map(|j| j.id()),
             Some(JokerId::Joker)
