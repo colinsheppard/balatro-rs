@@ -37,6 +37,17 @@ pub enum ConsumableError {
     EffectFailed(String),
 }
 
+/// Error types for slot operations
+#[derive(Debug, Error)]
+pub enum SlotError {
+    #[error("Slot {index} is out of bounds (capacity: {capacity})")]
+    IndexOutOfBounds { index: usize, capacity: usize },
+    #[error("No empty slots available (capacity: {capacity})")]
+    NoEmptySlots { capacity: usize },
+    #[error("Slot {index} is already empty")]
+    SlotEmpty { index: usize },
+}
+
 /// Categories of effects that consumables can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 pub enum ConsumableEffect {
@@ -387,12 +398,12 @@ impl ConsumableId {
 /// let large_slots = ConsumableSlots::with_capacity(5);
 /// assert_eq!(large_slots.capacity(), 5);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct ConsumableSlots {
     /// Current maximum capacity of slots
     capacity: usize,
-    /// Vector of optional consumable slots (storing IDs for now, will expand to full objects later)
-    slots: Vec<Option<ConsumableId>>,
+    /// Vector of optional consumable slots
+    slots: Vec<Option<Box<dyn Consumable>>>,
     /// Default capacity for new instances (always 2 as per Balatro base game)
     default_capacity: usize,
 }
@@ -523,6 +534,220 @@ impl ConsumableSlots {
     pub fn available_slots(&self) -> usize {
         self.capacity - self.len()
     }
+
+    /// Adds a consumable to the first available slot
+    ///
+    /// Returns the index where the consumable was placed, or an error if no slots are available.
+    ///
+    /// # Arguments
+    ///
+    /// * `consumable` - The consumable to add
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::NoEmptySlots` - If all slots are currently occupied
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let consumable = create_consumable(); // Some consumable
+    /// 
+    /// match slots.add_consumable(consumable) {
+    ///     Ok(index) => println!("Added to slot {}", index),
+    ///     Err(SlotError::NoEmptySlots { capacity }) => {
+    ///         println!("No empty slots (capacity: {})", capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn add_consumable(&mut self, consumable: Box<dyn Consumable>) -> Result<usize, SlotError> {
+        if let Some(index) = self.find_empty_slot() {
+            self.slots[index] = Some(consumable);
+            Ok(index)
+        } else {
+            Err(SlotError::NoEmptySlots {
+                capacity: self.capacity,
+            })
+        }
+    }
+
+    /// Removes a consumable from the specified slot
+    ///
+    /// Returns the removed consumable, or an error if the index is invalid or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to remove from
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    /// * `SlotError::SlotEmpty` - If the slot at index is already empty
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// // Add a consumable first
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Remove it
+    /// match slots.remove_consumable(index) {
+    ///     Ok(consumable) => println!("Removed consumable"),
+    ///     Err(SlotError::SlotEmpty { index }) => {
+    ///         println!("Slot {} is empty", index);
+    ///     }
+    ///     Err(SlotError::IndexOutOfBounds { index, capacity }) => {
+    ///         println!("Index {} out of bounds (capacity: {})", index, capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn remove_consumable(&mut self, index: usize) -> Result<Box<dyn Consumable>, SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+
+        self.slots[index].take().ok_or(SlotError::SlotEmpty { index })
+    }
+
+    /// Gets a reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable(index) {
+    ///     println!("Found consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn get_consumable(&self, index: usize) -> Option<&dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_ref().map(|boxed| boxed.as_ref())
+    }
+
+    /// Gets a mutable reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable_mut(index) {
+    ///     // Modify consumable if needed
+    /// }
+    /// ```
+    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_mut().map(|boxed| boxed.as_mut())
+    }
+
+    /// Finds the first empty slot
+    ///
+    /// Returns Some(index) if an empty slot is found, None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// assert_eq!(slots.find_empty_slot(), Some(0)); // First slot is empty
+    /// 
+    /// // Fill first slot
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// assert_eq!(slots.find_empty_slot(), Some(1)); // Second slot is empty
+    /// ```
+    pub fn find_empty_slot(&self) -> Option<usize> {
+        self.slots.iter().position(|slot| slot.is_none())
+    }
+
+    /// Clears a specific slot, removing any consumable in it
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to clear
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Clear the first slot
+    /// slots.clear_slot(0).unwrap();
+    /// assert_eq!(slots.len(), 0);
+    /// ```
+    pub fn clear_slot(&mut self, index: usize) -> Result<(), SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+        self.slots[index] = None;
+        Ok(())
+    }
+
+    /// Returns an iterator over all consumables in the slots
+    ///
+    /// This iterates only over occupied slots, skipping empty ones.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// for consumable in slots.iter() {
+    ///     println!("Consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn iter(&self) -> impl Iterator<Item = &dyn Consumable> {
+        self.slots
+            .iter()
+            .filter_map(|slot| slot.as_ref())
+            .map(|boxed| boxed.as_ref())
+    }
 }
 
 impl Default for ConsumableSlots {
@@ -539,3 +764,4 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
+pub use SlotError;
