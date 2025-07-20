@@ -1130,7 +1130,6 @@ mod tests {
     #[test]
     fn test_processing_context_builder_backward_compatibility() {
         // Test that existing code still works
-        let default_context = ProcessingContext::default();
         let mut manual_context = ProcessingContext::default();
         manual_context.processing_mode = ProcessingMode::Delayed;
         manual_context.validate_effects = false;
