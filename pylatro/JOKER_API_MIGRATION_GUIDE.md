@@ -288,7 +288,7 @@ def test_api_equivalence(game):
 ### Getting Help
 
 1. **Issue Tracker**: Report migration problems at [GitHub Issues](https://github.com/spencerduncan/balatro-rs/issues)
-2. **Examples**: See `test_backwards_compatibility.py` for working examples
+2. **Examples**: See `test/test_backwards_compatibility.py` for working examples
 3. **API Reference**: Check `JokerDefinition` class for complete metadata structure
 
 ### Migration Checklist
