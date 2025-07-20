@@ -126,6 +126,10 @@ pub struct Game {
     #[cfg_attr(feature = "serde", serde(skip))]
     pub debug_messages: Vec<String>,
 
+    /// Random number generator for secure game randomness
+    #[cfg_attr(feature = "serde", serde(skip, default = "default_game_rng"))]
+    pub rng: crate::rng::GameRng,
+
     /// Memory monitor for tracking and controlling memory usage
     #[cfg_attr(feature = "serde", serde(skip))]
     pub memory_monitor: MemoryMonitor,
@@ -134,6 +138,11 @@ pub struct Game {
 #[cfg(feature = "serde")]
 fn default_joker_state_manager() -> Arc<JokerStateManager> {
     Arc::new(JokerStateManager::new())
+}
+
+#[cfg(feature = "serde")]
+fn default_game_rng() -> crate::rng::GameRng {
+    crate::rng::GameRng::secure()
 }
 
 impl Game {
@@ -178,6 +187,9 @@ impl Game {
             debug_logging_enabled: false,
             debug_messages: Vec::new(),
 
+            // Initialize secure RNG
+            rng: crate::rng::GameRng::secure(),
+
             // Initialize memory monitor with default configuration
             memory_monitor: MemoryMonitor::default(),
 
@@ -218,6 +230,7 @@ impl Game {
                 hand_type_counts: &self.hand_type_counts,
                 cards_in_deck: self.deck.len(),
                 stone_cards_in_deck: 0, // TODO: Track stone cards when implemented
+                rng: &self.rng,
             };
 
             let effect = joker.on_blind_start(&mut context);
@@ -301,7 +314,7 @@ impl Game {
         // add available back to deck and empty
         self.deck.extend(self.available.cards());
         self.available.empty();
-        self.deck.shuffle();
+        self.deck.shuffle(&self.rng);
         self.draw(self.config.available);
     }
 
@@ -418,6 +431,7 @@ impl Game {
             hand_type_counts: &self.hand_type_counts,
             cards_in_deck: self.deck.len(),
             stone_cards_in_deck: 0, // TODO: Track stone cards when implemented
+            rng: &self.rng,
         };
 
         // Process hand-level effects first
@@ -589,6 +603,7 @@ impl Game {
                 hand_type_counts: &self.hand_type_counts,
                 cards_in_deck: self.deck.len(),
                 stone_cards_in_deck: 0, // TODO: Track stone cards when implemented
+                rng: &self.rng,
             };
 
             // Process each joker and track contributions
@@ -814,7 +829,7 @@ impl Game {
         self.money += self.reward;
         self.reward = 0.0;
         self.stage = Stage::Shop();
-        self.shop.refresh();
+        self.shop.refresh(&self.rng);
         Ok(())
     }
 
@@ -1040,28 +1055,26 @@ impl Game {
                 }
             }
             ShopItem::Consumable(consumable_type) => {
-                use rand::seq::SliceRandom;
-
                 // Select a random consumable of the appropriate type
                 let consumable_id = match consumable_type {
                     crate::shop::ConsumableType::Tarot => {
                         let tarot_cards = ConsumableId::tarot_cards();
-                        tarot_cards
-                            .choose(&mut rand::thread_rng())
+                        self.rng
+                            .choose(&tarot_cards)
                             .copied()
                             .unwrap_or(ConsumableId::TheFool)
                     }
                     crate::shop::ConsumableType::Planet => {
                         let planet_cards = ConsumableId::planet_cards();
-                        planet_cards
-                            .choose(&mut rand::thread_rng())
+                        self.rng
+                            .choose(&planet_cards)
                             .copied()
                             .unwrap_or(ConsumableId::Mercury)
                     }
                     crate::shop::ConsumableType::Spectral => {
                         let spectral_cards = ConsumableId::spectral_cards();
-                        spectral_cards
-                            .choose(&mut rand::thread_rng())
+                        self.rng
+                            .choose(&spectral_cards)
                             .copied()
                             .unwrap_or(ConsumableId::Familiar)
                     }
@@ -1539,6 +1552,8 @@ impl Game {
             // Initialize debug logging fields (not serialized)
             debug_logging_enabled: false,
             debug_messages: Vec::new(),
+            // Initialize secure RNG (not serialized)
+            rng: crate::rng::GameRng::secure(),
             // Initialize memory monitor (not serialized)
             memory_monitor: MemoryMonitor::default(),
         };
@@ -1726,7 +1741,7 @@ mod tests {
         g.start();
         g.stage = Stage::Shop();
         g.money = 10.0;
-        g.shop.refresh();
+        g.shop.refresh(&g.rng);
 
         let j1 = g.shop.joker_from_index(0).expect("is joker");
         g.buy_joker(j1.clone()).expect("buy joker");
@@ -1811,7 +1826,7 @@ mod tests {
         game.start();
         game.stage = Stage::Shop();
         game.money = 20.0;
-        game.shop.refresh();
+        game.shop.refresh(&game.rng);
 
         // Test buying in slot beyond limit (default is 5 slots, so 0-4 are valid)
         let action = Action::BuyJoker {
@@ -1881,7 +1896,7 @@ mod tests {
         game.start();
         game.stage = Stage::Shop();
         game.money = 20.0;
-        game.shop.refresh();
+        game.shop.refresh(&game.rng);
 
         // Try to buy a joker that's not currently in the shop
         let action = Action::BuyJoker {

@@ -22,6 +22,7 @@ pub mod joker_state;
 pub mod math_safe;
 pub mod memory_monitor;
 pub mod rank;
+pub mod rng;
 pub mod security_tests;
 pub mod shop;
 pub mod space;
@@ -37,8 +38,6 @@ mod tests {
     use crate::game::Game;
     use crate::stage::Stage;
 
-    use rand::Rng;
-
     #[test]
     // Test executing a full game using the gen_actions api
     fn test_game_gen_actions() {
@@ -53,7 +52,7 @@ mod tests {
             }
 
             // Pick a random move and execute it
-            let i = rand::thread_rng().gen_range(0..actions.len());
+            let i = g.rng.gen_range(0..actions.len());
             let action = actions[i].clone();
             dbg!("game state:\n{}", &g);
             dbg!("play action: {}", action.clone());
@@ -86,7 +85,7 @@ mod tests {
             // Pick a random move and ensure its unmasked
             let mut i: usize;
             loop {
-                i = rand::thread_rng().gen_range(0..space_vec.len());
+                i = g.rng.gen_range(0..space_vec.len());
                 if space_vec[i] == 1 {
                     break;
                 }
