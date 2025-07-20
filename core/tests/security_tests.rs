@@ -5,12 +5,12 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::config::Config;
-    use crate::math_safe::{
+    use balatro_rs::config::Config;
+    use balatro_rs::math_safe::{
         safe_add, safe_divide, safe_multiply, safe_size_for_move_operations, safe_subtract,
         saturating_subtract, validate_array_size, MathError,
     };
-    use crate::space::ActionSpace;
+    use balatro_rs::space::ActionSpace;
 
     /// Test that ActionSpace creation handles zero available_max without underflow
     #[test]
