@@ -31,6 +31,9 @@ pub mod state_version;
 pub mod static_joker;
 pub mod static_joker_factory;
 pub mod vouchers;
+pub mod scaling_joker;
+pub mod scaling_joker_impl;
+pub mod scaling_joker_custom;
 
 #[cfg(test)]
 mod tests {
