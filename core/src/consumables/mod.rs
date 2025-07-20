@@ -237,6 +237,92 @@ impl Target {
     pub fn cards_in_played(indices: Vec<usize>) -> Self {
         Target::Cards(CardTarget::new(CardCollection::PlayedCards, indices))
     }
+
+    /// Generate all available targets for a given target type
+    pub fn get_available_targets(target_type: TargetType, game: &Game) -> Vec<Target> {
+        match target_type {
+            TargetType::None => vec![Target::None],
+            TargetType::Cards(count) => {
+                if count == 0 || count > 5 {
+                    // Return empty for performance reasons (> 5 cards) or invalid input (0 cards)
+                    return vec![];
+                }
+                
+                let hand_size = game.available.cards().len();
+                if count > hand_size {
+                    return vec![];
+                }
+                
+                // Generate all combinations of selecting `count` cards from hand
+                generate_card_combinations(hand_size, count)
+            }
+            TargetType::HandType => {
+                // Return all available hand types (for now, all are available)
+                use crate::rank::HandRank;
+                vec![
+                    Target::HandType(HandRank::HighCard),
+                    Target::HandType(HandRank::OnePair),
+                    Target::HandType(HandRank::TwoPair),
+                    Target::HandType(HandRank::ThreeOfAKind),
+                    Target::HandType(HandRank::Straight),
+                    Target::HandType(HandRank::Flush),
+                    Target::HandType(HandRank::FullHouse),
+                    Target::HandType(HandRank::FourOfAKind),
+                    Target::HandType(HandRank::StraightFlush),
+                    Target::HandType(HandRank::RoyalFlush),
+                    Target::HandType(HandRank::FiveOfAKind),
+                    Target::HandType(HandRank::FlushHouse),
+                    Target::HandType(HandRank::FlushFive),
+                ]
+            }
+            TargetType::Joker => {
+                // Return targets for all available joker slots
+                (0..game.jokers.len()).map(Target::Joker).collect()
+            }
+            TargetType::Deck => vec![Target::Deck],
+            TargetType::Shop => {
+                // For now, return targets for shop slots 0-4 (typical shop size)
+                // In future: check actual shop inventory
+                (0..5).map(Target::Shop).collect()
+            }
+        }
+    }
+}
+
+/// Generate all possible combinations of selecting `count` cards from `hand_size` total cards
+fn generate_card_combinations(hand_size: usize, count: usize) -> Vec<Target> {
+    if count == 0 || count > hand_size {
+        return vec![];
+    }
+    
+    let mut combinations = Vec::new();
+    let mut current_combination = Vec::new();
+    
+    generate_combinations_recursive(0, hand_size, count, &mut current_combination, &mut combinations);
+    
+    combinations.into_iter()
+        .map(|indices| Target::cards_in_hand(indices))
+        .collect()
+}
+
+/// Recursive helper function to generate combinations
+fn generate_combinations_recursive(
+    start: usize,
+    total: usize,
+    remaining: usize,
+    current: &mut Vec<usize>,
+    all_combinations: &mut Vec<Vec<usize>>,
+) {
+    if remaining == 0 {
+        all_combinations.push(current.clone());
+        return;
+    }
+    
+    for i in start..=(total - remaining) {
+        current.push(i);
+        generate_combinations_recursive(i + 1, total, remaining - 1, current, all_combinations);
+        current.pop();
+    }
 }
 
 
