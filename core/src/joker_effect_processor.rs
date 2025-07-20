@@ -528,12 +528,13 @@ impl JokerEffectProcessor {
         }
         
         // Hash relevant game context
-        game_context.current_money.hash(&mut hasher);
-        game_context.current_mult.hash(&mut hasher);
-        game_context.current_chips.hash(&mut hasher);
-        game_context.hands_left.hash(&mut hasher);
-        game_context.discards_left.hash(&mut hasher);
-        game_context.current_blind_type.hash(&mut hasher);
+        game_context.money.hash(&mut hasher);
+        game_context.mult.hash(&mut hasher);
+        game_context.chips.hash(&mut hasher);
+        game_context.hands_played.hash(&mut hasher);
+        game_context.discards_used.hash(&mut hasher);
+        game_context.ante.hash(&mut hasher);
+        game_context.round.hash(&mut hasher);
         
         // Hash hand composition
         for card in &hand.cards {
@@ -563,10 +564,11 @@ impl JokerEffectProcessor {
         }
         
         // Hash relevant game context
-        game_context.current_money.hash(&mut hasher);
-        game_context.current_mult.hash(&mut hasher);
-        game_context.current_chips.hash(&mut hasher);
-        game_context.current_blind_type.hash(&mut hasher);
+        game_context.money.hash(&mut hasher);
+        game_context.mult.hash(&mut hasher);
+        game_context.chips.hash(&mut hasher);
+        game_context.ante.hash(&mut hasher);
+        game_context.round.hash(&mut hasher);
         
         // Hash card
         card.rank.hash(&mut hasher);
@@ -1050,13 +1052,22 @@ mod tests {
         
         // Create test data
         let mut game_context = GameContext {
-            current_money: 100,
-            current_mult: 4,
-            current_chips: 100,
-            hands_left: 3,
-            discards_left: 2,
-            current_blind_type: crate::blind::BlindType::Small,
-            jokers: HashMap::new(),
+            chips: 100,
+            mult: 4,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &crate::stage::Stage::PreBlind(),
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &[],
+            hand: &crate::hand::Hand::new(vec![]),
+            discarded: &[],
+            joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
+            hand_type_counts: &HashMap::new(),
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &crate::rng::GameRng::secure(),
         };
         
         let hand = SelectHand {
@@ -1080,7 +1091,7 @@ mod tests {
         assert_eq!(card_key1, card_key2);
         
         // Test that different inputs produce different keys
-        game_context.current_money = 200;
+        game_context.money = 200;
         let key3 = processor.generate_hand_cache_key(&jokers, &game_context, &hand);
         assert_ne!(key1, key3);
     }
@@ -1289,13 +1300,22 @@ mod tests {
         
         // Create test data that would be expensive to process
         let game_context = GameContext {
-            current_money: 100,
-            current_mult: 4,
-            current_chips: 100,
-            hands_left: 3,
-            discards_left: 2,
-            current_blind_type: crate::blind::BlindType::Small,
-            jokers: HashMap::new(),
+            chips: 100,
+            mult: 4,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &crate::stage::Stage::PreBlind(),
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &[],
+            hand: &crate::hand::Hand::new(vec![]),
+            discarded: &[],
+            joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
+            hand_type_counts: &HashMap::new(),
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &crate::rng::GameRng::secure(),
         };
         
         let hand = SelectHand {
@@ -1356,13 +1376,22 @@ mod tests {
         let mut processor = JokerEffectProcessor::new();
         
         let mut game_context = GameContext {
-            current_money: 100,
-            current_mult: 4,
-            current_chips: 100,
-            hands_left: 3,
-            discards_left: 2,
-            current_blind_type: crate::blind::BlindType::Small,
-            jokers: HashMap::new(),
+            chips: 100,
+            mult: 4,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &crate::stage::Stage::PreBlind(),
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &[],
+            hand: &crate::hand::Hand::new(vec![]),
+            discarded: &[],
+            joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
+            hand_type_counts: &HashMap::new(),
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &crate::rng::GameRng::secure(),
         };
         
         let hand = SelectHand {

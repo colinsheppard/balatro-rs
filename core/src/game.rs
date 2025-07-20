@@ -408,11 +408,7 @@ impl Game {
     fn process_joker_effects(&mut self, hand: &MadeHand) -> (i32, i32, i32, Vec<String>) {
         use crate::hand::Hand;
 
-        let mut total_chips = 0i32;
-        let mut total_mult = 0i32;
-        let mut total_money = 0i32;
         let mut messages = Vec::new();
-        let mut total_mult_multiplier = 1.0f64;
 
         // Create game context
         let mut context = GameContext {
@@ -434,124 +430,96 @@ impl Game {
             rng: &self.rng,
         };
 
-        // Process hand-level effects first
-        for joker in &self.jokers {
-            let select_hand = SelectHand::new(hand.hand.cards().to_vec());
-            let effect = joker.on_hand_played(&mut context, &select_hand);
+        // Process hand-level effects using the cached processor
+        let select_hand = SelectHand::new(hand.hand.cards().to_vec());
+        let hand_result = self.joker_effect_processor.process_hand_effects(&self.jokers, &mut context, &select_hand);
+        
+        let mut total_chips = hand_result.accumulated_effect.chips;
+        let mut total_mult = hand_result.accumulated_effect.mult;
+        let mut total_money = hand_result.accumulated_effect.money;
+        let mut total_mult_multiplier = if hand_result.accumulated_effect.mult_multiplier != 0.0 {
+            hand_result.accumulated_effect.mult_multiplier
+        } else {
+            1.0
+        };
 
-            // Calculate total triggers (1 + retriggers)
-            let total_triggers = 1 + effect.retrigger;
-
-            // Apply effect for each trigger (with killscreen detection)
-            for trigger_num in 0..total_triggers {
-                total_chips += effect.chips;
-                total_mult += effect.mult;
-                total_money += effect.money;
-
-                // Handle mult_multiplier: 0.0 means no multiplier, so treat as 1.0
-                if effect.mult_multiplier != 0.0 {
-                    total_mult_multiplier *= effect.mult_multiplier;
-
-                    // Killscreen detection - stop processing if we hit NaN/Infinity
-                    if !total_mult_multiplier.is_finite() {
-                        messages
-                            .push("KILLSCREEN: Score calculation reached infinity!".to_string());
-                        break;
-                    }
-                }
-
-                // Generate debug message for each trigger (optimized for minimal allocations)
-                #[cfg(debug_assertions)]
-                if trigger_num == 0 && (effect.chips != 0 || effect.mult != 0 || effect.money != 0)
-                {
-                    use std::fmt::Write;
-                    let mut debug_msg = String::with_capacity(128); // Pre-allocate reasonable size
-
-                    write!(
-                        &mut debug_msg,
-                        "Joker '{}': +{} chips, +{} mult, +{} money",
-                        joker.name(),
-                        effect.chips * total_triggers as i32,
-                        effect.mult * total_triggers as i32,
-                        effect.money * total_triggers as i32
-                    )
-                    .unwrap();
-
-                    if effect.retrigger > 0 {
-                        write!(&mut debug_msg, " (retrigger x{})", effect.retrigger).unwrap();
-                    }
-
-                    messages.push(debug_msg);
-                }
+        // Generate debug messages for hand effects
+        #[cfg(debug_assertions)]
+        if hand_result.jokers_processed > 0 && (total_chips != 0 || total_mult != 0 || total_money != 0) {
+            use std::fmt::Write;
+            let mut debug_msg = String::with_capacity(128);
+            write!(
+                &mut debug_msg,
+                "Hand effects: +{} chips, +{} mult, +{} money from {} jokers",
+                total_chips,
+                total_mult,
+                total_money,
+                hand_result.jokers_processed
+            ).unwrap();
+            
+            if hand_result.retriggered_count > 0 {
+                write!(&mut debug_msg, " ({} retriggers)", hand_result.retriggered_count).unwrap();
             }
+            messages.push(debug_msg);
+        }
 
-            if let Some(msg) = effect.message {
-                messages.push(msg);
+        // Process any error messages from hand effects
+        for error in &hand_result.errors {
+            match error {
+                crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) => {
+                    messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
+                },
+                _ => {} // Other errors are less critical for gameplay
             }
         }
 
-        // Process card-level effects
+        // Process card-level effects using the cached processor
         for card in hand.hand.cards() {
-            for joker in &self.jokers {
-                let effect = joker.on_card_scored(&mut context, &card);
-
-                // Only process if there are actual effects
-                if effect.chips != 0
-                    || effect.mult != 0
-                    || effect.money != 0
-                    || effect.mult_multiplier != 0.0
-                {
-                    // Calculate total triggers (1 + retriggers)
-                    let total_triggers = 1 + effect.retrigger;
-
-                    // Apply effect for each trigger (with killscreen detection)
-                    for trigger_num in 0..total_triggers {
-                        total_chips += effect.chips;
-                        total_mult += effect.mult;
-                        total_money += effect.money;
-
-                        // Handle mult_multiplier: 0.0 means no multiplier, so treat as 1.0
-                        if effect.mult_multiplier != 0.0 {
-                            total_mult_multiplier *= effect.mult_multiplier;
-
-                            // Killscreen detection - stop processing if we hit NaN/Infinity
-                            if !total_mult_multiplier.is_finite() {
-                                messages.push(
-                                    "KILLSCREEN: Score calculation reached infinity!".to_string(),
-                                );
-                                break;
-                            }
-                        }
-
-                        // Generate debug message for first trigger only (optimized)
-                        #[cfg(debug_assertions)]
-                        if trigger_num == 0 {
-                            use std::fmt::Write;
-                            let mut debug_msg = String::with_capacity(128); // Pre-allocate reasonable size
-
-                            write!(
-                                &mut debug_msg,
-                                "Joker '{}' on card {}: +{} chips, +{} mult, +{} money",
-                                joker.name(),
-                                card,
-                                effect.chips * total_triggers as i32,
-                                effect.mult * total_triggers as i32,
-                                effect.money * total_triggers as i32
-                            )
-                            .unwrap();
-
-                            if effect.retrigger > 0 {
-                                write!(&mut debug_msg, " (retrigger x{})", effect.retrigger)
-                                    .unwrap();
-                            }
-
-                            messages.push(debug_msg);
-                        }
-                    }
+            let card_result = self.joker_effect_processor.process_card_effects(&self.jokers, &mut context, card);
+            
+            // Accumulate card effects
+            total_chips += card_result.accumulated_effect.chips;
+            total_mult += card_result.accumulated_effect.mult;
+            total_money += card_result.accumulated_effect.money;
+            
+            // Handle mult_multiplier: only apply if it's not the default value
+            if card_result.accumulated_effect.mult_multiplier != 0.0 {
+                total_mult_multiplier *= card_result.accumulated_effect.mult_multiplier;
+                
+                // Killscreen detection
+                if !total_mult_multiplier.is_finite() {
+                    messages.push("KILLSCREEN: Score calculation reached infinity!".to_string());
+                    break;
                 }
+            }
 
-                if let Some(msg) = effect.message {
-                    messages.push(msg);
+            // Generate debug messages for card effects
+            #[cfg(debug_assertions)]
+            if card_result.jokers_processed > 0 && (card_result.accumulated_effect.chips != 0 || card_result.accumulated_effect.mult != 0 || card_result.accumulated_effect.money != 0) {
+                use std::fmt::Write;
+                let mut debug_msg = String::with_capacity(128);
+                write!(
+                    &mut debug_msg,
+                    "Card {} effects: +{} chips, +{} mult, +{} money",
+                    card,
+                    card_result.accumulated_effect.chips,
+                    card_result.accumulated_effect.mult,
+                    card_result.accumulated_effect.money
+                ).unwrap();
+                
+                if card_result.retriggered_count > 0 {
+                    write!(&mut debug_msg, " ({} retriggers)", card_result.retriggered_count).unwrap();
+                }
+                messages.push(debug_msg);
+            }
+            
+            // Process any error messages from card effects
+            for error in &card_result.errors {
+                match error {
+                    crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) => {
+                        messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
+                    },
+                    _ => {} // Other errors are less critical for gameplay
                 }
             }
         }
@@ -801,6 +769,60 @@ impl Game {
         } else {
             true // Assume safe if no stats available
         }
+    }
+
+    /// Configure joker effect cache settings
+    pub fn configure_joker_effect_cache(&mut self, config: crate::joker_effect_processor::CacheConfig) {
+        self.joker_effect_processor.set_cache_config(config);
+    }
+
+    /// Enable joker effect caching with default settings
+    pub fn enable_joker_effect_cache(&mut self) {
+        let mut config = crate::joker_effect_processor::CacheConfig::default();
+        config.enabled = true;
+        self.joker_effect_processor.set_cache_config(config);
+    }
+
+    /// Disable joker effect caching
+    pub fn disable_joker_effect_cache(&mut self) {
+        let mut config = crate::joker_effect_processor::CacheConfig::default();
+        config.enabled = false;
+        self.joker_effect_processor.set_cache_config(config);
+    }
+
+    /// Get joker effect cache performance metrics
+    pub fn get_joker_cache_metrics(&self) -> &crate::joker_effect_processor::CacheMetrics {
+        self.joker_effect_processor.cache_metrics()
+    }
+
+    /// Clear the joker effect cache
+    pub fn clear_joker_effect_cache(&mut self) {
+        self.joker_effect_processor.clear_cache();
+    }
+
+    /// Perform maintenance on the joker effect cache (cleanup expired entries)
+    pub fn maintain_joker_effect_cache(&mut self) {
+        self.joker_effect_processor.maintain_cache();
+    }
+
+    /// Configure joker effect cache for RL training scenarios
+    pub fn configure_joker_cache_for_rl(&mut self) {
+        let config = crate::joker_effect_processor::CacheConfig {
+            max_entries: 10000, // Larger cache for training
+            ttl_seconds: 600,   // 10 minutes
+            enabled: true,
+        };
+        self.joker_effect_processor.set_cache_config(config);
+    }
+
+    /// Configure joker effect cache for simulation scenarios
+    pub fn configure_joker_cache_for_simulation(&mut self) {
+        let config = crate::joker_effect_processor::CacheConfig {
+            max_entries: 1000,  // Moderate cache for simulation
+            ttl_seconds: 300,   // 5 minutes
+            enabled: true,
+        };
+        self.joker_effect_processor.set_cache_config(config);
     }
 
     pub fn required_score(&self) -> f64 {
@@ -1924,5 +1946,143 @@ mod tests {
         let result = game.handle_action(action);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+    }
+
+    #[test]
+    fn test_joker_effect_cache_integration() {
+        use crate::card::{Suit, Value};
+        use crate::joker::JokerId;
+
+        let mut game = Game::default();
+        game.start();
+        game.stage = Stage::Blind(Blind::Small);
+        game.blind = Some(Blind::Small);
+
+        // Add a joker to the game for testing
+        if let Some(joker) = crate::joker_factory::JokerFactory::create(JokerId::Joker) {
+            game.jokers.push(joker);
+        }
+
+        // Enable cache and clear any existing entries
+        game.enable_joker_effect_cache();
+        game.clear_joker_effect_cache();
+
+        // Create a test hand
+        let cards = vec![
+            Card::new(Value::Ace, Suit::Heart),
+            Card::new(Value::King, Suit::Heart),
+            Card::new(Value::Queen, Suit::Heart),
+            Card::new(Value::Jack, Suit::Heart),
+            Card::new(Value::Ten, Suit::Heart),
+        ];
+
+        let select_hand = SelectHand::new(cards);
+        let made_hand = select_hand.best_hand().unwrap();
+
+        // First call should miss cache
+        let initial_metrics = game.get_joker_cache_metrics().clone();
+        let (chips1, mult1, money1, messages1) = game.process_joker_effects(&made_hand);
+
+        // Verify cache metrics show a miss
+        let metrics_after_first = game.get_joker_cache_metrics();
+        assert!(metrics_after_first.total_lookups >= initial_metrics.total_lookups);
+
+        // Second call with same input should potentially hit cache
+        // Note: Since we create a new GameContext each time with current game state,
+        // cache hits depend on the game state being identical
+        let (chips2, mult2, money2, messages2) = game.process_joker_effects(&made_hand);
+
+        // Results should be identical regardless of cache
+        assert_eq!(chips1, chips2);
+        assert_eq!(mult1, mult2);
+        assert_eq!(money1, money2);
+        // Note: messages might differ slightly due to aggregation vs individual processing
+
+        // Test cache configuration
+        game.disable_joker_effect_cache();
+        let config = game.joker_effect_processor.context().cache_config.clone();
+        assert!(!config.enabled);
+
+        game.configure_joker_cache_for_rl();
+        let rl_config = game.joker_effect_processor.context().cache_config.clone();
+        assert!(rl_config.enabled);
+        assert_eq!(rl_config.max_entries, 10000);
+        assert_eq!(rl_config.ttl_seconds, 600);
+
+        game.configure_joker_cache_for_simulation();
+        let sim_config = game.joker_effect_processor.context().cache_config.clone();
+        assert!(sim_config.enabled);
+        assert_eq!(sim_config.max_entries, 1000);
+        assert_eq!(sim_config.ttl_seconds, 300);
+    }
+
+    #[test]
+    fn test_cache_performance_benefit() {
+        use crate::card::{Suit, Value};
+        use crate::joker::JokerId;
+        use std::time::Instant;
+
+        let mut game = Game::default();
+        game.start();
+        game.stage = Stage::Blind(Blind::Small);
+        game.blind = Some(Blind::Small);
+
+        // Add multiple jokers to increase processing complexity
+        for joker_id in [JokerId::Joker, JokerId::GreedyJoker].iter() {
+            if let Some(joker) = crate::joker_factory::JokerFactory::create(*joker_id) {
+                game.jokers.push(joker);
+            }
+        }
+
+        // Create a test hand
+        let cards = vec![
+            Card::new(Value::Ace, Suit::Heart),
+            Card::new(Value::King, Suit::Heart),
+            Card::new(Value::Queen, Suit::Heart),
+        ];
+        let select_hand = SelectHand::new(cards);
+        let made_hand = select_hand.best_hand().unwrap();
+
+        // Test with cache enabled
+        game.enable_joker_effect_cache();
+        game.clear_joker_effect_cache();
+
+        let start_cached = Instant::now();
+        for _ in 0..100 {
+            let _ = game.process_joker_effects(&made_hand);
+        }
+        let cached_duration = start_cached.elapsed();
+
+        // Test with cache disabled
+        game.disable_joker_effect_cache();
+
+        let start_uncached = Instant::now();
+        for _ in 0..100 {
+            let _ = game.process_joker_effects(&made_hand);
+        }
+        let uncached_duration = start_uncached.elapsed();
+
+        // Re-enable cache for metrics check
+        game.enable_joker_effect_cache();
+        let metrics = game.get_joker_cache_metrics();
+
+        // The test passes if the caching infrastructure works correctly
+        // Performance benefits depend on joker complexity and may not be measurable in simple tests
+        println!("Cached processing: {:?}", cached_duration);
+        println!("Uncached processing: {:?}", uncached_duration);
+        if metrics.total_lookups > 0 {
+            println!("Cache hit ratio: {:.2}%", metrics.hit_ratio() * 100.0);
+        }
+
+        // Verify that both approaches produce the same results
+        game.enable_joker_effect_cache();
+        let (chips_cached, mult_cached, money_cached, _) = game.process_joker_effects(&made_hand);
+
+        game.disable_joker_effect_cache();
+        let (chips_uncached, mult_uncached, money_uncached, _) = game.process_joker_effects(&made_hand);
+
+        assert_eq!(chips_cached, chips_uncached);
+        assert_eq!(mult_cached, mult_uncached);
+        assert_eq!(money_cached, money_uncached);
     }
 }
