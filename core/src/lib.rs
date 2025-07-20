@@ -24,7 +24,6 @@ pub mod math_safe;
 pub mod memory_monitor;
 pub mod rank;
 pub mod rng;
-pub mod security_tests;
 pub mod shop;
 pub mod space;
 pub mod stage;
