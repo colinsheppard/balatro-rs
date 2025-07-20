@@ -18,6 +18,7 @@
 //! - Ensures compatibility with existing game flow
 
 use crate::game::Game;
+use crate::joker::{Joker, JokerId};
 use crate::rank::HandRank;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -35,6 +36,32 @@ pub enum ConsumableError {
     InvalidGameState(String),
     #[error("Effect failed to apply: {0}")]
     EffectFailed(String),
+}
+
+/// Error types for slot operations
+#[derive(Debug, Error)]
+pub enum SlotError {
+    #[error("Slot {index} is out of bounds (capacity: {capacity})")]
+    IndexOutOfBounds { index: usize, capacity: usize },
+    #[error("No empty slots available (capacity: {capacity})")]
+    NoEmptySlots { capacity: usize },
+    #[error("Slot {index} is already empty")]
+    SlotEmpty { index: usize },
+}
+
+/// Error types for target validation
+#[derive(Debug, Error, Clone)]
+pub enum TargetValidationError {
+    #[error("Card index {index} out of bounds (hand size: {hand_size})")]
+    CardIndexOutOfBounds { index: usize, hand_size: usize },
+    #[error("Joker slot {slot} is empty or invalid (joker count: {joker_count})")]
+    JokerSlotInvalid { slot: usize, joker_count: usize },
+    #[error("Hand type {hand_type:?} is not available")]
+    HandTypeNotAvailable { hand_type: HandRank },
+    #[error("No cards available for targeting")]
+    NoCardsAvailable,
+    #[error("Shop slot {slot} is invalid or empty")]
+    ShopSlotInvalid { slot: usize },
 }
 
 /// Categories of effects that consumables can have
@@ -138,21 +165,275 @@ impl Target {
         }
     }
 
-    /// Validate if this target is valid for the current game state
-    pub fn is_valid(&self, game_state: &Game) -> bool {
+    /// Check if this target is valid for the current game state (simple boolean check)
+    pub fn is_valid(&self, game: &Game) -> bool {
+        self.validate(game).is_ok()
+    }
+
+    /// Validate this target against the current game state with detailed error reporting
+    pub fn validate(&self, game: &Game) -> Result<(), TargetValidationError> {
         match self {
-            Target::None => true,
-            Target::Cards(cards) => {
-                !cards.is_empty()
-                    && cards
-                        .iter()
-                        .all(|&i| i < game_state.available.cards().len())
+            Target::None => Ok(()),
+            Target::Cards(indices) => {
+                // Check if any cards are available
+                let hand_size = game.available.cards().len();
+                if hand_size == 0 {
+                    return Err(TargetValidationError::NoCardsAvailable);
+                }
+
+                // Check if indices list is empty
+                if indices.is_empty() {
+                    return Err(TargetValidationError::NoCardsAvailable);
+                }
+
+                // Validate each card index
+                for &index in indices {
+                    if index >= hand_size {
+                        return Err(TargetValidationError::CardIndexOutOfBounds {
+                            index,
+                            hand_size,
+                        });
+                    }
+                }
+                Ok(())
             }
-            Target::HandType(_) => true,
-            Target::Joker(index) => *index < game_state.jokers.len(),
-            Target::Deck => true,
-            Target::Shop(_) => true, // Shop validation would require shop state
+            Target::HandType(_hand_type) => {
+                // For now, all hand types are considered available
+                // In future implementations, we might check if the hand type
+                // has been discovered/unlocked by the player
+                Ok(())
+            }
+            Target::Joker(slot) => {
+                let joker_count = game.jokers.len();
+                if *slot >= joker_count {
+                    Err(TargetValidationError::JokerSlotInvalid {
+                        slot: *slot,
+                        joker_count,
+                    })
+                } else {
+                    Ok(())
+                }
+            }
+            Target::Deck => Ok(()), // Deck is always a valid target
+            Target::Shop(_slot) => {
+                // Shop validation would require shop state implementation
+                // For now, we'll accept any shop slot as valid
+                // In future: check against actual shop inventory
+                Ok(())
+            }
         }
+    }
+
+    /// Convert a joker target to a JokerTarget struct for enhanced validation
+    pub fn as_joker_target(&self) -> Option<JokerTarget> {
+        match self {
+            Target::Joker(slot) => Some(JokerTarget::new(*slot)),
+            _ => None,
+        }
+    }
+
+    /// Create a target for a joker at the specified slot
+    pub fn joker_at_slot(slot: usize) -> Self {
+        Target::Joker(slot)
+    }
+
+    /// Create a target for an active joker at the specified slot
+    /// Note: For full active joker validation, use JokerTarget::active_joker directly
+    pub fn active_joker_at_slot(slot: usize) -> Self {
+        Target::Joker(slot)
+    }
+
+    /// Get all available targets of a specific type for the current game state
+    pub fn get_available_targets(target_type: TargetType, game: &Game) -> Vec<Target> {
+        match target_type {
+            TargetType::None => vec![Target::None],
+            TargetType::Cards(count) => {
+                let hand_size = game.available.cards().len();
+                if hand_size == 0 || count > hand_size {
+                    vec![] // No valid card combinations available
+                } else if count == 1 {
+                    // For single card selection, return each card as a separate target
+                    (0..hand_size)
+                        .map(|i| Target::Cards(vec![i]))
+                        .collect()
+                } else {
+                    // For multiple card selection, generate all valid combinations
+                    // Limited to reasonable number of combinations for performance
+                    if count > 5 || count > hand_size {
+                        vec![] // Too many combinations or impossible selection
+                    } else {
+                        generate_card_combinations(hand_size, count)
+                    }
+                }
+            }
+            TargetType::HandType => {
+                // Return all possible hand types as targets
+                use HandRank::*;
+                vec![
+                    Target::HandType(HighCard),
+                    Target::HandType(OnePair),
+                    Target::HandType(TwoPair),
+                    Target::HandType(ThreeOfAKind),
+                    Target::HandType(Straight),
+                    Target::HandType(Flush),
+                    Target::HandType(FullHouse),
+                    Target::HandType(FourOfAKind),
+                    Target::HandType(StraightFlush),
+                    Target::HandType(RoyalFlush),
+                    Target::HandType(FiveOfAKind),
+                    Target::HandType(FlushHouse),
+                    Target::HandType(FlushFive),
+                ]
+            }
+            TargetType::Joker => {
+                // Return targets for each joker slot that has a joker
+                (0..game.jokers.len())
+                    .map(|i| Target::Joker(i))
+                    .collect()
+            }
+            TargetType::Deck => vec![Target::Deck],
+            TargetType::Shop => {
+                // Without shop implementation, return empty
+                // In future: return available shop slots
+                vec![]
+            }
+        }
+    }
+}
+
+/// Target information for joker selection with enhanced validation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct JokerTarget {
+    /// The slot index of the joker
+    pub slot: usize,
+    /// Whether the joker must be active (not disabled/sealed)
+    pub require_active: bool,
+    /// Optional requirement for specific joker type
+    pub joker_type: Option<JokerId>,
+}
+
+impl JokerTarget {
+    /// Create a new JokerTarget for any joker at the given slot
+    pub fn new(slot: usize) -> Self {
+        Self {
+            slot,
+            require_active: false,
+            joker_type: None,
+        }
+    }
+
+    /// Create a target that requires an active joker at the given slot
+    pub fn active_joker(slot: usize) -> Self {
+        Self {
+            slot,
+            require_active: true,
+            joker_type: None,
+        }
+    }
+
+    /// Create a target for a specific joker type at the given slot
+    pub fn joker_of_type(slot: usize, joker_type: JokerId) -> Self {
+        Self {
+            slot,
+            require_active: false,
+            joker_type: Some(joker_type),
+        }
+    }
+
+    /// Validate that this target is valid for the current game state
+    pub fn validate(&self, game: &Game) -> Result<(), JokerTargetError> {
+        // Check if slot is within bounds
+        if self.slot >= game.jokers.len() {
+            return Err(JokerTargetError::EmptySlot { slot: self.slot });
+        }
+
+        // Get the joker at this slot
+        let joker = &game.jokers[self.slot];
+
+        // Check if joker is active if required
+        // TODO: This will need to be updated when joker state management is fully implemented
+        // For now, we assume all jokers are active
+        if self.require_active {
+            // In the future, check joker.is_active() or similar
+            // For now, this check passes
+        }
+
+        // Check joker type if specified
+        if let Some(expected_type) = self.joker_type {
+            let actual_type = joker.id();
+            if actual_type != expected_type {
+                return Err(JokerTargetError::WrongJokerType {
+                    expected: expected_type,
+                    actual: actual_type,
+                });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get the joker at this target's slot
+    pub fn get_joker<'a>(&self, game: &'a Game) -> Result<&'a dyn Joker, JokerTargetError> {
+        // Validate first
+        self.validate(game)?;
+        
+        // Return the joker (we know it's valid from validation)
+        Ok(&*game.jokers[self.slot])
+    }
+
+    /// Check if the slot is occupied (without full validation)
+    pub fn is_slot_occupied(&self, game: &Game) -> bool {
+        self.slot < game.jokers.len()
+    }
+}
+
+/// Error types specific to joker targeting
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum JokerTargetError {
+    #[error("Joker slot {slot} is empty")]
+    EmptySlot { slot: usize },
+    #[error("Joker at slot {slot} is not active")]
+    InactiveJoker { slot: usize },
+    #[error("Expected joker type {expected:?} but found {actual:?}")]
+    WrongJokerType {
+        expected: JokerId,
+        actual: JokerId,
+    },
+}
+
+/// Generate all possible combinations of selecting `count` cards from `hand_size` total cards
+fn generate_card_combinations(hand_size: usize, count: usize) -> Vec<Target> {
+    if count == 0 || count > hand_size {
+        return vec![];
+    }
+    
+    let mut combinations = Vec::new();
+    let mut current_combination = Vec::new();
+    
+    generate_combinations_recursive(0, hand_size, count, &mut current_combination, &mut combinations);
+    
+    combinations.into_iter()
+        .map(|indices| Target::Cards(indices))
+        .collect()
+}
+
+/// Recursive helper function to generate combinations
+fn generate_combinations_recursive(
+    start: usize,
+    total: usize,
+    remaining: usize,
+    current: &mut Vec<usize>,
+    all_combinations: &mut Vec<Vec<usize>>,
+) {
+    if remaining == 0 {
+        all_combinations.push(current.clone());
+        return;
+    }
+    
+    for i in start..=(total - remaining) {
+        current.push(i);
+        generate_combinations_recursive(i + 1, total, remaining - 1, current, all_combinations);
+        current.pop();
     }
 }
 
@@ -387,12 +668,12 @@ impl ConsumableId {
 /// let large_slots = ConsumableSlots::with_capacity(5);
 /// assert_eq!(large_slots.capacity(), 5);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct ConsumableSlots {
     /// Current maximum capacity of slots
     capacity: usize,
-    /// Vector of optional consumable slots (storing IDs for now, will expand to full objects later)
-    slots: Vec<Option<ConsumableId>>,
+    /// Vector of optional consumable slots
+    slots: Vec<Option<Box<dyn Consumable>>>,
     /// Default capacity for new instances (always 2 as per Balatro base game)
     default_capacity: usize,
 }
@@ -523,6 +804,220 @@ impl ConsumableSlots {
     pub fn available_slots(&self) -> usize {
         self.capacity - self.len()
     }
+
+    /// Adds a consumable to the first available slot
+    ///
+    /// Returns the index where the consumable was placed, or an error if no slots are available.
+    ///
+    /// # Arguments
+    ///
+    /// * `consumable` - The consumable to add
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::NoEmptySlots` - If all slots are currently occupied
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let consumable = create_consumable(); // Some consumable
+    /// 
+    /// match slots.add_consumable(consumable) {
+    ///     Ok(index) => println!("Added to slot {}", index),
+    ///     Err(SlotError::NoEmptySlots { capacity }) => {
+    ///         println!("No empty slots (capacity: {})", capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn add_consumable(&mut self, consumable: Box<dyn Consumable>) -> Result<usize, SlotError> {
+        if let Some(index) = self.find_empty_slot() {
+            self.slots[index] = Some(consumable);
+            Ok(index)
+        } else {
+            Err(SlotError::NoEmptySlots {
+                capacity: self.capacity,
+            })
+        }
+    }
+
+    /// Removes a consumable from the specified slot
+    ///
+    /// Returns the removed consumable, or an error if the index is invalid or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to remove from
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    /// * `SlotError::SlotEmpty` - If the slot at index is already empty
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// // Add a consumable first
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Remove it
+    /// match slots.remove_consumable(index) {
+    ///     Ok(consumable) => println!("Removed consumable"),
+    ///     Err(SlotError::SlotEmpty { index }) => {
+    ///         println!("Slot {} is empty", index);
+    ///     }
+    ///     Err(SlotError::IndexOutOfBounds { index, capacity }) => {
+    ///         println!("Index {} out of bounds (capacity: {})", index, capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn remove_consumable(&mut self, index: usize) -> Result<Box<dyn Consumable>, SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+
+        self.slots[index].take().ok_or(SlotError::SlotEmpty { index })
+    }
+
+    /// Gets a reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable(index) {
+    ///     println!("Found consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn get_consumable(&self, index: usize) -> Option<&dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_ref().map(|boxed| boxed.as_ref())
+    }
+
+    /// Gets a mutable reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable_mut(index) {
+    ///     // Modify consumable if needed
+    /// }
+    /// ```
+    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_mut().map(|boxed| boxed.as_mut())
+    }
+
+    /// Finds the first empty slot
+    ///
+    /// Returns Some(index) if an empty slot is found, None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// assert_eq!(slots.find_empty_slot(), Some(0)); // First slot is empty
+    /// 
+    /// // Fill first slot
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// assert_eq!(slots.find_empty_slot(), Some(1)); // Second slot is empty
+    /// ```
+    pub fn find_empty_slot(&self) -> Option<usize> {
+        self.slots.iter().position(|slot| slot.is_none())
+    }
+
+    /// Clears a specific slot, removing any consumable in it
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to clear
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Clear the first slot
+    /// slots.clear_slot(0).unwrap();
+    /// assert_eq!(slots.len(), 0);
+    /// ```
+    pub fn clear_slot(&mut self, index: usize) -> Result<(), SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+        self.slots[index] = None;
+        Ok(())
+    }
+
+    /// Returns an iterator over all consumables in the slots
+    ///
+    /// This iterates only over occupied slots, skipping empty ones.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// for consumable in slots.iter() {
+    ///     println!("Consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn iter(&self) -> impl Iterator<Item = &dyn Consumable> {
+        self.slots
+            .iter()
+            .filter_map(|slot| slot.as_ref())
+            .map(|boxed| boxed.as_ref())
+    }
 }
 
 impl Default for ConsumableSlots {
@@ -539,3 +1034,4 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
+pub use SlotError;

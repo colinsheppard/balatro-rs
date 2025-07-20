@@ -1,10 +1,15 @@
 use crate::card::Card;
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
+use crate::joker_metadata::JokerMetadata;
+use crate::joker_registry;
+#[cfg(feature = "python")]
+use pyo3::pyclass;
 use std::collections::HashMap;
 
 /// Priority level for effect processing
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "python", pyclass(eq))]
 pub enum EffectPriority {
     /// Lowest priority - applied first
     Low = 1,
@@ -66,6 +71,233 @@ impl Default for ProcessingContext {
             validate_effects: true,
             max_retriggered_effects: 100,
         }
+    }
+}
+
+impl ProcessingContext {
+    /// Create a new builder for ProcessingContext.
+    ///
+    /// This provides a fluent API for configuring ProcessingContext instances.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode, ConflictResolutionStrategy};
+    /// let context = ProcessingContext::builder()
+    ///     .processing_mode(ProcessingMode::Delayed)
+    ///     .resolution_strategy(ConflictResolutionStrategy::Maximum)
+    ///     .validate_effects(false)
+    ///     .max_retriggered_effects(50)
+    ///     .build();
+    /// ```
+    pub fn builder() -> ProcessingContextBuilder {
+        ProcessingContextBuilder::new()
+    }
+}
+
+/// Builder for creating ProcessingContext instances with a fluent API.
+///
+/// The ProcessingContextBuilder provides a convenient way to configure
+/// ProcessingContext instances using method chaining. All configuration
+/// options are optional, with sensible defaults being used for unspecified
+/// fields.
+///
+/// # Examples
+///
+/// ## Basic usage with all options
+///
+/// ```
+/// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode, ConflictResolutionStrategy};
+/// let context = ProcessingContext::builder()
+///     .processing_mode(ProcessingMode::Delayed)
+///     .resolution_strategy(ConflictResolutionStrategy::Maximum)
+///     .validate_effects(false)
+///     .max_retriggered_effects(50)
+///     .build();
+/// ```
+///
+/// ## Partial configuration (uses defaults for unspecified fields)
+///
+/// ```
+/// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode};
+/// let context = ProcessingContext::builder()
+///     .processing_mode(ProcessingMode::Delayed)
+///     .validate_effects(false)
+///     .build();
+/// ```
+///
+/// ## Builder reuse
+///
+/// ```
+/// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode, ConflictResolutionStrategy};
+/// let base_builder = ProcessingContext::builder()
+///     .processing_mode(ProcessingMode::Delayed)
+///     .resolution_strategy(ConflictResolutionStrategy::Maximum);
+///
+/// let context1 = base_builder.clone().validate_effects(true).build();
+/// let context2 = base_builder.validate_effects(false).build();
+/// ```
+#[derive(Debug, Clone)]
+pub struct ProcessingContextBuilder {
+    processing_mode: ProcessingMode,
+    resolution_strategy: ConflictResolutionStrategy,
+    validate_effects: bool,
+    max_retriggered_effects: u32,
+}
+
+impl ProcessingContextBuilder {
+    /// Create a new builder with default values.
+    ///
+    /// The builder starts with the same default values as [`ProcessingContext::default()`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::ProcessingContextBuilder;
+    /// let builder = ProcessingContextBuilder::new();
+    /// let context = builder.build();
+    /// ```
+    pub fn new() -> Self {
+        let default_context = ProcessingContext::default();
+        Self {
+            processing_mode: default_context.processing_mode,
+            resolution_strategy: default_context.resolution_strategy,
+            validate_effects: default_context.validate_effects,
+            max_retriggered_effects: default_context.max_retriggered_effects,
+        }
+    }
+
+    /// Set the processing mode for joker effects.
+    ///
+    /// The processing mode determines when effects are applied:
+    /// - `ProcessingMode::Immediate`: Effects are applied as soon as they are generated
+    /// - `ProcessingMode::Delayed`: Effects are collected and applied in batch
+    ///
+    /// # Arguments
+    ///
+    /// * `mode` - The processing mode to use
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode};
+    /// let context = ProcessingContext::builder()
+    ///     .processing_mode(ProcessingMode::Delayed)
+    ///     .build();
+    /// ```
+    pub fn processing_mode(mut self, mode: ProcessingMode) -> Self {
+        self.processing_mode = mode;
+        self
+    }
+
+    /// Set the conflict resolution strategy for combining multiple effects.
+    ///
+    /// When multiple jokers produce conflicting effects, the resolution strategy
+    /// determines how they are combined:
+    /// - `ConflictResolutionStrategy::Sum`: Add all effect values together
+    /// - `ConflictResolutionStrategy::Maximum`: Use the highest effect value
+    /// - `ConflictResolutionStrategy::Minimum`: Use the lowest effect value
+    ///
+    /// # Arguments
+    ///
+    /// * `strategy` - The conflict resolution strategy to use
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::{ProcessingContext, ConflictResolutionStrategy};
+    /// let context = ProcessingContext::builder()
+    ///     .resolution_strategy(ConflictResolutionStrategy::Maximum)
+    ///     .build();
+    /// ```
+    pub fn resolution_strategy(mut self, strategy: ConflictResolutionStrategy) -> Self {
+        self.resolution_strategy = strategy;
+        self
+    }
+
+    /// Set whether to validate effects during processing.
+    ///
+    /// When enabled, each effect is validated against predefined rules before
+    /// being applied. This can help catch invalid effects but adds processing overhead.
+    ///
+    /// # Arguments
+    ///
+    /// * `validate` - Whether to enable effect validation
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::ProcessingContext;
+    /// // Enable validation for debugging
+    /// let debug_context = ProcessingContext::builder()
+    ///     .validate_effects(true)
+    ///     .build();
+    ///
+    /// // Disable validation for performance
+    /// let production_context = ProcessingContext::builder()
+    ///     .validate_effects(false)
+    ///     .build();
+    /// ```
+    pub fn validate_effects(mut self, validate: bool) -> Self {
+        self.validate_effects = validate;
+        self
+    }
+
+    /// Set the maximum number of retriggered effects allowed.
+    ///
+    /// This prevents infinite loops from jokers that retrigger other jokers.
+    /// When the limit is reached, additional retriggers are ignored and an error
+    /// is recorded.
+    ///
+    /// # Arguments
+    ///
+    /// * `max` - The maximum number of retriggered effects (0 disables retriggering)
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::ProcessingContext;
+    /// // Conservative limit for safety
+    /// let safe_context = ProcessingContext::builder()
+    ///     .max_retriggered_effects(10)
+    ///     .build();
+    ///
+    /// // Higher limit for complex interactions
+    /// let complex_context = ProcessingContext::builder()
+    ///     .max_retriggered_effects(200)
+    ///     .build();
+    /// ```
+    pub fn max_retriggered_effects(mut self, max: u32) -> Self {
+        self.max_retriggered_effects = max;
+        self
+    }
+
+    /// Build the final ProcessingContext instance.
+    ///
+    /// Consumes the builder and returns a configured ProcessingContext.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// # use balatro_rs::joker_effect_processor::{ProcessingContext, ProcessingMode};
+    /// let context = ProcessingContext::builder()
+    ///     .processing_mode(ProcessingMode::Delayed)
+    ///     .validate_effects(false)
+    ///     .build();
+    /// ```
+    pub fn build(self) -> ProcessingContext {
+        ProcessingContext {
+            processing_mode: self.processing_mode,
+            resolution_strategy: self.resolution_strategy,
+            validate_effects: self.validate_effects,
+            max_retriggered_effects: self.max_retriggered_effects,
+        }
+    }
+}
+
+impl Default for ProcessingContextBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -208,31 +440,10 @@ impl JokerEffectProcessor {
         base_processing_time: u64,
     ) -> ProcessingResult {
         let mut errors = Vec::new();
-        let mut retriggered_count = 0;
 
         // Handle retriggering
-        let mut i = 0;
-        let original_length = weighted_effects.len();
-        while i < original_length && retriggered_count < self.context.max_retriggered_effects {
-            let retrigger_count = weighted_effects[i].effect.retrigger;
-
-            // Process retriggers for this effect
-            for _ in 0..retrigger_count {
-                if retriggered_count >= self.context.max_retriggered_effects {
-                    errors.push(EffectProcessingError::TooManyRetriggers(
-                        self.context.max_retriggered_effects,
-                    ));
-                    break;
-                }
-
-                let mut retriggered_effect = weighted_effects[i].clone();
-                retriggered_effect.is_retriggered = true;
-                weighted_effects.push(retriggered_effect);
-                retriggered_count += 1;
-            }
-
-            i += 1;
-        }
+        let (retriggered_count, retrigger_errors) = self.process_retriggers(&mut weighted_effects);
+        errors.extend(retrigger_errors);
 
         // Sort by priority (higher priority applied later)
         weighted_effects.sort_by_key(|we| we.priority);
@@ -257,6 +468,51 @@ impl JokerEffectProcessor {
             processing_time_micros: base_processing_time
                 + std::time::Instant::now().elapsed().as_micros() as u64,
         }
+    }
+
+    /// Process retrigger effects for weighted effects
+    ///
+    /// This method handles the creation of retriggered copies of effects that have
+    /// retrigger counts. It enforces a maximum retrigger limit to prevent infinite loops.
+    ///
+    /// # Arguments
+    /// * `weighted_effects` - The vector of weighted effects to process retriggers for
+    ///
+    /// # Returns
+    /// A tuple containing:
+    /// * `u32` - The total number of retriggered effects created
+    /// * `Vec<EffectProcessingError>` - Any errors encountered during retrigger processing
+    fn process_retriggers(
+        &self,
+        weighted_effects: &mut Vec<WeightedEffect>,
+    ) -> (u32, Vec<EffectProcessingError>) {
+        let mut errors = Vec::new();
+        let mut retriggered_count = 0;
+
+        let mut i = 0;
+        let original_length = weighted_effects.len();
+        while i < original_length && retriggered_count < self.context.max_retriggered_effects {
+            let retrigger_count = weighted_effects[i].effect.retrigger;
+
+            // Process retriggers for this effect
+            for _ in 0..retrigger_count {
+                if retriggered_count >= self.context.max_retriggered_effects {
+                    errors.push(EffectProcessingError::TooManyRetriggers(
+                        self.context.max_retriggered_effects,
+                    ));
+                    break;
+                }
+
+                let mut retriggered_effect = weighted_effects[i].clone();
+                retriggered_effect.is_retriggered = true;
+                weighted_effects.push(retriggered_effect);
+                retriggered_count += 1;
+            }
+
+            i += 1;
+        }
+
+        (retriggered_count, errors)
     }
 
     /// Accumulate multiple effects into a single effect using the current resolution strategy
@@ -371,10 +627,17 @@ impl JokerEffectProcessor {
             && effect.message.is_none()
     }
 
-    /// Get processing priority for a joker (can be customized)
-    fn get_joker_priority(&self, _joker_id: JokerId) -> EffectPriority {
-        // Default implementation - can be extended to read from joker metadata
-        EffectPriority::Normal
+    /// Get processing priority for a joker based on its metadata
+    fn get_joker_priority(&self, joker_id: JokerId) -> EffectPriority {
+        // Try to get the joker definition and create metadata
+        if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
+            // Create metadata to get the computed priority
+            let metadata = JokerMetadata::from_definition(&definition, true);
+            metadata.effect_priority
+        } else {
+            // Fallback to Normal priority if definition not found
+            EffectPriority::Normal
+        }
     }
 
     /// Validate a single effect
@@ -708,6 +971,155 @@ mod tests {
     }
 
     #[test]
+    fn test_comprehensive_priority_system() {
+        let processor = JokerEffectProcessor::new();
+
+        // Test with jokers that are actually registered in the registry
+        assert_eq!(processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+
+        // Test fallback behavior for unregistered jokers
+        // These jokers exist in the enum but aren't registered in the registry
+        assert_eq!(processor.get_joker_priority(JokerId::IceCream), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::EggJoker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::SpaceJoker), EffectPriority::Normal);
+    }
+
+    #[test]
+    fn test_priority_based_effect_ordering() {
+        let processor = JokerEffectProcessor::new();
+
+        // Create effects with manually assigned priorities to demonstrate the system works
+        let mut weighted_effects = vec![
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(50),
+                priority: EffectPriority::High, // High priority
+                source_joker_id: JokerId::EggJoker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(10),
+                priority: EffectPriority::Low, // Low priority
+                source_joker_id: JokerId::IceCream,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(30),
+                priority: EffectPriority::Normal, // Normal priority
+                source_joker_id: JokerId::Joker,
+                is_retriggered: false,
+            },
+        ];
+
+        // Sort by priority (lower values processed first)
+        weighted_effects.sort_by_key(|we| we.priority);
+
+        // Verify the ordering: Low (1) -> Normal (5) -> High (10)
+        assert_eq!(weighted_effects[0].source_joker_id, JokerId::IceCream);
+        assert_eq!(weighted_effects[0].priority, EffectPriority::Low);
+        
+        assert_eq!(weighted_effects[1].source_joker_id, JokerId::Joker);
+        assert_eq!(weighted_effects[1].priority, EffectPriority::Normal);
+        
+        assert_eq!(weighted_effects[2].source_joker_id, JokerId::EggJoker);
+        assert_eq!(weighted_effects[2].priority, EffectPriority::High);
+
+        // Test that the accumulation works correctly with priority ordering
+        let result = processor.accumulate_effects(&weighted_effects);
+        
+        // All chips should be summed: 10 + 30 + 50 = 90
+        assert_eq!(result.chips, 90);
+    }
+
+    #[test]
+    fn test_priority_system_with_multiplicative_effects() {
+        let processor = JokerEffectProcessor::new();
+
+        // Test that multiplicative effects would get critical priority
+        // (We test the priority assignment logic, even though these specific jokers 
+        // might not actually have multiplicative effects in the current implementation)
+        
+        // Create effects simulating what would happen with multiplicative jokers
+        let weighted_effects = vec![
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(10),
+                priority: EffectPriority::Normal, // Additive effect
+                source_joker_id: JokerId::Joker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_mult_multiplier(2.0),
+                priority: EffectPriority::Critical, // Multiplicative effect
+                source_joker_id: JokerId::SpaceJoker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_mult(5),
+                priority: EffectPriority::High, // High priority additive
+                source_joker_id: JokerId::EggJoker,
+                is_retriggered: false,
+            },
+        ];
+
+        let result = processor.accumulate_effects(&weighted_effects);
+
+        // Additive effects: 10 chips, 5 mult
+        // Multiplicative effect: 2.0x mult multiplier
+        assert_eq!(result.chips, 10);
+        assert_eq!(result.mult, 5);
+        assert_eq!(result.mult_multiplier, 2.0);
+    }
+
+    #[test]
+    fn test_priority_assignment_logic_directly() {
+        // Test the priority assignment logic directly by importing and testing
+        // the determine_effect_priority function from joker_metadata
+        use crate::joker_metadata::determine_effect_priority;
+
+        // Test multiplicative effects get Critical priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "multiplicative_mult", "X2 Mult"),
+            EffectPriority::Critical
+        );
+        
+        // Test destructive effects get Critical priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "special", "destroy all cards"),
+            EffectPriority::Critical
+        );
+        
+        // Test economy effects get High priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "economy", "Earn $5 when played"),
+            EffectPriority::High
+        );
+        
+        // Test hand modification effects get High priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "hand_modification", "+1 hand size"),
+            EffectPriority::High
+        );
+        
+        // Test specific joker overrides
+        assert_eq!(
+            determine_effect_priority(&JokerId::IceCream, "conditional_chips", "conditional effect"),
+            EffectPriority::Low
+        );
+        
+        assert_eq!(
+            determine_effect_priority(&JokerId::EggJoker, "special", "affects sell values"),
+            EffectPriority::High
+        );
+        
+        // Test standard jokers get Normal priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "additive_mult", "+4 Mult"),
+            EffectPriority::Normal
+        );
+    }
+
+    #[test]
     fn test_processing_result_structure() {
         let mut processor = JokerEffectProcessor::new();
 
@@ -737,5 +1149,235 @@ mod tests {
         processor.clear_cache();
         // Cache should be empty after clear (no direct way to verify size)
         // This test ensures the method exists and doesn't panic
+    }
+
+    #[test]
+    fn test_processing_context_builder_default() {
+        let builder = ProcessingContextBuilder::new();
+        let context = builder.build();
+        let default_context = ProcessingContext::default();
+
+        assert_eq!(context.processing_mode, default_context.processing_mode);
+        assert_eq!(
+            context.resolution_strategy,
+            default_context.resolution_strategy
+        );
+        assert_eq!(context.validate_effects, default_context.validate_effects);
+        assert_eq!(
+            context.max_retriggered_effects,
+            default_context.max_retriggered_effects
+        );
+    }
+
+    #[test]
+    fn test_processing_context_builder_fluent_api() {
+        let context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .resolution_strategy(ConflictResolutionStrategy::Maximum)
+            .validate_effects(false)
+            .max_retriggered_effects(50)
+            .build();
+
+        assert_eq!(context.processing_mode, ProcessingMode::Delayed);
+        assert_eq!(
+            context.resolution_strategy,
+            ConflictResolutionStrategy::Maximum
+        );
+        assert!(!context.validate_effects);
+        assert_eq!(context.max_retriggered_effects, 50);
+    }
+
+    #[test]
+    fn test_processing_context_builder_partial_configuration() {
+        let context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .validate_effects(false)
+            .build();
+
+        // Should use default values for unset fields
+        assert_eq!(context.processing_mode, ProcessingMode::Delayed);
+        assert_eq!(context.resolution_strategy, ConflictResolutionStrategy::Sum);
+        assert!(!context.validate_effects);
+        assert_eq!(context.max_retriggered_effects, 100);
+    }
+
+    #[test]
+    fn test_processing_context_builder_chaining() {
+        let builder = ProcessingContextBuilder::new()
+            .processing_mode(ProcessingMode::Delayed)
+            .resolution_strategy(ConflictResolutionStrategy::Maximum);
+
+        let context1 = builder.clone().validate_effects(true).build();
+        let context2 = builder.validate_effects(false).build();
+
+        // Both should have the same processing mode and resolution strategy
+        assert_eq!(context1.processing_mode, ProcessingMode::Delayed);
+        assert_eq!(context2.processing_mode, ProcessingMode::Delayed);
+        assert_eq!(
+            context1.resolution_strategy,
+            ConflictResolutionStrategy::Maximum
+        );
+        assert_eq!(
+            context2.resolution_strategy,
+            ConflictResolutionStrategy::Maximum
+        );
+
+        // But different validation settings
+        assert!(context1.validate_effects);
+        assert!(!context2.validate_effects);
+    }
+
+    #[test]
+    fn test_processing_context_builder_from_default() {
+        let builder = ProcessingContextBuilder::default();
+        let context = builder.build();
+        let default_context = ProcessingContext::default();
+
+        assert_eq!(context.processing_mode, default_context.processing_mode);
+        assert_eq!(
+            context.resolution_strategy,
+            default_context.resolution_strategy
+        );
+        assert_eq!(context.validate_effects, default_context.validate_effects);
+        assert_eq!(
+            context.max_retriggered_effects,
+            default_context.max_retriggered_effects
+        );
+    }
+
+    #[test]
+    fn test_processing_context_builder_all_processing_modes() {
+        let immediate_context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Immediate)
+            .build();
+        assert_eq!(immediate_context.processing_mode, ProcessingMode::Immediate);
+
+        let delayed_context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .build();
+        assert_eq!(delayed_context.processing_mode, ProcessingMode::Delayed);
+    }
+
+    #[test]
+    fn test_processing_context_builder_all_resolution_strategies() {
+        let sum_context = ProcessingContext::builder()
+            .resolution_strategy(ConflictResolutionStrategy::Sum)
+            .build();
+        assert_eq!(
+            sum_context.resolution_strategy,
+            ConflictResolutionStrategy::Sum
+        );
+
+        let max_context = ProcessingContext::builder()
+            .resolution_strategy(ConflictResolutionStrategy::Maximum)
+            .build();
+        assert_eq!(
+            max_context.resolution_strategy,
+            ConflictResolutionStrategy::Maximum
+        );
+
+        let min_context = ProcessingContext::builder()
+            .resolution_strategy(ConflictResolutionStrategy::Minimum)
+            .build();
+        assert_eq!(
+            min_context.resolution_strategy,
+            ConflictResolutionStrategy::Minimum
+        );
+    }
+
+    #[test]
+    fn test_processing_context_builder_validation_flags() {
+        let validate_true = ProcessingContext::builder().validate_effects(true).build();
+        assert!(validate_true.validate_effects);
+
+        let validate_false = ProcessingContext::builder().validate_effects(false).build();
+        assert!(!validate_false.validate_effects);
+    }
+
+    #[test]
+    fn test_processing_context_builder_max_retriggered_effects() {
+        let context = ProcessingContext::builder()
+            .max_retriggered_effects(25)
+            .build();
+        assert_eq!(context.max_retriggered_effects, 25);
+
+        let high_limit_context = ProcessingContext::builder()
+            .max_retriggered_effects(1000)
+            .build();
+        assert_eq!(high_limit_context.max_retriggered_effects, 1000);
+
+        let zero_limit_context = ProcessingContext::builder()
+            .max_retriggered_effects(0)
+            .build();
+        assert_eq!(zero_limit_context.max_retriggered_effects, 0);
+    }
+
+    #[test]
+    fn test_processing_context_builder_backward_compatibility() {
+        // Test that existing code still works
+        let mut manual_context = ProcessingContext::default();
+        manual_context.processing_mode = ProcessingMode::Delayed;
+        manual_context.validate_effects = false;
+
+        let builder_context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .validate_effects(false)
+            .build();
+
+        assert_eq!(
+            manual_context.processing_mode,
+            builder_context.processing_mode
+        );
+        assert_eq!(
+            manual_context.validate_effects,
+            builder_context.validate_effects
+        );
+        assert_eq!(
+            manual_context.resolution_strategy,
+            builder_context.resolution_strategy
+        );
+        assert_eq!(
+            manual_context.max_retriggered_effects,
+            builder_context.max_retriggered_effects
+        );
+    }
+
+    #[test]
+    fn test_processing_context_builder_debug_trait() {
+        let builder = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .validate_effects(false);
+
+        // Should be able to debug print the builder
+        let debug_string = format!("{:?}", builder);
+        assert!(debug_string.contains("ProcessingContextBuilder"));
+    }
+
+    #[test]
+    fn test_processing_context_builder_clone_trait() {
+        let builder = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .validate_effects(false);
+
+        let cloned_builder = builder.clone();
+        let original_context = builder.build();
+        let cloned_context = cloned_builder.build();
+
+        assert_eq!(
+            original_context.processing_mode,
+            cloned_context.processing_mode
+        );
+        assert_eq!(
+            original_context.validate_effects,
+            cloned_context.validate_effects
+        );
+        assert_eq!(
+            original_context.resolution_strategy,
+            cloned_context.resolution_strategy
+        );
+        assert_eq!(
+            original_context.max_retriggered_effects,
+            cloned_context.max_retriggered_effects
+        );
     }
 }
