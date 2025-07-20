@@ -37,6 +37,21 @@ pub enum ConsumableError {
     EffectFailed(String),
 }
 
+/// Error types for target validation
+#[derive(Debug, Error, Clone)]
+pub enum TargetValidationError {
+    #[error("Card index {index} out of bounds (hand size: {hand_size})")]
+    CardIndexOutOfBounds { index: usize, hand_size: usize },
+    #[error("Joker slot {slot} is empty or invalid (joker count: {joker_count})")]
+    JokerSlotInvalid { slot: usize, joker_count: usize },
+    #[error("Hand type {hand_type:?} is not available")]
+    HandTypeNotAvailable { hand_type: HandRank },
+    #[error("No cards available for targeting")]
+    NoCardsAvailable,
+    #[error("Shop slot {slot} is invalid or empty")]
+    ShopSlotInvalid { slot: usize },
+}
+
 /// Categories of effects that consumables can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 pub enum ConsumableEffect {
@@ -138,21 +153,156 @@ impl Target {
         }
     }
 
-    /// Validate if this target is valid for the current game state
-    pub fn is_valid(&self, game_state: &Game) -> bool {
+    /// Check if this target is valid for the current game state (simple boolean check)
+    pub fn is_valid(&self, game: &Game) -> bool {
+        self.validate(game).is_ok()
+    }
+
+    /// Validate this target against the current game state with detailed error reporting
+    pub fn validate(&self, game: &Game) -> Result<(), TargetValidationError> {
         match self {
-            Target::None => true,
-            Target::Cards(cards) => {
-                !cards.is_empty()
-                    && cards
-                        .iter()
-                        .all(|&i| i < game_state.available.cards().len())
+            Target::None => Ok(()),
+            Target::Cards(indices) => {
+                // Check if any cards are available
+                let hand_size = game.available.cards().len();
+                if hand_size == 0 {
+                    return Err(TargetValidationError::NoCardsAvailable);
+                }
+
+                // Check if indices list is empty
+                if indices.is_empty() {
+                    return Err(TargetValidationError::NoCardsAvailable);
+                }
+
+                // Validate each card index
+                for &index in indices {
+                    if index >= hand_size {
+                        return Err(TargetValidationError::CardIndexOutOfBounds {
+                            index,
+                            hand_size,
+                        });
+                    }
+                }
+                Ok(())
             }
-            Target::HandType(_) => true,
-            Target::Joker(index) => *index < game_state.jokers.len(),
-            Target::Deck => true,
-            Target::Shop(_) => true, // Shop validation would require shop state
+            Target::HandType(_hand_type) => {
+                // For now, all hand types are considered available
+                // In future implementations, we might check if the hand type
+                // has been discovered/unlocked by the player
+                Ok(())
+            }
+            Target::Joker(slot) => {
+                let joker_count = game.jokers.len();
+                if *slot >= joker_count {
+                    Err(TargetValidationError::JokerSlotInvalid {
+                        slot: *slot,
+                        joker_count,
+                    })
+                } else {
+                    Ok(())
+                }
+            }
+            Target::Deck => Ok(()), // Deck is always a valid target
+            Target::Shop(_slot) => {
+                // Shop validation would require shop state implementation
+                // For now, we'll accept any shop slot as valid
+                // In future: check against actual shop inventory
+                Ok(())
+            }
         }
+    }
+
+    /// Get all available targets of a specific type for the current game state
+    pub fn get_available_targets(target_type: TargetType, game: &Game) -> Vec<Target> {
+        match target_type {
+            TargetType::None => vec![Target::None],
+            TargetType::Cards(count) => {
+                let hand_size = game.available.cards().len();
+                if hand_size == 0 || count > hand_size {
+                    vec![] // No valid card combinations available
+                } else if count == 1 {
+                    // For single card selection, return each card as a separate target
+                    (0..hand_size)
+                        .map(|i| Target::Cards(vec![i]))
+                        .collect()
+                } else {
+                    // For multiple card selection, generate all valid combinations
+                    // Limited to reasonable number of combinations for performance
+                    if count > 5 || count > hand_size {
+                        vec![] // Too many combinations or impossible selection
+                    } else {
+                        generate_card_combinations(hand_size, count)
+                    }
+                }
+            }
+            TargetType::HandType => {
+                // Return all possible hand types as targets
+                use HandRank::*;
+                vec![
+                    Target::HandType(HighCard),
+                    Target::HandType(OnePair),
+                    Target::HandType(TwoPair),
+                    Target::HandType(ThreeOfAKind),
+                    Target::HandType(Straight),
+                    Target::HandType(Flush),
+                    Target::HandType(FullHouse),
+                    Target::HandType(FourOfAKind),
+                    Target::HandType(StraightFlush),
+                    Target::HandType(RoyalFlush),
+                    Target::HandType(FiveOfAKind),
+                    Target::HandType(FlushHouse),
+                    Target::HandType(FlushFive),
+                ]
+            }
+            TargetType::Joker => {
+                // Return targets for each joker slot that has a joker
+                (0..game.jokers.len())
+                    .map(|i| Target::Joker(i))
+                    .collect()
+            }
+            TargetType::Deck => vec![Target::Deck],
+            TargetType::Shop => {
+                // Without shop implementation, return empty
+                // In future: return available shop slots
+                vec![]
+            }
+        }
+    }
+}
+
+/// Generate all possible combinations of selecting `count` cards from `hand_size` total cards
+fn generate_card_combinations(hand_size: usize, count: usize) -> Vec<Target> {
+    if count == 0 || count > hand_size {
+        return vec![];
+    }
+    
+    let mut combinations = Vec::new();
+    let mut current_combination = Vec::new();
+    
+    generate_combinations_recursive(0, hand_size, count, &mut current_combination, &mut combinations);
+    
+    combinations.into_iter()
+        .map(|indices| Target::Cards(indices))
+        .collect()
+}
+
+/// Recursive helper function to generate combinations
+fn generate_combinations_recursive(
+    start: usize,
+    total: usize,
+    remaining: usize,
+    current: &mut Vec<usize>,
+    all_combinations: &mut Vec<Vec<usize>>,
+) {
+    if remaining == 0 {
+        all_combinations.push(current.clone());
+        return;
+    }
+    
+    for i in start..=(total - remaining) {
+        current.push(i);
+        generate_combinations_recursive(i + 1, total, remaining - 1, current, all_combinations);
+        current.pop();
     }
 }
 
