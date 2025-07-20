@@ -1136,6 +1136,71 @@ impl Game {
         Ok(())
     }
 
+    /// Validates whether a consumable can be purchased based on game state, player resources, and slot availability.
+    ///
+    /// This method checks that:
+    /// - The game is currently in Shop stage
+    /// - The player has sufficient money for the purchase
+    /// - At least one consumable slot is available in the player's hand
+    ///
+    /// # Arguments
+    /// * `consumable_type` - The type of consumable to validate for purchase
+    ///
+    /// # Returns
+    /// * `Ok(())` if the consumable can be purchased
+    /// * `Err(GameError)` with the specific reason if purchase is not allowed
+    ///
+    /// # Errors
+    /// * `InvalidStage` - Game is not in Shop stage
+    /// * `InvalidBalance` - Player doesn't have enough money
+    /// * `NoAvailableSlot` - Consumable hand is full
+    ///
+    /// # Example
+    /// ```rust,ignore
+    /// use balatro_rs::game::Game;
+    /// use balatro_rs::shop::ConsumableType;
+    /// use balatro_rs::stage::Stage;
+    ///
+    /// let mut game = Game::default();
+    /// game.stage = Stage::Shop();
+    /// game.money = 10.0;
+    ///
+    /// // This should succeed
+    /// assert!(game.can_purchase_consumable(ConsumableType::Tarot).is_ok());
+    ///
+    /// // This should fail due to insufficient money
+    /// game.money = 1.0;
+    /// assert!(game.can_purchase_consumable(ConsumableType::Spectral).is_err());
+    /// ```
+    pub fn can_purchase_consumable(
+        &self,
+        consumable_type: crate::shop::ConsumableType,
+    ) -> Result<(), GameError> {
+        // Check if game is in Shop stage
+        if self.stage != Stage::Shop() {
+            return Err(GameError::InvalidStage);
+        }
+
+        // Determine cost based on consumable type (maintaining f64 consistency)
+        let cost = match consumable_type {
+            crate::shop::ConsumableType::Tarot => 3.0,
+            crate::shop::ConsumableType::Planet => 3.0,
+            crate::shop::ConsumableType::Spectral => 4.0,
+        };
+
+        // Check if player has sufficient money
+        if self.money < cost {
+            return Err(GameError::InvalidBalance);
+        }
+
+        // Check if consumable hand has available space
+        if self.consumables_in_hand.len() >= self.config.consumable_hand_capacity {
+            return Err(GameError::NoAvailableSlot);
+        }
+
+        Ok(())
+    }
+
     /// Pack System Methods
     /// Buy a pack of the specified type
     pub(crate) fn buy_pack(
@@ -2202,7 +2267,6 @@ mod tests {
     }
 
     #[test]
-<<<<<<< HEAD
     fn test_joker_effect_cache_integration() {
         use crate::card::{Suit, Value};
         use crate::joker::JokerId;
@@ -2794,6 +2858,168 @@ mod tests {
 
         assert_eq!(effects1, effects2);
         assert_ne!(effects1, effects3);
->>>>>>> 01320b29d215ec9ece20948172854441e86e89c9
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_validation() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        game.money = 10.0;
+
+        // Test valid purchase conditions for all consumable types
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_ok());
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_insufficient_money() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        
+        // Test insufficient money for Tarot (costs 3)
+        game.money = 2.0;
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Tarot);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidBalance));
+        
+        // Test insufficient money for Planet (costs 3)
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Planet);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidBalance));
+        
+        // Test insufficient money for Spectral (costs 4)
+        game.money = 3.0;
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Spectral);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidBalance));
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_edge_case_exact_money() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        
+        // Test edge case: exactly enough money for Tarot
+        game.money = 3.0;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_ok());
+        
+        // Test edge case: exactly enough money for Planet
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_ok());
+        
+        // Test edge case: exactly enough money for Spectral
+        game.money = 4.0;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_ok());
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_no_available_slots() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        game.money = 10.0;
+        
+        // Fill consumable hand to capacity (default is 2)
+        game.consumables_in_hand = vec![
+            crate::consumables::ConsumableId::TheFool,
+            crate::consumables::ConsumableId::Mercury,
+        ];
+        assert_eq!(game.consumables_in_hand.len(), game.config.consumable_hand_capacity);
+        
+        // Should not be able to purchase any consumable when hand is full
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Tarot);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::NoAvailableSlot));
+        
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Planet);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::NoAvailableSlot));
+        
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Spectral);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::NoAvailableSlot));
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_wrong_stage() {
+        let mut game = Game::default();
+        game.money = 10.0;
+        
+        // Test all invalid stages
+        game.stage = Stage::PreBlind();
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Tarot);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+        
+        game.stage = Stage::Blind(crate::stage::Blind::Small);
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Planet);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+        
+        game.stage = Stage::PostBlind();
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Spectral);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+        
+        game.stage = Stage::End(crate::stage::End::Win);
+        let result = game.can_purchase_consumable(crate::shop::ConsumableType::Tarot);
+        assert!(result.is_err());
+        assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_cost_validation() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        
+        // Test Tarot card cost (3 money)
+        game.money = 3.0;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_ok());
+        game.money = 2.9;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_err());
+        
+        // Test Planet card cost (3 money)
+        game.money = 3.0;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_ok());
+        game.money = 2.9;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_err());
+        
+        // Test Spectral card cost (4 money)
+        game.money = 4.0;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_ok());
+        game.money = 3.9;
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_err());
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_partial_hand() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        game.money = 10.0;
+        
+        // Test with one consumable in hand (capacity is 2)
+        game.consumables_in_hand = vec![crate::consumables::ConsumableId::TheFool];
+        assert_eq!(game.consumables_in_hand.len(), 1);
+        assert!(game.consumables_in_hand.len() < game.config.consumable_hand_capacity);
+        
+        // Should be able to purchase any consumable
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_ok());
+    }
+
+    #[test]
+    fn test_can_purchase_consumable_empty_hand() {
+        let mut game = Game::default();
+        game.stage = Stage::Shop();
+        game.money = 10.0;
+        
+        // Test with empty consumable hand
+        game.consumables_in_hand = vec![];
+        assert_eq!(game.consumables_in_hand.len(), 0);
+        
+        // Should be able to purchase any consumable
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Tarot).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Planet).is_ok());
+        assert!(game.can_purchase_consumable(crate::shop::ConsumableType::Spectral).is_ok());
     }
 }

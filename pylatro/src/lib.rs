@@ -11,6 +11,7 @@ use balatro_rs::joker_metadata::JokerMetadata;
 use balatro_rs::joker_registry::{
     calculate_joker_cost, registry, JokerDefinition, UnlockCondition,
 };
+use balatro_rs::shop::ConsumableType;
 use balatro_rs::stage::{End, Stage};
 use pyo3::prelude::*;
 use pyo3::{PyResult, Python};
@@ -343,6 +344,14 @@ impl GameEngine {
         }
 
         false
+    }
+
+    /// Check if player can afford and has space for a consumable
+    fn can_purchase_consumable(&self, consumable_type: ConsumableType) -> bool {
+        match self.game.can_purchase_consumable(consumable_type) {
+            Ok(()) => true,
+            Err(_) => false,
+        }
     }
 
     /// Get the cost of a specific joker
@@ -1466,7 +1475,7 @@ fn pylatro(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<JokerDefinition>()?;
     m.add_class::<JokerMetadata>()?;
     m.add_class::<UnlockCondition>()?;
-    m.add_class::<JokerMetadata>()?;
+    m.add_class::<ConsumableType>()?;
 
     Ok(())
 }
