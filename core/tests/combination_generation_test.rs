@@ -1,5 +1,6 @@
 use balatro_rs::consumables::{Target, TargetType};
 use balatro_rs::game::Game;
+use balatro_rs::config::Config;
 
 /// Test helper to create a mock game with specified number of cards
 fn create_game_with_cards(card_count: usize) -> Game {
@@ -9,7 +10,7 @@ fn create_game_with_cards(card_count: usize) -> Game {
     
     // This is a placeholder - in the actual implementation,
     // you would need to use the proper game setup methods
-    Game::new()
+    Game::new(Config::default())
 }
 
 #[test]
