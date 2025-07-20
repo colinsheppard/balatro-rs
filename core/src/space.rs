@@ -328,19 +328,18 @@ impl ActionSpace {
     pub fn is_empty(&self) -> bool {
         // Use iterator for zero-copy check - more efficient than to_vec()
         let mut iter = self.iter();
-        
+
         // Check if iterator has any elements first
         let first = iter.next();
         if first.is_none() {
             return true; // Empty iterator means empty action space
         }
-        
+
         // Use fold to efficiently find min/max in single pass
-        let (min, max) = iter.fold(
-            (first.unwrap(), first.unwrap()), 
-            |(min, max), val| (min.min(val), max.max(val))
-        );
-        
+        let (min, max) = iter.fold((first.unwrap(), first.unwrap()), |(min, max), val| {
+            (min.min(val), max.max(val))
+        });
+
         min == 0 && max == 0
     }
 }
