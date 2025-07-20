@@ -346,10 +346,15 @@ impl ActionSpace {
 
 impl From<Config> for ActionSpace {
     fn from(c: Config) -> Self {
+        use crate::math_safe::safe_size_for_move_operations;
+
+        // Use safe operations to prevent underflow when available_max is 0
+        let move_operations_size = safe_size_for_move_operations(c.available_max);
+
         ActionSpace {
             select_card: vec![0; c.available_max],
-            move_card_left: vec![0; c.available_max - 1], // every card but leftmost can move left
-            move_card_right: vec![0; c.available_max - 1], // every card but rightmost can move right
+            move_card_left: vec![0; move_operations_size], // every card but leftmost can move left
+            move_card_right: vec![0; move_operations_size], // every card but rightmost can move right
             play: vec![0; 1],
             discard: vec![0; 1],
             cash_out: vec![0; 1],
