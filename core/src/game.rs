@@ -55,6 +55,96 @@ pub struct JokerContribution {
     pub retrigger_count: u32,
 }
 
+/// Accumulates effects from multiple jokers in a structured way
+#[derive(Debug, Clone, PartialEq)]
+pub struct AccumulatedEffects {
+    /// Total chips to add to the hand
+    pub chips: i32,
+    /// Total mult to add to the hand
+    pub mult: i32,
+    /// Total money to award to the player
+    pub money: i32,
+    /// Combined mult multiplier (multiplicative)
+    pub mult_multiplier: f64,
+    /// Collection of all messages from jokers
+    pub messages: Vec<String>,
+}
+
+impl AccumulatedEffects {
+    /// Create a new AccumulatedEffects with default values
+    pub fn new() -> Self {
+        Self {
+            chips: 0,
+            mult: 0,
+            money: 0,
+            mult_multiplier: 1.0,
+            messages: Vec::new(),
+        }
+    }
+
+    /// Accumulate a JokerEffect into this accumulator
+    /// Returns false if killscreen (infinity/NaN) is detected
+    pub fn accumulate_effect(&mut self, effect: &crate::joker::JokerEffect) -> bool {
+        
+        // Calculate total iterations (1 + retriggers)
+        let iterations = 1 + effect.retrigger as i32;
+        
+        // Accumulate chips, mult, and money (additive, multiplied by retriggers)
+        self.chips = self.chips.saturating_add(effect.chips.saturating_mul(iterations));
+        self.mult = self.mult.saturating_add(effect.mult.saturating_mul(iterations));
+        self.money = self.money.saturating_add(effect.money.saturating_mul(iterations));
+        
+        // Apply mult multiplier for each iteration (multiplicative)
+        if effect.mult_multiplier != 0.0 {
+            for _ in 0..iterations {
+                self.mult_multiplier *= effect.mult_multiplier;
+            }
+        }
+        
+        // Add message if present
+        if let Some(ref message) = effect.message {
+            self.messages.push(message.clone());
+        }
+        
+        // Check for killscreen (infinity or NaN)
+        if self.mult_multiplier.is_infinite() || self.mult_multiplier.is_nan() {
+            return false;
+        }
+        
+        true
+    }
+
+    /// Merge another AccumulatedEffects into this one
+    pub fn merge(&mut self, other: &AccumulatedEffects) {
+        self.chips = self.chips.saturating_add(other.chips);
+        self.mult = self.mult.saturating_add(other.mult);
+        self.money = self.money.saturating_add(other.money);
+        
+        // Multiply mult multipliers
+        if other.mult_multiplier != 0.0 {
+            self.mult_multiplier *= other.mult_multiplier;
+        }
+        
+        // Append messages
+        self.messages.extend_from_slice(&other.messages);
+    }
+
+    /// Apply the accumulated mult multiplier to the mult value
+    pub fn apply_mult_multiplier(&mut self) {
+        if self.mult_multiplier != 0.0 && self.mult_multiplier != 1.0 {
+            let multiplied = (self.mult as f64) * self.mult_multiplier;
+            // Clamp to i32 range to prevent overflow
+            self.mult = multiplied.clamp(i32::MIN as f64, i32::MAX as f64) as i32;
+        }
+    }
+}
+
+impl Default for AccumulatedEffects {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[derive(Debug)]
 pub struct Game {
@@ -1924,5 +2014,461 @@ mod tests {
         let result = game.handle_action(action);
         assert!(result.is_err());
         assert!(matches!(result.unwrap_err(), GameError::InvalidStage));
+    }
+
+    #[test]
+    fn test_accumulated_effects_new() {
+        let effects = AccumulatedEffects::new();
+        assert_eq!(effects.chips, 0);
+        assert_eq!(effects.mult, 0);
+        assert_eq!(effects.money, 0);
+        assert_eq!(effects.mult_multiplier, 1.0);
+        assert!(effects.messages.is_empty());
+    }
+
+    #[test]
+    fn test_accumulated_effects_default() {
+        let effects = AccumulatedEffects::default();
+        assert_eq!(effects.chips, 0);
+        assert_eq!(effects.mult, 0);
+        assert_eq!(effects.money, 0);
+        assert_eq!(effects.mult_multiplier, 1.0);
+        assert!(effects.messages.is_empty());
+    }
+
+    #[test]
+    fn test_accumulated_effects_accumulate_basic() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        let joker_effect = JokerEffect {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: Some("Test message".to_string()),
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(result); // Should not trigger killscreen
+        assert_eq!(effects.chips, 10);
+        assert_eq!(effects.mult, 5);
+        assert_eq!(effects.money, 3);
+        assert_eq!(effects.mult_multiplier, 2.0);
+        assert_eq!(effects.messages.len(), 1);
+        assert_eq!(effects.messages[0], "Test message");
+    }
+
+    #[test]
+    fn test_accumulated_effects_accumulate_with_retriggers() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        let joker_effect = JokerEffect {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            retrigger: 2, // Will trigger 3 times total (1 + 2 retriggers)
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(result);
+        // Values should be multiplied by iterations (3)
+        assert_eq!(effects.chips, 30); // 10 * 3
+        assert_eq!(effects.mult, 15);  // 5 * 3
+        assert_eq!(effects.money, 9);  // 3 * 3
+        // Multiplier should be applied 3 times: 1.0 * 2.0 * 2.0 * 2.0 = 8.0
+        assert_eq!(effects.mult_multiplier, 8.0);
+        assert!(effects.messages.is_empty());
+    }
+
+    #[test]
+    fn test_accumulated_effects_accumulate_zero_multiplier() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        let joker_effect = JokerEffect {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 0.0, // Zero means no multiplier
+            retrigger: 1,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(result);
+        assert_eq!(effects.chips, 20); // 10 * 2 iterations
+        assert_eq!(effects.mult, 10);  // 5 * 2 iterations
+        assert_eq!(effects.money, 6);  // 3 * 2 iterations
+        assert_eq!(effects.mult_multiplier, 1.0); // Should remain 1.0 for zero multiplier
+    }
+
+    #[test]
+    fn test_accumulated_effects_killscreen_infinity() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        let joker_effect = JokerEffect {
+            chips: 0,
+            mult: 0,
+            money: 0,
+            mult_multiplier: f64::INFINITY,
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(!result); // Should trigger killscreen
+        assert!(effects.mult_multiplier.is_infinite());
+    }
+
+    #[test]
+    fn test_accumulated_effects_killscreen_nan() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        let joker_effect = JokerEffect {
+            chips: 0,
+            mult: 0,
+            money: 0,
+            mult_multiplier: f64::NAN,
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(!result); // Should trigger killscreen
+        assert!(effects.mult_multiplier.is_nan());
+    }
+
+    #[test]
+    fn test_accumulated_effects_killscreen_from_multiplication() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        effects.mult_multiplier = f64::MAX / 2.0; // Set to a very large value
+        
+        let joker_effect = JokerEffect {
+            chips: 0,
+            mult: 0,
+            money: 0,
+            mult_multiplier: f64::MAX / 2.0, // This multiplication should overflow to infinity
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(!result); // Should trigger killscreen
+        assert!(effects.mult_multiplier.is_infinite());
+    }
+
+    #[test]
+    fn test_accumulated_effects_saturating_arithmetic() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        effects.chips = i32::MAX - 5; // Set close to max
+        
+        let joker_effect = JokerEffect {
+            chips: 10, // This would overflow without saturating arithmetic
+            mult: 0,
+            money: 0,
+            mult_multiplier: 0.0,
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: None,
+        };
+
+        let result = effects.accumulate_effect(&joker_effect);
+        assert!(result);
+        assert_eq!(effects.chips, i32::MAX); // Should saturate at max value
+    }
+
+    #[test]
+    fn test_accumulated_effects_merge() {
+        let mut effects1 = AccumulatedEffects {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            messages: vec!["Message 1".to_string()],
+        };
+
+        let effects2 = AccumulatedEffects {
+            chips: 20,
+            mult: 10,
+            money: 7,
+            mult_multiplier: 3.0,
+            messages: vec!["Message 2".to_string(), "Message 3".to_string()],
+        };
+
+        effects1.merge(&effects2);
+
+        assert_eq!(effects1.chips, 30);    // 10 + 20
+        assert_eq!(effects1.mult, 15);     // 5 + 10
+        assert_eq!(effects1.money, 10);    // 3 + 7
+        assert_eq!(effects1.mult_multiplier, 6.0); // 2.0 * 3.0
+        assert_eq!(effects1.messages.len(), 3);
+        assert_eq!(effects1.messages[0], "Message 1");
+        assert_eq!(effects1.messages[1], "Message 2");
+        assert_eq!(effects1.messages[2], "Message 3");
+    }
+
+    #[test]
+    fn test_accumulated_effects_merge_zero_multiplier() {
+        let mut effects1 = AccumulatedEffects {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            messages: vec![],
+        };
+
+        let effects2 = AccumulatedEffects {
+            chips: 20,
+            mult: 10,
+            money: 7,
+            mult_multiplier: 0.0, // Zero multiplier should not affect the result
+            messages: vec![],
+        };
+
+        effects1.merge(&effects2);
+
+        assert_eq!(effects1.chips, 30);
+        assert_eq!(effects1.mult, 15);
+        assert_eq!(effects1.money, 10);
+        assert_eq!(effects1.mult_multiplier, 2.0); // Should remain unchanged
+    }
+
+    #[test]
+    fn test_accumulated_effects_merge_saturating() {
+        let mut effects1 = AccumulatedEffects {
+            chips: i32::MAX - 5,
+            mult: i32::MAX - 3,
+            money: i32::MAX - 1,
+            mult_multiplier: 1.0,
+            messages: vec![],
+        };
+
+        let effects2 = AccumulatedEffects {
+            chips: 10,
+            mult: 10,
+            money: 10,
+            mult_multiplier: 1.0,
+            messages: vec![],
+        };
+
+        effects1.merge(&effects2);
+
+        // Should saturate at max values
+        assert_eq!(effects1.chips, i32::MAX);
+        assert_eq!(effects1.mult, i32::MAX);
+        assert_eq!(effects1.money, i32::MAX);
+    }
+
+    #[test]
+    fn test_accumulated_effects_apply_mult_multiplier() {
+        let mut effects = AccumulatedEffects {
+            chips: 0,
+            mult: 10,
+            money: 0,
+            mult_multiplier: 2.5,
+            messages: vec![],
+        };
+
+        effects.apply_mult_multiplier();
+
+        assert_eq!(effects.mult, 25); // 10 * 2.5 = 25
+    }
+
+    #[test]
+    fn test_accumulated_effects_apply_mult_multiplier_zero() {
+        let mut effects = AccumulatedEffects {
+            chips: 0,
+            mult: 10,
+            money: 0,
+            mult_multiplier: 0.0, // Zero multiplier should not change mult
+            messages: vec![],
+        };
+
+        effects.apply_mult_multiplier();
+
+        assert_eq!(effects.mult, 10); // Should remain unchanged
+    }
+
+    #[test]
+    fn test_accumulated_effects_apply_mult_multiplier_one() {
+        let mut effects = AccumulatedEffects {
+            chips: 0,
+            mult: 10,
+            money: 0,
+            mult_multiplier: 1.0, // 1.0 multiplier should not change mult
+            messages: vec![],
+        };
+
+        effects.apply_mult_multiplier();
+
+        assert_eq!(effects.mult, 10); // Should remain unchanged
+    }
+
+    #[test]
+    fn test_accumulated_effects_apply_mult_multiplier_clamping() {
+        let mut effects = AccumulatedEffects {
+            chips: 0,
+            mult: 10,
+            money: 0,
+            mult_multiplier: f64::MAX, // Very large multiplier
+            messages: vec![],
+        };
+
+        effects.apply_mult_multiplier();
+
+        // Should clamp to i32::MAX
+        assert_eq!(effects.mult, i32::MAX);
+    }
+
+    #[test]
+    fn test_accumulated_effects_apply_mult_multiplier_negative_clamping() {
+        let mut effects = AccumulatedEffects {
+            chips: 0,
+            mult: -10,
+            money: 0,
+            mult_multiplier: f64::MAX, // Very large multiplier on negative value
+            messages: vec![],
+        };
+
+        effects.apply_mult_multiplier();
+
+        // Should clamp to i32::MIN
+        assert_eq!(effects.mult, i32::MIN);
+    }
+
+    #[test]
+    fn test_accumulated_effects_multiple_accumulations() {
+        use crate::joker::JokerEffect;
+        
+        let mut effects = AccumulatedEffects::new();
+        
+        // First effect
+        let effect1 = JokerEffect {
+            chips: 5,
+            mult: 2,
+            money: 1,
+            mult_multiplier: 2.0,
+            retrigger: 0,
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: Some("Effect 1".to_string()),
+        };
+        
+        // Second effect
+        let effect2 = JokerEffect {
+            chips: 3,
+            mult: 4,
+            money: 2,
+            mult_multiplier: 1.5,
+            retrigger: 1, // 2 total iterations
+            destroy_self: false,
+            destroy_others: vec![],
+            transform_cards: vec![],
+            hand_size_mod: 0,
+            discard_mod: 0,
+            sell_value_increase: 0,
+            message: Some("Effect 2".to_string()),
+        };
+
+        let result1 = effects.accumulate_effect(&effect1);
+        let result2 = effects.accumulate_effect(&effect2);
+
+        assert!(result1);
+        assert!(result2);
+
+        // Final values should be accumulated from both effects
+        assert_eq!(effects.chips, 11);    // 5 + (3 * 2)
+        assert_eq!(effects.mult, 10);     // 2 + (4 * 2)
+        assert_eq!(effects.money, 5);     // 1 + (2 * 2)
+        assert_eq!(effects.mult_multiplier, 4.5); // 2.0 * (1.5 * 1.5)
+        assert_eq!(effects.messages.len(), 2);
+        assert_eq!(effects.messages[0], "Effect 1");
+        assert_eq!(effects.messages[1], "Effect 2");
+    }
+
+    #[test]
+    fn test_accumulated_effects_equality() {
+        let effects1 = AccumulatedEffects {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            messages: vec!["Test".to_string()],
+        };
+
+        let effects2 = AccumulatedEffects {
+            chips: 10,
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            messages: vec!["Test".to_string()],
+        };
+
+        let effects3 = AccumulatedEffects {
+            chips: 11, // Different value
+            mult: 5,
+            money: 3,
+            mult_multiplier: 2.0,
+            messages: vec!["Test".to_string()],
+        };
+
+        assert_eq!(effects1, effects2);
+        assert_ne!(effects1, effects3);
     }
 }
