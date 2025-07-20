@@ -19,14 +19,14 @@ fn test_target_validation_empty_hand() {
 
 #[test]
 fn test_target_validation_card_index_bounds() {
-    let mut game = Game::new(Config::default());
+    let game = Game::new(Config::default());
     
     // Add some cards to the hand (simulate having 3 cards)
     // Note: This test assumes we can modify the game state for testing
     // In a real scenario, you'd use the game's methods to deal cards
     
     // Test valid card index
-    let valid_target = Target::Cards(vec![0]);
+    let _valid_target = Target::Cards(vec![0]);
     // Note: Without actual cards, this will fail with NoCardsAvailable
     // This test demonstrates the structure for when cards are present
     
@@ -126,7 +126,7 @@ fn test_get_available_targets_hand_types() {
     assert!(!targets.is_empty(), "Hand type targets should always be available");
     
     // Verify we get all hand types
-    let expected_count = 10; // Number of HandRank variants in use
+    let expected_count = 13; // Number of HandRank variants in use
     assert_eq!(targets.len(), expected_count, "Should have targets for all hand types");
 }
 
