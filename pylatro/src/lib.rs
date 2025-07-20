@@ -500,7 +500,8 @@ impl GameEngine {
         pyo3::Python::with_gil(|py| {
             let dict = pyo3::types::PyDict::new(py);
 
-            // Get all available jokers and their metadata - single registry access fixes N+1 pattern
+            // Get all available jokers and their metadata
+            // Single registry access fixes N+1 pattern
             if let Ok(all_jokers) = registry::all_definitions() {
                 for definition in all_jokers {
                     let is_unlocked = definition
@@ -633,7 +634,10 @@ impl GameEngine {
 
                 // Get actual state from the joker state manager
                 if let Some(joker_state) = self.game.joker_state_manager.get_state(joker_id) {
-                    let _ = state_dict.set_item("accumulated_value", joker_state.accumulated_value);
+                    let _ = state_dict.set_item(
+                        "accumulated_value",
+                        joker_state.accumulated_value,
+                    );
                     let _ =
                         state_dict.set_item("triggers_remaining", joker_state.triggers_remaining);
 
@@ -999,7 +1003,10 @@ impl GameEngine {
 
                 // Get actual state from the joker state manager
                 if let Some(joker_state) = self.game.joker_state_manager.get_state(joker_id) {
-                    let _ = state_dict.set_item("accumulated_value", joker_state.accumulated_value);
+                    let _ = state_dict.set_item(
+                        "accumulated_value",
+                        joker_state.accumulated_value,
+                    );
                     let _ =
                         state_dict.set_item("triggers_remaining", joker_state.triggers_remaining);
 
@@ -1139,7 +1146,7 @@ impl GameState {
             warnings.call_method1(
                 "warn",
                 (
-                    "GameState.jokers is deprecated. Use GameState.joker_ids with GameEngine.get_joker_info() instead. \
+                    "GameState.jokers is deprecated. Use GameState.joker_ids with \
                      The jokers property will be removed in a future version. \
                      See migration guide for details.",
                     py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
@@ -1227,7 +1234,11 @@ impl GameState {
             let warnings = py.import("warnings")?;
             warnings.call_method1(
                 "warn",
-                ("GameState.gen_actions() is deprecated. Use GameEngine.gen_actions() instead. GameState should only be used for reading game state, not performing actions.",),
+                (
+                    "GameState.gen_actions() is deprecated. Use GameEngine.gen_actions() \
+                     instead. GameState should only be used for reading game state, \
+                     not performing actions.",
+                ),
             )?;
             warnings.call_method1(
                 "warn",

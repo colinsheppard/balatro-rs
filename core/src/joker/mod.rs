@@ -1028,7 +1028,11 @@ pub trait Joker: Send + Sync + std::fmt::Debug {
     ///
     /// # Example
     /// ```rust,ignore
-    /// fn serialize_state(&self, context: &GameContext, state: &JokerState) -> Result<Value, serde_json::Error> {
+    /// fn serialize_state(
+    ///     &self,
+    ///     context: &GameContext,
+    ///     state: &JokerState,
+    /// ) -> Result<Value, serde_json::Error> {
     ///     // Custom serialization for complex joker state
     ///     let mut custom_state = serde_json::to_value(state)?;
     ///     custom_state["joker_type"] = Value::String(self.name().to_string());
@@ -1060,7 +1064,11 @@ pub trait Joker: Send + Sync + std::fmt::Debug {
     ///
     /// # Example
     /// ```rust,ignore
-    /// fn deserialize_state(&self, context: &GameContext, data: &Value) -> Result<JokerState, serde_json::Error> {
+    /// fn deserialize_state(
+    ///     &self,
+    ///     context: &GameContext,
+    ///     data: &Value,
+    /// ) -> Result<JokerState, serde_json::Error> {
     ///     // Custom deserialization with validation
     ///     let mut state: JokerState = serde_json::from_value(data.clone())?;
     ///
@@ -1165,7 +1173,12 @@ pub trait Joker: Send + Sync + std::fmt::Debug {
     ///
     /// # Example
     /// ```rust,ignore
-    /// fn migrate_state(&self, context: &GameContext, old_state: &Value, from_version: u32) -> Result<JokerState, String> {
+    /// fn migrate_state(
+    ///     &self,
+    ///     context: &GameContext,
+    ///     old_state: &Value,
+    ///     from_version: u32,
+    /// ) -> Result<JokerState, String> {
     ///     match from_version {
     ///         1 => {
     ///             // Migrate from version 1
