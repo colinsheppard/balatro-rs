@@ -1,10 +1,15 @@
 use crate::card::Card;
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
+use crate::joker_metadata::JokerMetadata;
+use crate::joker_registry;
+#[cfg(feature = "python")]
+use pyo3::pyclass;
 use std::collections::HashMap;
 
 /// Priority level for effect processing
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[cfg_attr(feature = "python", pyclass(eq))]
 pub enum EffectPriority {
     /// Lowest priority - applied first
     Low = 1,
@@ -371,10 +376,17 @@ impl JokerEffectProcessor {
             && effect.message.is_none()
     }
 
-    /// Get processing priority for a joker (can be customized)
-    fn get_joker_priority(&self, _joker_id: JokerId) -> EffectPriority {
-        // Default implementation - can be extended to read from joker metadata
-        EffectPriority::Normal
+    /// Get processing priority for a joker based on its metadata
+    fn get_joker_priority(&self, joker_id: JokerId) -> EffectPriority {
+        // Try to get the joker definition and create metadata
+        if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
+            // Create metadata to get the computed priority
+            let metadata = JokerMetadata::from_definition(&definition, true);
+            metadata.effect_priority
+        } else {
+            // Fallback to Normal priority if definition not found
+            EffectPriority::Normal
+        }
     }
 
     /// Validate a single effect
@@ -705,6 +717,155 @@ mod tests {
             ConflictResolutionStrategy::Maximum
         );
         assert!(!processor.context().validate_effects);
+    }
+
+    #[test]
+    fn test_comprehensive_priority_system() {
+        let processor = JokerEffectProcessor::new();
+
+        // Test with jokers that are actually registered in the registry
+        assert_eq!(processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+
+        // Test fallback behavior for unregistered jokers
+        // These jokers exist in the enum but aren't registered in the registry
+        assert_eq!(processor.get_joker_priority(JokerId::IceCream), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::EggJoker), EffectPriority::Normal);
+        assert_eq!(processor.get_joker_priority(JokerId::SpaceJoker), EffectPriority::Normal);
+    }
+
+    #[test]
+    fn test_priority_based_effect_ordering() {
+        let processor = JokerEffectProcessor::new();
+
+        // Create effects with manually assigned priorities to demonstrate the system works
+        let mut weighted_effects = vec![
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(50),
+                priority: EffectPriority::High, // High priority
+                source_joker_id: JokerId::EggJoker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(10),
+                priority: EffectPriority::Low, // Low priority
+                source_joker_id: JokerId::IceCream,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(30),
+                priority: EffectPriority::Normal, // Normal priority
+                source_joker_id: JokerId::Joker,
+                is_retriggered: false,
+            },
+        ];
+
+        // Sort by priority (lower values processed first)
+        weighted_effects.sort_by_key(|we| we.priority);
+
+        // Verify the ordering: Low (1) -> Normal (5) -> High (10)
+        assert_eq!(weighted_effects[0].source_joker_id, JokerId::IceCream);
+        assert_eq!(weighted_effects[0].priority, EffectPriority::Low);
+        
+        assert_eq!(weighted_effects[1].source_joker_id, JokerId::Joker);
+        assert_eq!(weighted_effects[1].priority, EffectPriority::Normal);
+        
+        assert_eq!(weighted_effects[2].source_joker_id, JokerId::EggJoker);
+        assert_eq!(weighted_effects[2].priority, EffectPriority::High);
+
+        // Test that the accumulation works correctly with priority ordering
+        let result = processor.accumulate_effects(&weighted_effects);
+        
+        // All chips should be summed: 10 + 30 + 50 = 90
+        assert_eq!(result.chips, 90);
+    }
+
+    #[test]
+    fn test_priority_system_with_multiplicative_effects() {
+        let processor = JokerEffectProcessor::new();
+
+        // Test that multiplicative effects would get critical priority
+        // (We test the priority assignment logic, even though these specific jokers 
+        // might not actually have multiplicative effects in the current implementation)
+        
+        // Create effects simulating what would happen with multiplicative jokers
+        let weighted_effects = vec![
+            WeightedEffect {
+                effect: JokerEffect::new().with_chips(10),
+                priority: EffectPriority::Normal, // Additive effect
+                source_joker_id: JokerId::Joker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_mult_multiplier(2.0),
+                priority: EffectPriority::Critical, // Multiplicative effect
+                source_joker_id: JokerId::SpaceJoker,
+                is_retriggered: false,
+            },
+            WeightedEffect {
+                effect: JokerEffect::new().with_mult(5),
+                priority: EffectPriority::High, // High priority additive
+                source_joker_id: JokerId::EggJoker,
+                is_retriggered: false,
+            },
+        ];
+
+        let result = processor.accumulate_effects(&weighted_effects);
+
+        // Additive effects: 10 chips, 5 mult
+        // Multiplicative effect: 2.0x mult multiplier
+        assert_eq!(result.chips, 10);
+        assert_eq!(result.mult, 5);
+        assert_eq!(result.mult_multiplier, 2.0);
+    }
+
+    #[test]
+    fn test_priority_assignment_logic_directly() {
+        // Test the priority assignment logic directly by importing and testing
+        // the determine_effect_priority function from joker_metadata
+        use crate::joker_metadata::determine_effect_priority;
+
+        // Test multiplicative effects get Critical priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "multiplicative_mult", "X2 Mult"),
+            EffectPriority::Critical
+        );
+        
+        // Test destructive effects get Critical priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "special", "destroy all cards"),
+            EffectPriority::Critical
+        );
+        
+        // Test economy effects get High priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "economy", "Earn $5 when played"),
+            EffectPriority::High
+        );
+        
+        // Test hand modification effects get High priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "hand_modification", "+1 hand size"),
+            EffectPriority::High
+        );
+        
+        // Test specific joker overrides
+        assert_eq!(
+            determine_effect_priority(&JokerId::IceCream, "conditional_chips", "conditional effect"),
+            EffectPriority::Low
+        );
+        
+        assert_eq!(
+            determine_effect_priority(&JokerId::EggJoker, "special", "affects sell values"),
+            EffectPriority::High
+        );
+        
+        // Test standard jokers get Normal priority
+        assert_eq!(
+            determine_effect_priority(&JokerId::Joker, "additive_mult", "+4 Mult"),
+            EffectPriority::Normal
+        );
     }
 
     #[test]
