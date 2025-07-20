@@ -1,5 +1,5 @@
 use balatro_rs::consumables::{
-    Consumable, ConsumableEffect, ConsumableError, ConsumableType, Target, TargetType,
+    Consumable, ConsumableEffect, ConsumableError, ConsumableSlots, ConsumableType, Target, TargetType,
 };
 use balatro_rs::game::Game;
 
@@ -361,4 +361,155 @@ fn test_shop_target_specific_functionality() {
     for target in &shop_targets {
         assert!(target.is_valid(&game));
     }
+}
+
+// Tests for ConsumableSlots basic functionality
+#[test]
+fn test_consumable_slots_basic_functionality() {
+    // Test default creation
+    let slots = ConsumableSlots::new();
+    assert_eq!(slots.capacity(), 2);
+    assert_eq!(slots.len(), 0);
+    assert!(slots.is_empty());
+    assert!(!slots.is_full());
+    assert_eq!(slots.available_slots(), 2);
+
+    // Test custom capacity creation
+    let large_slots = ConsumableSlots::with_capacity(5);
+    assert_eq!(large_slots.capacity(), 5);
+    assert_eq!(large_slots.len(), 0);
+    assert!(large_slots.is_empty());
+    assert!(!large_slots.is_full());
+    assert_eq!(large_slots.available_slots(), 5);
+}
+
+#[test]
+fn test_consumable_slots_default_implementation() {
+    let default_slots = ConsumableSlots::default();
+    let new_slots = ConsumableSlots::new();
+    
+    // Both should have same capacity
+    assert_eq!(default_slots.capacity(), new_slots.capacity());
+    assert_eq!(default_slots.len(), new_slots.len());
+    assert_eq!(default_slots.is_empty(), new_slots.is_empty());
+    assert_eq!(default_slots.available_slots(), new_slots.available_slots());
+}
+
+#[test]
+fn test_consumable_slots_edge_cases() {
+    // Test zero capacity (edge case)
+    let zero_slots = ConsumableSlots::with_capacity(0);
+    assert_eq!(zero_slots.capacity(), 0);
+    assert_eq!(zero_slots.len(), 0);
+    assert!(zero_slots.is_empty());
+    assert!(zero_slots.is_full()); // Zero capacity means full by definition
+    assert_eq!(zero_slots.available_slots(), 0);
+
+    // Test single capacity
+    let single_slot = ConsumableSlots::with_capacity(1);
+    assert_eq!(single_slot.capacity(), 1);
+    assert_eq!(single_slot.len(), 0);
+    assert!(single_slot.is_empty());
+    assert!(!single_slot.is_full());
+    assert_eq!(single_slot.available_slots(), 1);
+
+    // Test large capacity
+    let large_slots = ConsumableSlots::with_capacity(100);
+    assert_eq!(large_slots.capacity(), 100);
+    assert_eq!(large_slots.len(), 0);
+    assert!(large_slots.is_empty());
+    assert!(!large_slots.is_full());
+    assert_eq!(large_slots.available_slots(), 100);
+}
+
+#[test]
+fn test_consumable_slots_capacity_calculations() {
+    let slots = ConsumableSlots::with_capacity(10);
+    
+    // Verify capacity calculations are consistent
+    assert_eq!(slots.available_slots(), slots.capacity() - slots.len());
+    assert_eq!(slots.is_empty(), slots.len() == 0);
+    assert_eq!(slots.is_full(), slots.len() == slots.capacity());
+}
+
+#[test]
+fn test_consumable_slots_debug_trait() {
+    let slots = ConsumableSlots::new();
+    let debug_output = format!("{:?}", slots);
+    
+    // Should contain the struct name and key fields
+    assert!(debug_output.contains("ConsumableSlots"));
+    assert!(debug_output.contains("capacity"));
+    assert!(debug_output.contains("slots"));
+}
+
+#[test]
+fn test_consumable_slots_clone() {
+    let original = ConsumableSlots::with_capacity(3);
+    let cloned = original.clone();
+    
+    // Verify clone has same properties
+    assert_eq!(original.capacity(), cloned.capacity());
+    assert_eq!(original.len(), cloned.len());
+    assert_eq!(original.is_empty(), cloned.is_empty());
+    assert_eq!(original.is_full(), cloned.is_full());
+    assert_eq!(original.available_slots(), cloned.available_slots());
+}
+
+#[test]
+fn test_consumable_slots_serde_compatibility() {
+    use serde_json;
+    
+    let original = ConsumableSlots::with_capacity(3);
+    
+    // Test serialization
+    let serialized = serde_json::to_string(&original);
+    assert!(serialized.is_ok());
+    
+    // Test deserialization
+    let json = serialized.unwrap();
+    let deserialized: Result<ConsumableSlots, _> = serde_json::from_str(&json);
+    assert!(deserialized.is_ok());
+    
+    let restored = deserialized.unwrap();
+    assert_eq!(original.capacity(), restored.capacity());
+    assert_eq!(original.len(), restored.len());
+    assert_eq!(original.is_empty(), restored.is_empty());
+    assert_eq!(original.is_full(), restored.is_full());
+    assert_eq!(original.available_slots(), restored.available_slots());
+}
+
+#[test]
+fn test_consumable_slots_thread_safety() {
+    use std::sync::Arc;
+    use std::thread;
+    
+    let slots = Arc::new(ConsumableSlots::new());
+    let slots_clone = Arc::clone(&slots);
+    
+    // Test that ConsumableSlots can be safely shared between threads
+    let handle = thread::spawn(move || {
+        let capacity = slots_clone.capacity();
+        let len = slots_clone.len();
+        (capacity, len)
+    });
+    
+    let (capacity, len) = handle.join().unwrap();
+    assert_eq!(capacity, 2);
+    assert_eq!(len, 0);
+}
+
+#[test]
+fn test_consumable_slots_memory_efficiency() {
+    // Test that slots are properly allocated only to capacity
+    let small_slots = ConsumableSlots::with_capacity(2);
+    let large_slots = ConsumableSlots::with_capacity(100);
+    
+    // Both should start empty regardless of capacity
+    assert_eq!(small_slots.len(), 0);
+    assert_eq!(large_slots.len(), 0);
+    
+    // Capacity should be exactly what was requested
+    assert_eq!(small_slots.capacity(), 2);
+    assert_eq!(large_slots.capacity(), 100);
 }
