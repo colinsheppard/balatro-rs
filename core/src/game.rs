@@ -19,6 +19,7 @@ use crate::shop::packs::{OpenPackState, Pack};
 use crate::shop::Shop;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
+use crate::target_context::TargetContext;
 use crate::vouchers::VoucherCollection;
 
 // Re-export GameState for external use with qualified name to avoid Python bindings conflict
@@ -216,6 +217,10 @@ pub struct Game {
     #[cfg_attr(feature = "serde", serde(skip))]
     pub debug_messages: Vec<String>,
 
+    /// Multi-select context for tracking selected items
+    #[cfg_attr(feature = "serde", serde(skip, default = "TargetContext::new"))]
+    pub target_context: TargetContext,
+
     /// Random number generator for secure game randomness
     #[cfg_attr(feature = "serde", serde(skip, default = "default_game_rng"))]
     pub rng: crate::rng::GameRng,
@@ -322,6 +327,9 @@ impl Game {
             // Initialize debug logging fields
             debug_logging_enabled: false,
             debug_messages: Vec::new(),
+
+            // Initialize multi-select context
+            target_context: TargetContext::new(),
 
             // Initialize secure RNG
             rng: crate::rng::GameRng::secure(),
@@ -439,7 +447,8 @@ impl Game {
     fn draw(&mut self, count: usize) {
         if let Some(drawn) = self.deck.draw(count) {
             self.available.extend(drawn);
-            // self.available.extend(drawn);
+            // Update target context with new available cards
+            self.sync_target_context();
         }
     }
 
@@ -450,8 +459,33 @@ impl Game {
         // add available back to deck and empty
         self.deck.extend(self.available.cards());
         self.available.empty();
+        // Clear target context when cards are emptied
+        self.target_context.clear_selections();
         self.deck.shuffle(&self.rng);
         self.draw(self.config.available);
+    }
+
+    /// Synchronize target context with current game state
+    fn sync_target_context(&mut self) {
+        // Update available cards
+        let available_cards = self.available.cards();
+        self.target_context.set_available_cards(available_cards);
+        
+        // Update available jokers
+        let joker_ids: Vec<JokerId> = self.jokers.iter()
+            .map(|joker| {
+                // Get the joker's ID
+                joker.id()
+            })
+            .collect();
+        self.target_context.set_available_jokers(joker_ids);
+        
+        // Update available packs (if any)
+        let pack_ids: Vec<usize> = self.pack_inventory.iter()
+            .enumerate()
+            .map(|(i, _)| i)
+            .collect();
+        self.target_context.set_available_packs(pack_ids);
     }
 
     pub(crate) fn select_card(&mut self, card: Card) -> Result<(), GameError> {
@@ -1367,6 +1401,76 @@ impl Game {
                 option_index,
             } => self.select_from_pack(pack_id, option_index),
             Action::SkipPack { pack_id } => self.skip_pack(pack_id),
+            
+            // Multi-select actions - placeholder implementations for now
+            Action::SelectCards(_) => {
+                // TODO: Implement multi-card selection
+                Err(GameError::InvalidAction)
+            }
+            Action::DeselectCard(_) => {
+                // TODO: Implement card deselection
+                Err(GameError::InvalidAction)
+            }
+            Action::DeselectCards(_) => {
+                // TODO: Implement multi-card deselection
+                Err(GameError::InvalidAction)
+            }
+            Action::ToggleCardSelection(_) => {
+                // TODO: Implement card selection toggle
+                Err(GameError::InvalidAction)
+            }
+            Action::SelectAllCards() => {
+                // TODO: Implement select all cards
+                Err(GameError::InvalidAction)
+            }
+            Action::DeselectAllCards() => {
+                // TODO: Implement deselect all cards
+                Err(GameError::InvalidAction)
+            }
+            Action::RangeSelectCards { start: _, end: _ } => {
+                // TODO: Implement range selection
+                Err(GameError::InvalidAction)
+            }
+            Action::SelectJoker(_) => {
+                // TODO: Implement joker selection
+                Err(GameError::InvalidAction)
+            }
+            Action::DeselectJoker(_) => {
+                // TODO: Implement joker deselection
+                Err(GameError::InvalidAction)
+            }
+            Action::ToggleJokerSelection(_) => {
+                // TODO: Implement joker selection toggle
+                Err(GameError::InvalidAction)
+            }
+            Action::SelectAllJokers() => {
+                // TODO: Implement select all jokers
+                Err(GameError::InvalidAction)
+            }
+            Action::DeselectAllJokers() => {
+                // TODO: Implement deselect all jokers
+                Err(GameError::InvalidAction)
+            }
+            Action::BuyJokers(_) => {
+                // TODO: Implement batch joker buying
+                Err(GameError::InvalidAction)
+            }
+            Action::SellJokers(_) => {
+                // TODO: Implement batch joker selling
+                Err(GameError::InvalidAction)
+            }
+            Action::BuyPacks(_) => {
+                // TODO: Implement batch pack buying
+                Err(GameError::InvalidAction)
+            }
+            Action::ActivateMultiSelect() => {
+                // TODO: Implement multi-select activation
+                Err(GameError::InvalidAction)
+            }
+            Action::DeactivateMultiSelect() => {
+                // TODO: Implement multi-select deactivation
+                Err(GameError::InvalidAction)
+            }
         }
     }
 
@@ -1522,6 +1626,16 @@ impl fmt::Display for Game {
         writeln!(f, "deck length: {}", self.deck.len())?;
         writeln!(f, "available length: {}", self.available.cards().len())?;
         writeln!(f, "selected length: {}", self.available.selected().len())?;
+        
+        // Multi-select status
+        if self.target_context.is_multi_select_active() {
+            let counts = self.target_context.get_selection_counts();
+            writeln!(f, "multi-select: ACTIVE ({} cards, {} jokers, {} total)", 
+                counts.cards, counts.jokers, counts.total)?;
+        } else {
+            writeln!(f, "multi-select: inactive")?;
+        }
+        
         writeln!(f, "discard length: {}", self.discarded.len())?;
         writeln!(f, "jokers: ")?;
         for j in &self.jokers {
@@ -1711,6 +1825,8 @@ impl Game {
             // Initialize debug logging fields (not serialized)
             debug_logging_enabled: false,
             debug_messages: Vec::new(),
+            // Initialize target context (not serialized)
+            target_context: TargetContext::new(),
             // Initialize secure RNG (not serialized)
             rng: crate::rng::GameRng::secure(),
             // Initialize memory monitor (not serialized)
