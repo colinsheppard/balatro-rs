@@ -1207,6 +1207,9 @@ pub enum Categories {
 // Include the compatibility module for the old API
 pub mod compat;
 
+// Include the new trait definitions
+pub mod traits;
+
 // Include the conditional joker framework
 pub mod conditional;
 
@@ -1223,6 +1226,12 @@ pub mod test_utils;
 
 // Re-export important types
 pub use conditional::{ConditionalJoker, JokerCondition};
+
+// Re-export new trait definitions
+pub use traits::{
+    JokerIdentity, JokerLifecycle, JokerGameplay, JokerModifiers, JokerState as JokerStateTrait,
+    ProcessContext, ProcessResult, Rarity
+};
 
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
