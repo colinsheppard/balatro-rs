@@ -68,7 +68,11 @@ pub enum TargetValidationError {
     #[error("Shop slot {slot} is invalid or empty")]
     ShopSlotInvalid { slot: usize },
     #[error("Invalid number of cards selected: expected between {min} and {max}, got {actual}")]
-    InvalidCardCount { min: usize, max: usize, actual: usize },
+    InvalidCardCount {
+        min: usize,
+        max: usize,
+        actual: usize,
+    },
     #[error("Card at index {index} is already targeted")]
     CardAlreadyTargeted { index: usize },
 }
@@ -239,7 +243,6 @@ impl Target {
         Target::Cards(CardTarget::new(CardCollection::PlayedCards, indices))
     }
 }
-
 
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -798,7 +801,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// let consumable = create_consumable(); // Some consumable
-    /// 
+    ///
     /// match slots.add_consumable(consumable) {
     ///     Ok(index) => println!("Added to slot {}", index),
     ///     Err(SlotError::NoEmptySlots { capacity }) => {
@@ -839,7 +842,7 @@ impl ConsumableSlots {
     /// let mut slots = ConsumableSlots::new();
     /// // Add a consumable first
     /// let index = slots.add_consumable(create_consumable()).unwrap();
-    /// 
+    ///
     /// // Remove it
     /// match slots.remove_consumable(index) {
     ///     Ok(consumable) => println!("Removed consumable"),
@@ -860,7 +863,9 @@ impl ConsumableSlots {
             });
         }
 
-        self.slots[index].take().ok_or(SlotError::SlotEmpty { index })
+        self.slots[index]
+            .take()
+            .ok_or(SlotError::SlotEmpty { index })
     }
 
     /// Gets a reference to the consumable at the specified index
@@ -878,7 +883,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// let index = slots.add_consumable(create_consumable()).unwrap();
-    /// 
+    ///
     /// if let Some(consumable) = slots.get_consumable(index) {
     ///     println!("Found consumable: {:?}", consumable);
     /// }
@@ -905,7 +910,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// let index = slots.add_consumable(create_consumable()).unwrap();
-    /// 
+    ///
     /// if let Some(consumable) = slots.get_consumable_mut(index) {
     ///     // Modify consumable if needed
     /// }
@@ -928,7 +933,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// assert_eq!(slots.find_empty_slot(), Some(0)); // First slot is empty
-    /// 
+    ///
     /// // Fill first slot
     /// slots.add_consumable(create_consumable()).unwrap();
     /// assert_eq!(slots.find_empty_slot(), Some(1)); // Second slot is empty
@@ -954,7 +959,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// slots.add_consumable(create_consumable()).unwrap();
-    /// 
+    ///
     /// // Clear the first slot
     /// slots.clear_slot(0).unwrap();
     /// assert_eq!(slots.len(), 0);
@@ -981,7 +986,7 @@ impl ConsumableSlots {
     ///
     /// let mut slots = ConsumableSlots::new();
     /// slots.add_consumable(create_consumable()).unwrap();
-    /// 
+    ///
     /// for consumable in slots.iter() {
     ///     println!("Consumable: {:?}", consumable);
     /// }
