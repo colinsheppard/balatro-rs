@@ -405,7 +405,7 @@ impl Game {
     }
 
     /// Process JokerEffect from all jokers and return accumulated effects
-    fn process_joker_effects(&mut self, hand: &MadeHand) -> (i32, i32, i32, Vec<String>) {
+    pub fn process_joker_effects(&mut self, hand: &MadeHand) -> (i32, i32, i32, Vec<String>) {
         use crate::hand::Hand;
 
         let mut total_chips = 0i32;
