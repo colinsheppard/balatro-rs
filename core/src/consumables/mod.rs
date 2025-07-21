@@ -39,6 +39,15 @@ pub enum ConsumableError {
     EffectFailed(String),
 }
 
+/// Different card collections that can be targeted
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CardCollection {
+    Hand,
+    Deck,
+    DiscardPile,
+    PlayedCards,
+}
+
 /// Error types for slot operations
 #[derive(Debug, Error)]
 pub enum SlotError {
@@ -696,7 +705,7 @@ impl ConsumableSlots {
     pub fn with_capacity(capacity: usize) -> Self {
         Self {
             capacity,
-            slots: vec![None; capacity],
+            slots: (0..capacity).map(|_| None).collect(),
             default_capacity: 2,
         }
     }
@@ -1013,4 +1022,3 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
-pub use SlotError;

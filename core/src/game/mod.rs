@@ -1672,8 +1672,11 @@ impl Game {
     /// Clean up orphaned joker state (state for jokers no longer in play).
     pub fn cleanup_joker_state(&mut self) {
         // Get all joker IDs currently in play
-        let current_jokers: std::collections::HashSet<_> =
-            self.jokers.iter().map(|joker| joker.id()).collect();
+        let current_jokers: std::collections::HashSet<_> = self
+            .jokers
+            .iter()
+            .map(|joker| joker.id())
+            .collect();
 
         // Get all joker IDs with state
         let state_jokers: Vec<_> = self

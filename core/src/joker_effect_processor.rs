@@ -238,6 +238,7 @@ pub struct ProcessingContextBuilder {
     resolution_strategy: ConflictResolutionStrategy,
     validate_effects: bool,
     max_retriggered_effects: u32,
+    cache_config: CacheConfig,
 }
 
 impl ProcessingContextBuilder {
@@ -259,6 +260,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: default_context.resolution_strategy,
             validate_effects: default_context.validate_effects,
             max_retriggered_effects: default_context.max_retriggered_effects,
+            cache_config: default_context.cache_config,
         }
     }
 
@@ -386,6 +388,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: self.resolution_strategy,
             validate_effects: self.validate_effects,
             max_retriggered_effects: self.max_retriggered_effects,
+            cache_config: self.cache_config,
         }
     }
 }
@@ -804,8 +807,8 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
 
         // Hash hand composition
-        for card in &hand.cards {
-            card.rank.hash(&mut hasher);
+        for card in hand.cards() {
+            card.value.hash(&mut hasher);
             card.suit.hash(&mut hasher);
         }
 
@@ -838,7 +841,7 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
 
         // Hash card
-        card.rank.hash(&mut hasher);
+        card.value.hash(&mut hasher);
         card.suit.hash(&mut hasher);
 
         // Hash processing context settings
