@@ -205,7 +205,7 @@ pub struct SchemaVersionValidator;
 
 impl JokerValidator for SchemaVersionValidator {
     fn validate(&self, config: &JokerConfig) -> Result<(), TomlParserError> {
-        let supported_versions = vec!["1.0.0"];
+        let supported_versions = ["1.0.0"];
 
         if !supported_versions.contains(&config.schema_version.as_str()) {
             return Err(TomlParserError::UnsupportedSchemaVersion(

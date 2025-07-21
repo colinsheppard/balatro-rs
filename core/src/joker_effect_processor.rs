@@ -1,8 +1,6 @@
 use crate::card::Card;
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
-use crate::joker_metadata::JokerMetadata;
-use crate::joker_registry;
 pub use crate::priority_strategy::{
     ContextAwarePriorityStrategy, CustomPriorityStrategy, DefaultPriorityStrategy,
 };

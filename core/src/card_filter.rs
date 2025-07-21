@@ -2,7 +2,7 @@
 ///
 /// This module provides a foundational system for filtering cards based on various criteria.
 /// All filter functionality builds upon these core traits and types.
-use crate::card::{Card, Edition, Enhancement, Suit, Value};
+use crate::card::{Card, Edition, Suit, Value};
 use crate::game::Game;
 
 #[cfg(feature = "serde")]

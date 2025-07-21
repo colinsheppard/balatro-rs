@@ -3,11 +3,10 @@ use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker_state::JokerState;
 use crate::rank::HandRank;
-use crate::scaling_joker::{ScalingEffectType, ScalingEvent, ScalingJoker};
+use crate::scaling_joker::ScalingJoker;
 
 /// Custom implementations for scaling jokers that require special logic
 /// beyond the basic ScalingJoker framework
-
 /// Green Joker: +1 mult per hand, -1 per discard
 #[derive(Debug, Clone)]
 pub struct GreenJoker {

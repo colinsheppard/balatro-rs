@@ -3,7 +3,7 @@
 //! This module implements jokers with unique mechanics that don't fit standard patterns.
 //! These jokers use the new 5-trait system for modular, maintainable implementations.
 
-use crate::card::{Card, Suit, Value};
+use crate::card::{Card, Value};
 use crate::hand::SelectHand;
 use crate::joker::traits::{
     JokerGameplay, JokerIdentity, JokerLifecycle, JokerModifiers, JokerState as JokerStateTrait,
@@ -127,12 +127,12 @@ impl JokerLifecycle for FigureJoker {}
 
 impl JokerGameplay for FigureJoker {
     fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-        let mut money_earned = 0;
+        let mut _money_earned = 0;
 
         // Award $3 for each face card played
         for card in context.played_cards {
             if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
-                money_earned += 3;
+                _money_earned += 3;
             }
         }
 
@@ -175,7 +175,7 @@ impl Joker for FigureJoker {
         JokerRarity::Uncommon
     }
 
-    fn on_card_scored(&self, context: &mut GameContext, card: &Card) -> JokerEffect {
+    fn on_card_scored(&self, _context: &mut GameContext, card: &Card) -> JokerEffect {
         if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
             // Award money for face cards
             JokerEffect::new().with_money(3)
@@ -349,7 +349,7 @@ impl JokerStateTrait for BlueprintJoker {
 
     fn deserialize_state(&mut self, value: serde_json::Value) -> Result<(), String> {
         self.copied_effects = serde_json::from_value(value)
-            .map_err(|e| format!("Failed to deserialize Blueprint state: {}", e))?;
+            .map_err(|e| format!("Failed to deserialize Blueprint state: {e}"))?;
         Ok(())
     }
 
@@ -695,12 +695,12 @@ impl JokerStateTrait for PhotographJoker {
     }
 
     fn serialize_state(&self) -> Option<serde_json::Value> {
-        serde_json::to_value(&self.face_card_triggered).ok()
+        serde_json::to_value(self.face_card_triggered).ok()
     }
 
     fn deserialize_state(&mut self, value: serde_json::Value) -> Result<(), String> {
         self.face_card_triggered = serde_json::from_value(value)
-            .map_err(|e| format!("Failed to deserialize Photograph state: {}", e))?;
+            .map_err(|e| format!("Failed to deserialize Photograph state: {e}"))?;
         Ok(())
     }
 
