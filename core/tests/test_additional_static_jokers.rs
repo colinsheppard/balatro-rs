@@ -99,14 +99,124 @@ fn test_banner_joker() {
 }
 
 #[test]
-#[ignore] // Ignore until framework supports joker interactions
 fn test_abstract_joker() {
-    let joker = StaticJokerFactory::create_abstract_joker();
+    use balatro_rs::joker_factory::JokerFactory;
+    use balatro_rs::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
+    use balatro_rs::joker_state::JokerStateManager;
+    use balatro_rs::hand::{Hand, SelectHand};
+    use balatro_rs::card::{Card, Suit, Value};
+    use balatro_rs::stage::Stage;
+    use balatro_rs::rank::HandRank;
+    use balatro_rs::rng::GameRng;
+    use std::collections::HashMap;
+    use std::sync::Arc;
+
+    // Test basic properties first
+    let joker = JokerFactory::create(JokerId::AbstractJoker).unwrap();
     assert_eq!(joker.id(), JokerId::AbstractJoker);
     assert_eq!(joker.name(), "Abstract Joker");
     assert_eq!(joker.description(), "All Jokers give X0.25 more Mult");
     assert_eq!(joker.rarity(), JokerRarity::Common);
     assert_eq!(joker.cost(), 3);
+
+    // Test joker interaction behavior
+    // Create multiple jokers for testing
+    let abstract_joker = JokerFactory::create(JokerId::AbstractJoker).unwrap();
+    let greedy_joker = JokerFactory::create(JokerId::GreedyJoker).unwrap();
+    let jolly_joker = JokerFactory::create(JokerId::JollyJoker).unwrap();
+    
+    // Create a collection of jokers
+    let jokers: Vec<Box<dyn Joker>> = vec![
+        abstract_joker,
+        greedy_joker,
+        jolly_joker,
+    ];
+    
+    // Convert to static reference for testing (unsafe but okay for tests)
+    let jokers_ref: &'static [Box<dyn Joker>] = Box::leak(jokers.into_boxed_slice());
+    
+    // Create a test game context manually
+    let joker_state_manager = Arc::new(JokerStateManager::new());
+    let stage = Stage::Blind;
+    let stage_ref: &'static Stage = Box::leak(Box::new(stage));
+    let hand = Hand::new();
+    let hand_ref: &'static Hand = Box::leak(Box::new(hand));
+    let discarded: Vec<Card> = Vec::new();
+    let discarded_ref: &'static [Card] = Box::leak(discarded.into_boxed_slice());
+    let hand_type_counts: HashMap<HandRank, u32> = HashMap::new();
+    let hand_type_counts_ref: &'static HashMap<HandRank, u32> = Box::leak(Box::new(hand_type_counts));
+    let rng = GameRng::new();
+    let rng_ref: &'static GameRng = Box::leak(Box::new(rng));
+    
+    let mut context = GameContext {
+        chips: 10,
+        mult: 1,
+        money: 5,
+        ante: 1,
+        round: 1,
+        stage: stage_ref,
+        hands_played: 0,
+        discards_used: 0,
+        jokers: jokers_ref,
+        hand: hand_ref,
+        discarded: discarded_ref,
+        joker_state_manager: &joker_state_manager,
+        hand_type_counts: hand_type_counts_ref,
+        cards_in_deck: 52,
+        stone_cards_in_deck: 0,
+        rng: rng_ref,
+    };
+    
+    // Create a test hand to play
+    let test_hand = SelectHand::new(vec![
+        Card::new(Value::King, Suit::Heart),
+        Card::new(Value::King, Suit::Diamond),
+    ]);
+    
+    // Test Abstract Joker with 0 other jokers (should give 0 mult)
+    // First, test with only Abstract Joker
+    let single_joker: Vec<Box<dyn Joker>> = vec![
+        JokerFactory::create(JokerId::AbstractJoker).unwrap(),
+    ];
+    let single_joker_ref: &'static [Box<dyn Joker>] = Box::leak(single_joker.into_boxed_slice());
+    context.jokers = single_joker_ref;
+    
+    let abstract_joker_instance = &context.jokers[0];
+    let effect = abstract_joker_instance.on_hand_played(&mut context, &test_hand);
+    assert_eq!(effect.mult, 0, "Abstract Joker should provide 0 mult when no other jokers present");
+    
+    // Reset context with 3 jokers (Abstract + 2 others)
+    context.jokers = jokers_ref;
+    
+    // Test Abstract Joker with 2 other jokers (should give 6 mult = 2 * 3)
+    let abstract_joker_instance = &context.jokers[0];
+    let effect = abstract_joker_instance.on_hand_played(&mut context, &test_hand);
+    assert_eq!(effect.mult, 6, "Abstract Joker should provide 6 mult with 2 other jokers (2 * 3)");
+    
+    // Verify the effect calculation excludes itself
+    assert_eq!(context.jokers.len(), 3, "Should have 3 total jokers");
+    
+    // Test that other jokers don't count themselves
+    let greedy_joker_instance = &context.jokers[1];
+    let greedy_effect = greedy_joker_instance.on_hand_played(&mut context, &test_hand);
+    // Greedy joker is a per-card joker, so it should not provide mult on hand played
+    assert_eq!(greedy_effect.mult, 0, "Greedy Joker should not provide mult on hand played");
+    
+    // Test with a different number of jokers
+    let more_jokers: Vec<Box<dyn Joker>> = vec![
+        JokerFactory::create(JokerId::AbstractJoker).unwrap(),
+        JokerFactory::create(JokerId::GreedyJoker).unwrap(),
+        JokerFactory::create(JokerId::LustyJoker).unwrap(),
+        JokerFactory::create(JokerId::WrathfulJoker).unwrap(),
+        JokerFactory::create(JokerId::GluttonousJoker).unwrap(),
+    ];
+    let more_jokers_ref: &'static [Box<dyn Joker>] = Box::leak(more_jokers.into_boxed_slice());
+    context.jokers = more_jokers_ref;
+    
+    // Test Abstract Joker with 4 other jokers (should give 12 mult = 4 * 3)
+    let abstract_joker_instance = &context.jokers[0];
+    let effect = abstract_joker_instance.on_hand_played(&mut context, &test_hand);
+    assert_eq!(effect.mult, 12, "Abstract Joker should provide 12 mult with 4 other jokers (4 * 3)");
 }
 
 #[test]

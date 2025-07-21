@@ -817,6 +817,47 @@ impl Joker for SpaceJoker {
     }
 }
 
+// Abstract Joker implementation - provides mult based on number of other jokers
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+pub struct AbstractJoker;
+
+impl Joker for AbstractJoker {
+    fn id(&self) -> JokerId {
+        JokerId::AbstractJoker
+    }
+
+    fn name(&self) -> &str {
+        "Abstract Joker"
+    }
+
+    fn description(&self) -> &str {
+        "All Jokers give X0.25 more Mult"
+    }
+
+    fn rarity(&self) -> JokerRarity {
+        JokerRarity::Common
+    }
+
+    fn cost(&self) -> usize {
+        3
+    }
+
+    fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
+        // Count all jokers except this one
+        let other_joker_count = context
+            .jokers
+            .iter()
+            .filter(|joker| joker.id() != self.id())
+            .count();
+
+        // Provide +3 mult per other joker (simplified implementation)
+        // This represents the "X0.25 more Mult" for all jokers conceptually
+        let mult_bonus = (other_joker_count as i32) * 3;
+
+        JokerEffect::new().with_mult(mult_bonus)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

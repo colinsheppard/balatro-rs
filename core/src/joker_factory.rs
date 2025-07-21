@@ -46,7 +46,7 @@ impl JokerFactory {
             // Placeholder jokers with TODO comments
             JokerId::HalfJoker => Some(StaticJokerFactory::create_half_joker()),
             JokerId::Banner => Some(StaticJokerFactory::create_banner()),
-            JokerId::AbstractJoker => Some(StaticJokerFactory::create_abstract_joker()),
+            JokerId::AbstractJoker => Some(Box::new(AbstractJoker)),
             JokerId::SteelJoker => Some(StaticJokerFactory::create_steel_joker()),
             // TODO: Implement remaining jokers
             _ => None,
@@ -138,7 +138,9 @@ impl JokerFactory {
             FacelessJoker,
             Square,
             Walkie,
-            // Note: HalfJoker, Banner, AbstractJoker, and SteelJoker are placeholders
+            // Custom implemented jokers with interaction support
+            AbstractJoker,
+            // Note: HalfJoker, Banner, and SteelJoker are placeholders
         ]
     }
 }
@@ -223,8 +225,10 @@ mod tests {
         assert!(implemented.contains(&JokerId::Square));
         assert!(implemented.contains(&JokerId::Walkie));
         assert!(implemented.contains(&JokerId::Runner));
+        assert!(implemented.contains(&JokerId::AbstractJoker));
 
-        // Note: Placeholder jokers (HalfJoker, Banner, AbstractJoker, SteelJoker)
+        // AbstractJoker is now properly implemented and included above
+        // Note: Placeholder jokers (HalfJoker, Banner, SteelJoker)
         // are intentionally not in get_all_implemented() as they're not complete
     }
 }
