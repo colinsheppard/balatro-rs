@@ -100,6 +100,30 @@ pub enum TargetValidationError {
     CardAlreadyTargeted { index: usize },
 }
 
+/// Represents different card collections that consumables can target
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards in the player's current hand (available cards)
+    Hand,
+    /// Cards in the deck
+    Deck,
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that were played/selected in the current hand
+    PlayedCards,
+}
+
+impl fmt::Display for CardCollection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CardCollection::Hand => write!(f, "Hand"),
+            CardCollection::Deck => write!(f, "Deck"),
+            CardCollection::DiscardPile => write!(f, "Discard Pile"),
+            CardCollection::PlayedCards => write!(f, "Played Cards"),
+        }
+    }
+}
+
 /// Categories of effects that consumables can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 pub enum ConsumableEffect {
