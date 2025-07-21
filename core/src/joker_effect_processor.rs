@@ -1514,18 +1514,18 @@ mod tests {
         let hand = SelectHand {
             cards: vec![
                 Card {
-                    rank: Rank::Ace,
+                    value: Value::Ace,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::King,
+                    value: Value::King,
                     suit: Suit::Hearts,
                 },
             ],
         };
 
         let card = Card {
-            rank: Rank::Queen,
+            value: Value::Queen,
             suit: Suit::Spades,
         };
 
@@ -1747,28 +1747,6 @@ mod tests {
         let mut config = CacheConfig::default();
         config.enabled = false;
         processor_without_cache.set_cache_config(config);
-<<<<<<< HEAD
-
-        // Helper function to create fresh GameContext instances
-        let create_game_context = || GameContext {
-            chips: 100,
-            mult: 4,
-            money: 100,
-            ante: 1,
-            round: 1,
-            stage: &crate::stage::Stage::PreBlind(),
-            hands_played: 0,
-            discards_used: 0,
-            jokers: &[],
-            hand: &crate::hand::Hand::new(vec![]),
-            discarded: &[],
-            joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
-            hand_type_counts: &HashMap::new(),
-            cards_in_deck: 52,
-            stone_cards_in_deck: 0,
-            rng: &crate::rng::GameRng::secure(),
-=======
-        
         // Helper function to create fresh GameContext instances
         let create_game_context = || {
             GameContext {
@@ -1789,29 +1767,28 @@ mod tests {
                 stone_cards_in_deck: 0,
                 rng: &crate::rng::GameRng::secure(),
             }
->>>>>>> main
         };
 
         let hand = SelectHand {
             cards: vec![
                 Card {
-                    rank: Rank::Ace,
+                    value: Value::Ace,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::King,
+                    value: Value::King,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::Queen,
+                    value: Value::Queen,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::Jack,
+                    value: Value::Jack,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::Ten,
+                    value: Value::Ten,
                     suit: Suit::Hearts,
                 },
             ],
@@ -1886,18 +1863,18 @@ mod tests {
         let hand = SelectHand {
             cards: vec![
                 Card {
-                    rank: Rank::Ace,
+                    value: Value::Ace,
                     suit: Suit::Hearts,
                 },
                 Card {
-                    rank: Rank::King,
+                    value: Value::King,
                     suit: Suit::Hearts,
                 },
             ],
         };
 
         let card = Card {
-            rank: Rank::Queen,
+            value: Value::Queen,
             suit: Suit::Spades,
         };
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
