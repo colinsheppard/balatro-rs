@@ -35,12 +35,12 @@
 //! assert_effect_mult(&effect, 10);
 //! ```
 
-use crate::card::{Card, Value, Suit};
+use crate::card::{Card, Suit, Value};
 use crate::hand::{Hand, SelectHand};
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker_state::{JokerState, JokerStateManager};
 use crate::rank::HandRank;
-use balatro_rs::rng::GameRng;
+use crate::rng::GameRng;
 use crate::stage::Stage;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
@@ -337,7 +337,7 @@ impl Joker for MockGameplayJoker {
 ///
 /// This mock allows you to specify custom modifiers for base game values
 /// (chips, mult, hand size, discards).
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct MockModifierJoker {
     pub id: JokerId,
     pub name: String,
@@ -347,6 +347,21 @@ pub struct MockModifierJoker {
     pub mult_modifier: Option<Box<dyn Fn(i32) -> i32 + Send + Sync>>,
     pub hand_size_modifier: Option<Box<dyn Fn(usize) -> usize + Send + Sync>>,
     pub discards_modifier: Option<Box<dyn Fn(usize) -> usize + Send + Sync>>,
+}
+
+impl std::fmt::Debug for MockModifierJoker {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("MockModifierJoker")
+            .field("id", &self.id)
+            .field("name", &self.name)
+            .field("description", &self.description)
+            .field("rarity", &self.rarity)
+            .field("chips_modifier", &self.chips_modifier.is_some())
+            .field("mult_modifier", &self.mult_modifier.is_some())
+            .field("hand_size_modifier", &self.hand_size_modifier.is_some())
+            .field("discards_modifier", &self.discards_modifier.is_some())
+            .finish()
+    }
 }
 
 impl MockModifierJoker {
@@ -838,7 +853,7 @@ pub fn create_test_hand(cards: Vec<Card>) -> Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{Value, Suit};
+    use crate::card::{Suit, Value};
     use crate::hand::SelectHand;
     use crate::joker_state::JokerState;
     use crate::rank::HandRank;
@@ -1065,7 +1080,7 @@ mod tests {
     #[test]
     fn test_create_test_card() {
         let card = create_test_card(Value::King, Suit::Heart);
-        assert_eq!(card.rank, Value::King);
+        assert_eq!(card.value, Value::King);
         assert_eq!(card.suit, Suit::Heart);
     }
 

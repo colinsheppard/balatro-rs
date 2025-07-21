@@ -25,7 +25,6 @@ use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 use thiserror::Error;
 
-
 /// Error types for consumable operations
 #[derive(Error, Debug, Clone)]
 pub enum ConsumableError {
@@ -360,6 +359,7 @@ fn generate_combinations_recursive(
         current.pop();
     }
 }
+
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CardTarget {
@@ -768,7 +768,7 @@ pub struct ConsumableSlots {
     /// Vector of optional consumable slots
     slots: Vec<Option<Box<dyn Consumable>>>,
     /// Default capacity for new instances (always 2 as per Balatro base game)
-    default_capacity: usize,
+    _default_capacity: usize,
 }
 
 impl ConsumableSlots {
@@ -817,7 +817,7 @@ impl ConsumableSlots {
         Self {
             capacity,
             slots,
-            default_capacity: 2,
+            _default_capacity: 2,
         }
     }
 
