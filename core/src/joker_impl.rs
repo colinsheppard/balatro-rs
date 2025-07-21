@@ -1,4 +1,4 @@
-use crate::card::{Card, Suit};
+use crate::card::{Card, Suit, Value};
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use serde::{Deserialize, Serialize};
@@ -878,8 +878,8 @@ impl Joker for SixShooterJoker {
 
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Count 6s in hand
-        let six_count = context.hand.cards.iter()
-            .filter(|card| card.rank.to_value() == 6)
+        let six_count = context.hand.cards().iter()
+            .filter(|card| card.value == Value::Six)
             .count();
         
         JokerEffect::new().with_mult((six_count * 4) as i32)
@@ -950,7 +950,7 @@ impl Joker for GrimJoker {
 
     fn on_hand_played(&self, _context: &mut GameContext, hand: &SelectHand) -> JokerEffect {
         // Count Hearts in played hand
-        let heart_count = hand.cards.iter()
+        let heart_count = hand.cards().iter()
             .filter(|card| card.suit == Suit::Heart)
             .count();
 

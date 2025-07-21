@@ -3,7 +3,7 @@
 //! This module implements jokers with unique mechanics that don't fit standard patterns.
 //! These jokers use the new 5-trait system for modular, maintainable implementations.
 
-use crate::card::{Card, Value};
+use crate::card::{Card, Suit, Value};
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker::traits::{
@@ -127,12 +127,12 @@ impl JokerLifecycle for FigureJoker {}
 
 impl JokerGameplay for FigureJoker {
     fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
-        let mut _money_earned = 0;
+        let mut money_earned = 0;
         
         // Award $3 for each face card played
-        for card in _context.played_cards {
+        for card in context.played_cards {
             if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
-                _money_earned += 3;
+                money_earned += 3;
             }
         }
         
@@ -174,7 +174,7 @@ impl Joker for FigureJoker {
         JokerRarity::Uncommon
     }
     
-    fn on_card_scored(&self, _context: &mut GameContext, card: &Card) -> JokerEffect {
+    fn on_card_scored(&self, context: &mut GameContext, card: &Card) -> JokerEffect {
         if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
             // Award money for face cards
             JokerEffect::new().with_money(3)
@@ -287,7 +287,15 @@ impl Joker for FlowerPotJoker {
 /// BlueprintJoker: Copies ability of joker to the right
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlueprintJoker {
-    copied_effects: Vec<JokerEffect>,
+    pub copied_effects: Vec<JokerEffect>,
+}
+
+impl BlueprintJoker {
+    pub fn new() -> Self {
+        Self {
+            copied_effects: Vec::new(),
+        }
+    }
 }
 
 impl BlueprintJoker {
@@ -620,7 +628,15 @@ impl Joker for TheOrderJoker {
 /// PhotographJoker: First played face card gives X2 Mult when scored
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PhotographJoker {
-    face_card_triggered: bool,
+    pub face_card_triggered: bool,
+}
+
+impl PhotographJoker {
+    pub fn new() -> Self {
+        Self {
+            face_card_triggered: false,
+        }
+    }
 }
 
 impl PhotographJoker {
@@ -663,7 +679,7 @@ impl JokerGameplay for PhotographJoker {
     fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         if !self.face_card_triggered {
             // Check if any played cards are face cards
-            for card in _context.played_cards {
+            for card in context.played_cards {
                 if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
                     self.face_card_triggered = true;
                     return ProcessResult {
@@ -740,7 +756,7 @@ impl Joker for PhotographJoker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{Card, Value, Suit};
+    use crate::card::{Card, Suit, Value};
     use crate::hand::SelectHand;
     use crate::joker::{GameContext, JokerEffect, JokerId, JokerRarity};
     use crate::joker::traits::{
@@ -752,8 +768,8 @@ mod tests {
     use std::sync::Arc;
 
     /// Helper function to create a test card
-    fn create_card(suit: Suit, rank: Value) -> Card {
-        Card::new(rank, suit)
+    fn create_card(suit: Suit, value: Value) -> Card {
+        Card::new(value, suit)
     }
 
     /// Helper function to create basic test context
