@@ -55,8 +55,18 @@ impl FilterContext {
     pub fn from_game(game: &Game) -> Self {
         Self {
             game_state: Some(GameStateSnapshot {
-                ante: game.ante as u8,
-                money: game.money,
+                ante: match game.ante_current {
+                    crate::ante::Ante::Zero => 0,
+                    crate::ante::Ante::One => 1,
+                    crate::ante::Ante::Two => 2,
+                    crate::ante::Ante::Three => 3,
+                    crate::ante::Ante::Four => 4,
+                    crate::ante::Ante::Five => 5,
+                    crate::ante::Ante::Six => 6,
+                    crate::ante::Ante::Seven => 7,
+                    crate::ante::Ante::Eight => 8,
+                },
+                money: game.money as i32,
                 joker_count: game.jokers.len(),
             }),
             metadata: FilterMetadata {

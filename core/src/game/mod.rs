@@ -666,7 +666,7 @@ impl Game {
         for card in hand.hand.cards() {
             let card_result =
                 self.joker_effect_processor
-                    .process_card_effects(&self.jokers, &mut context, card);
+                    .process_card_effects(&self.jokers, &mut context, &card);
 
             // Accumulate card effects
             total_chips += card_result.accumulated_effect.chips;

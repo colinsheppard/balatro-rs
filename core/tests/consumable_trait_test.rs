@@ -1,5 +1,5 @@
 use balatro_rs::consumables::{
-    Consumable, ConsumableEffect, ConsumableError, ConsumableSlots, ConsumableType, Target,
+    Consumable, ConsumableEffect, ConsumableError, ConsumableId, ConsumableSlots, ConsumableType, Target,
     TargetType,
 };
 use balatro_rs::game::Game;
