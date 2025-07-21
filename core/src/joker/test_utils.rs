@@ -541,7 +541,7 @@ impl Joker for MockStateJoker {
     fn deserialize_state(
         &self,
         _context: &GameContext,
-        data: &Value,
+        data: &JsonValue,
     ) -> Result<JokerState, serde_json::Error> {
         if self.custom_deserialization {
             let mut state: JokerState = serde_json::from_value(data.clone())?;
@@ -998,7 +998,7 @@ mod tests {
             .with_stage(Stage::Shop)
             .with_hands_played(3)
             .with_discards_used(2)
-            .with_hand_type_count(HandValue::Pair, 5)
+            .with_hand_type_count(HandRank::OnePair, 5)
             .with_cards_in_deck(40)
             .with_stone_cards_in_deck(2)
             .build();
@@ -1011,7 +1011,7 @@ mod tests {
         assert_eq!(*context.stage, Stage::Shop);
         assert_eq!(context.hands_played, 3);
         assert_eq!(context.discards_used, 2);
-        assert_eq!(context.get_hand_type_count(HandValue::Pair), 5);
+        assert_eq!(context.get_hand_type_count(HandRank::OnePair), 5);
         assert_eq!(context.cards_in_deck, 40);
         assert_eq!(context.stone_cards_in_deck, 2);
     }

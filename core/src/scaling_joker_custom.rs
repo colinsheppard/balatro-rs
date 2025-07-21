@@ -55,7 +55,7 @@ impl Joker for GreenJoker {
         JokerEffect::new().with_mult(current_value as i32)
     }
 
-    fn on_discard(&self, context: &mut GameContext, cards: &[Card]) -> JokerEffect {
+    fn on_discard(&self, context: &mut GameContext, _cards: &[Card]) -> JokerEffect {
         // Decrease value for each discard action (not per card)
         context
             .joker_state_manager
