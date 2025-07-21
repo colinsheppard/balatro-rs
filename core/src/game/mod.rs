@@ -223,7 +223,7 @@ pub struct Game {
 
     /// Random number generator for secure game randomness
     #[cfg_attr(feature = "serde", serde(skip, default = "default_game_rng"))]
-    pub rng: crate::rng::GameRng,
+    pub rng: balatro_rs::rng::GameRng,
 
     /// Memory monitor for tracking and controlling memory usage
     #[cfg_attr(feature = "serde", serde(skip))]
@@ -236,8 +236,8 @@ fn default_joker_state_manager() -> Arc<JokerStateManager> {
 }
 
 #[cfg(feature = "serde")]
-fn default_game_rng() -> crate::rng::GameRng {
-    crate::rng::GameRng::secure()
+fn default_game_rng() -> balatro_rs::rng::GameRng {
+    balatro_rs::rng::GameRng::secure()
 }
 
 /// Format debug message for joker effects with conditional compilation
@@ -332,7 +332,7 @@ impl Game {
             target_context: TargetContext::new(),
 
             // Initialize secure RNG
-            rng: crate::rng::GameRng::secure(),
+            rng: balatro_rs::rng::GameRng::secure(),
 
             // Initialize memory monitor with default configuration
             memory_monitor: MemoryMonitor::default(),
@@ -1892,7 +1892,7 @@ impl Game {
             // Initialize target context (not serialized)
             target_context: TargetContext::new(),
             // Initialize secure RNG (not serialized)
-            rng: crate::rng::GameRng::secure(),
+            rng: balatro_rs::rng::GameRng::secure(),
             // Initialize memory monitor (not serialized)
             memory_monitor: MemoryMonitor::default(),
         };
