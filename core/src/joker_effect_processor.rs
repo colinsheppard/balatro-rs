@@ -1473,7 +1473,7 @@ mod tests {
 
     #[test]
     fn test_cache_key_generation() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1502,12 +1502,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
@@ -1711,7 +1711,7 @@ mod tests {
 
     #[test]
     fn test_cache_performance_improvement() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1752,11 +1752,11 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
-                Card { rank: Rank::Queen, suit: Suit::Hearts },
-                Card { rank: Rank::Jack, suit: Suit::Hearts },
-                Card { rank: Rank::Ten, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
+                Card { rank: Value::Queen, suit: Suit::Hearts },
+                Card { rank: Value::Jack, suit: Suit::Hearts },
+                Card { rank: Value::Ten, suit: Suit::Hearts },
             ],
         };
         
@@ -1800,7 +1800,7 @@ mod tests {
 
     #[test]
     fn test_cache_integration_with_processing() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1828,12 +1828,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
         // First call should miss cache and store result

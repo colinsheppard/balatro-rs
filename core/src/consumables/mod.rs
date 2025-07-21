@@ -239,6 +239,18 @@ impl Target {
     }
 }
 
+/// Represents different card collections in the game
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards in the player's hand
+    Hand,
+    /// Cards in the deck
+    Deck, 
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that were played in the current hand
+    PlayedCards,
+}
 
 /// Represents different collections of cards that can be targeted
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
