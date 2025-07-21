@@ -26,6 +26,7 @@ pub mod joker_migration_tool;
 pub mod math_safe;
 pub mod memory_monitor;
 pub mod multi_select;
+pub mod priority_strategy;
 pub mod rank;
 pub mod rng;
 pub mod shop;

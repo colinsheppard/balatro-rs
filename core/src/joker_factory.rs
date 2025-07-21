@@ -49,13 +49,22 @@ impl JokerFactory {
             JokerId::Banner => Some(StaticJokerFactory::create_banner()),
             JokerId::AbstractJoker => Some(StaticJokerFactory::create_abstract_joker()),
             JokerId::SteelJoker => Some(StaticJokerFactory::create_steel_joker()),
+
+            // RNG-based jokers (Issue #442)
+            JokerId::Oops => Some(Box::new(OopsAllSixesJoker)),
+            JokerId::Reserved7 => Some(Box::new(SixShooterJoker)),
+            JokerId::LuckyCharm => Some(Box::new(LuckyCardJoker)),
+            JokerId::Reserved8 => Some(Box::new(GrimJoker)),
+            JokerId::AcrobatJoker => Some(Box::new(AcrobatJokerImpl)),
+            JokerId::Fortune => Some(Box::new(MysteryJoker)),
+            JokerId::VagabondJoker => Some(Box::new(VagabondJokerImpl)),
+            JokerId::Reserved9 => Some(Box::new(ChaoticJoker)),
             
             // Special mechanic jokers using new trait system
             JokerId::Erosion => Some(Box::new(ErosionJoker)),
             JokerId::Blueprint => Some(Box::new(BlueprintJoker::new())),
             JokerId::Photograph => Some(Box::new(PhotographJoker::new())), 
             JokerId::TheOrder => Some(Box::new(TheOrderJoker)),
-            
             // TODO: Implement remaining jokers
             _ => None,
         }
@@ -96,6 +105,9 @@ impl JokerFactory {
                 HalfJoker,
                 Banner,
                 AbstractJoker,
+                // RNG-based jokers (Issue #442)
+                Reserved7, // SixShooterJoker
+                LuckyCharm, // LuckyCardJoker
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
@@ -105,15 +117,23 @@ impl JokerFactory {
                 Burglar,    // Hand type conditional jokers
                 SpaceJoker, // New static jokers
                 RedCard, BlueJoker, SteelJoker,
+                // RNG-based jokers (Issue #442)
+                Oops, // OopsAllSixesJoker
+                Reserved8, // GrimJoker
+                VagabondJoker,
                 // Special mechanic jokers
                 TheOrder,
             ],
             JokerRarity::Rare => vec![
+                // RNG-based jokers (Issue #442)
+                AcrobatJoker,
+                Fortune, // MysteryJoker
                 // Special mechanic jokers
                 Blueprint,
             ],
             JokerRarity::Legendary => vec![
-                // TODO: Add legendary jokers
+                // RNG-based jokers (Issue #442)
+                Reserved9, // ChaoticJoker
             ],
         }
     }
@@ -152,6 +172,15 @@ impl JokerFactory {
             FacelessJoker,
             Square,
             Walkie,
+            // RNG-based jokers (Issue #442)
+            Oops, // OopsAllSixesJoker
+            Reserved7, // SixShooterJoker
+            LuckyCharm, // LuckyCardJoker
+            Reserved8, // GrimJoker
+            AcrobatJoker,
+            Fortune, // MysteryJoker
+            VagabondJoker,
+            Reserved9, // ChaoticJoker
             // Special mechanic jokers using new trait system
             Erosion,
             Blueprint,
