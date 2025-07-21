@@ -77,7 +77,7 @@ impl CustomPriorityStrategy {
     pub fn new(mappings: HashMap<JokerId, EffectPriority>) -> Self {
         Self {
             mappings,
-            fallback: Arc::new(MetadataPriorityStrategy::default()),
+            fallback: Arc::new(MetadataPriorityStrategy),
         }
     }
 
@@ -144,7 +144,7 @@ impl ContextAwarePriorityStrategy {
     /// Create a new context-aware strategy
     pub fn new() -> Self {
         Self {
-            base_strategy: Arc::new(MetadataPriorityStrategy::default()),
+            base_strategy: Arc::new(MetadataPriorityStrategy),
             boost_multiplicative_at_high_money: true,
             high_money_threshold: 50,
         }

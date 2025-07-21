@@ -105,7 +105,7 @@ impl JokerMigrationTool {
     /// Convert JokerId to string representation
     fn joker_id_to_string(&self, joker_id: JokerId) -> String {
         // Convert PascalCase enum variant to snake_case
-        format!("{:?}", joker_id)
+        format!("{joker_id:?}")
             .chars()
             .enumerate()
             .flat_map(|(i, c)| {

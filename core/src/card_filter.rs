@@ -153,10 +153,10 @@ impl CardFilter for CardFilterType {
     fn description(&self) -> String {
         match self {
             CardFilterType::Enhanced => "Enhanced cards".to_string(),
-            CardFilterType::Rarity(edition) => format!("Cards with {:?} rarity", edition),
-            CardFilterType::Suit(suit) => format!("Cards of suit {:?}", suit),
-            CardFilterType::Rank(value) => format!("Cards with rank {:?}", value),
-            CardFilterType::Edition(edition) => format!("Cards with {:?} edition", edition),
+            CardFilterType::Rarity(edition) => format!("Cards with {edition:?} rarity"),
+            CardFilterType::Suit(suit) => format!("Cards of suit {suit:?}"),
+            CardFilterType::Rank(value) => format!("Cards with rank {value:?}"),
+            CardFilterType::Edition(edition) => format!("Cards with {edition:?} edition"),
             CardFilterType::Sealed => "Cards with seals".to_string(),
             CardFilterType::Face => "Face cards (J, Q, K)".to_string(),
             CardFilterType::Even => "Even-valued cards".to_string(),
@@ -428,8 +428,8 @@ pub enum FilterError {
 impl std::fmt::Display for FilterError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            FilterError::UnknownFilter(name) => write!(f, "Unknown filter: {}", name),
-            FilterError::InvalidDefinition(def) => write!(f, "Invalid filter definition: {}", def),
+            FilterError::UnknownFilter(name) => write!(f, "Unknown filter: {name}"),
+            FilterError::InvalidDefinition(def) => write!(f, "Invalid filter definition: {def}"),
         }
     }
 }

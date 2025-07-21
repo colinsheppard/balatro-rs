@@ -768,7 +768,7 @@ pub struct ConsumableSlots {
     /// Vector of optional consumable slots
     slots: Vec<Option<Box<dyn Consumable>>>,
     /// Default capacity for new instances (always 2 as per Balatro base game)
-    default_capacity: usize,
+    _default_capacity: usize,
 }
 
 impl ConsumableSlots {
@@ -817,7 +817,7 @@ impl ConsumableSlots {
         Self {
             capacity,
             slots,
-            default_capacity: 2,
+            _default_capacity: 2,
         }
     }
 

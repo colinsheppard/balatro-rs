@@ -115,6 +115,6 @@ impl std::fmt::Display for HandRank {
             HandRank::FlushHouse => "Flush House",
             HandRank::FlushFive => "Flush Five",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }

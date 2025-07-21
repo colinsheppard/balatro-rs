@@ -16,6 +16,7 @@ use std::collections::HashMap;
 /// 3. **Extensible**: Easy to add new condition and action types
 /// 4. **Validatable**: Strong typing with comprehensive validation
 /// 5. **Performant**: Efficient parsing and runtime evaluation
+///
 /// Root configuration for joker definitions
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JokerConfig {

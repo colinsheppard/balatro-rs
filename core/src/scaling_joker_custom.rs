@@ -21,6 +21,12 @@ impl GreenJoker {
     }
 }
 
+impl Default for GreenJoker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Joker for GreenJoker {
     fn id(&self) -> JokerId {
         self.base.id()
@@ -38,7 +44,7 @@ impl Joker for GreenJoker {
         self.base.rarity()
     }
 
-    fn on_hand_played(&self, context: &mut GameContext, hand: &SelectHand) -> JokerEffect {
+    fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Increment value for any hand played
         context
             .joker_state_manager
@@ -81,6 +87,12 @@ impl SquareJoker {
         Self {
             base: crate::scaling_joker_impl::create_square_joker(),
         }
+    }
+}
+
+impl Default for SquareJoker {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -138,6 +150,12 @@ impl BullJoker {
     }
 }
 
+impl Default for BullJoker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Joker for BullJoker {
     fn id(&self) -> JokerId {
         self.base.id()
@@ -177,6 +195,12 @@ impl BootstrapsJoker {
         Self {
             base: crate::scaling_joker_impl::create_bootstraps(),
         }
+    }
+}
+
+impl Default for BootstrapsJoker {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -222,6 +246,12 @@ impl BannerJoker {
     }
 }
 
+impl Default for BannerJoker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Joker for BannerJoker {
     fn id(&self) -> JokerId {
         self.base.id()
@@ -264,6 +294,12 @@ impl CeremonialDagger {
         Self {
             base: crate::scaling_joker_impl::create_ceremonial_dagger(),
         }
+    }
+}
+
+impl Default for CeremonialDagger {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -334,6 +370,12 @@ impl MysticSummit {
         Self {
             base: crate::scaling_joker_impl::create_mystic_summit(),
         }
+    }
+}
+
+impl Default for MysticSummit {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

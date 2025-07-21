@@ -169,7 +169,7 @@ impl Default for ProcessingContext {
             resolution_strategy: ConflictResolutionStrategy::default(),
             validate_effects: true,
             max_retriggered_effects: 100,
-            priority_strategy: Arc::new(MetadataPriorityStrategy::default()),
+            priority_strategy: Arc::new(MetadataPriorityStrategy),
             cache_config: CacheConfig::default(),
         }
     }

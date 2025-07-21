@@ -247,7 +247,7 @@ fn default_game_rng() -> crate::rng::GameRng {
 
 /// Format debug message for joker effects with conditional compilation
 #[cfg(debug_assertions)]
-fn format_joker_effect_debug_message(
+fn _format_joker_effect_debug_message(
     joker_name: &str,
     effect: &crate::joker::JokerEffect,
     total_triggers: u32,
@@ -654,12 +654,9 @@ impl Game {
 
         // Process any error messages from hand effects
         for error in &hand_result.errors {
-            match error {
-                crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) => {
-                    messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
-                }
-                _ => {} // Other errors are less critical for gameplay
-            }
+            if let crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) = error {
+                messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
+            } // Other errors are less critical for gameplay
         }
 
         // Process card-level effects using the cached processor
@@ -716,12 +713,9 @@ impl Game {
 
             // Process any error messages from card effects
             for error in &card_result.errors {
-                match error {
-                    crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) => {
-                        messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
-                    }
-                    _ => {} // Other errors are less critical for gameplay
-                }
+                if let crate::joker_effect_processor::EffectProcessingError::TooManyRetriggers(_) = error {
+                    messages.push("KILLSCREEN: Too many retriggered effects!".to_string());
+                } // Other errors are less critical for gameplay
             }
         }
 
@@ -982,15 +976,19 @@ impl Game {
 
     /// Enable joker effect caching with default settings
     pub fn enable_joker_effect_cache(&mut self) {
-        let mut config = crate::joker_effect_processor::CacheConfig::default();
-        config.enabled = true;
+        let config = crate::joker_effect_processor::CacheConfig {
+            enabled: true,
+            ..Default::default()
+        };
         self.joker_effect_processor.set_cache_config(config);
     }
 
     /// Disable joker effect caching
     pub fn disable_joker_effect_cache(&mut self) {
-        let mut config = crate::joker_effect_processor::CacheConfig::default();
-        config.enabled = false;
+        let config = crate::joker_effect_processor::CacheConfig {
+            enabled: false,
+            ..Default::default()
+        };
         self.joker_effect_processor.set_cache_config(config);
     }
 

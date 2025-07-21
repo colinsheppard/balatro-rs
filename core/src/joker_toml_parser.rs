@@ -35,7 +35,7 @@ pub enum TomlParserError {
 /// Parser for TOML joker definitions
 pub struct TomlJokerParser {
     /// Supported schema versions
-    supported_versions: Vec<String>,
+    _supported_versions: Vec<String>,
 
     /// Validation rules
     validators: Vec<Box<dyn JokerValidator>>,
@@ -51,7 +51,7 @@ impl TomlJokerParser {
     /// Create a new parser with default configuration
     pub fn new() -> Self {
         let mut parser = Self {
-            supported_versions: vec!["1.0.0".to_string()],
+            _supported_versions: vec!["1.0.0".to_string()],
             validators: Vec::new(),
         };
 
@@ -171,7 +171,7 @@ impl TomlJokerParser {
         }
 
         // Check for removed jokers
-        for (id, _) in &old_jokers {
+        for id in old_jokers.keys() {
             if !new_jokers.contains_key(id) {
                 changed.push(id.to_string());
             }
