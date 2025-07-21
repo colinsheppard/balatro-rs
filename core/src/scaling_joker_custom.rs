@@ -152,7 +152,7 @@ impl Joker for BullJoker {
 
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Effect is based on current money, not accumulated
-        let chips_bonus = context.money * 2;
+        let chips_bonus = (context.money as f64 * 2.0) as i32;
         JokerEffect::new().with_chips(chips_bonus)
     }
 
@@ -194,7 +194,7 @@ impl Joker for BootstrapsJoker {
 
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Effect is based on current money divided by 5
-        let mult_bonus = (context.money / 5) * 2;
+        let mult_bonus = ((context.money as f64 / 5.0) * 2.0) as i32;
         JokerEffect::new().with_mult(mult_bonus)
     }
 
@@ -236,11 +236,11 @@ impl Joker for BannerJoker {
 
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Calculate remaining discards (assuming 3 base discards per round)
-        let base_discards = 3; // This should come from game config
+        let base_discards: usize = 3; // This should come from game config
         let remaining_discards = base_discards.saturating_sub(context.discards_used as usize);
-        let chips_bonus = remaining_discards * 30;
+        let chips_bonus = (remaining_discards * 30) as i32;
         
-        JokerEffect::new().with_chips(chips_bonus as i32)
+        JokerEffect::new().with_chips(chips_bonus)
     }
 
     fn initialize_state(&self, _context: &GameContext) -> JokerState {

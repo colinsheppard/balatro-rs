@@ -13,7 +13,9 @@ use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
 
 /// Priority level for effect processing
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[cfg_attr(feature = "python", pyclass(eq))]
 pub enum EffectPriority {
     /// Lowest priority - applied first
@@ -1287,15 +1289,33 @@ mod tests {
         let processor = JokerEffectProcessor::new();
 
         // Test with jokers that are actually registered in the registry
-        assert_eq!(processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+        assert_eq!(
+            processor.get_joker_priority(JokerId::Joker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::GreedyJoker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::LustyJoker),
+            EffectPriority::Normal
+        );
 
         // Test fallback behavior for unregistered jokers
         // These jokers exist in the enum but aren't registered in the registry
-        assert_eq!(processor.get_joker_priority(JokerId::IceCream), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::EggJoker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::SpaceJoker), EffectPriority::Normal);
+        assert_eq!(
+            processor.get_joker_priority(JokerId::IceCream),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::EggJoker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::SpaceJoker),
+            EffectPriority::Normal
+        );
     }
 
     #[test]
@@ -1330,16 +1350,16 @@ mod tests {
         // Verify the ordering: Low (1) -> Normal (5) -> High (10)
         assert_eq!(weighted_effects[0].source_joker_id, JokerId::IceCream);
         assert_eq!(weighted_effects[0].priority, EffectPriority::Low);
-        
+
         assert_eq!(weighted_effects[1].source_joker_id, JokerId::Joker);
         assert_eq!(weighted_effects[1].priority, EffectPriority::Normal);
-        
+
         assert_eq!(weighted_effects[2].source_joker_id, JokerId::EggJoker);
         assert_eq!(weighted_effects[2].priority, EffectPriority::High);
 
         // Test that the accumulation works correctly with priority ordering
         let result = processor.accumulate_effects(&weighted_effects);
-        
+
         // All chips should be summed: 10 + 30 + 50 = 90
         assert_eq!(result.chips, 90);
     }
@@ -1349,9 +1369,9 @@ mod tests {
         let processor = JokerEffectProcessor::new();
 
         // Test that multiplicative effects would get critical priority
-        // (We test the priority assignment logic, even though these specific jokers 
+        // (We test the priority assignment logic, even though these specific jokers
         // might not actually have multiplicative effects in the current implementation)
-        
+
         // Create effects simulating what would happen with multiplicative jokers
         let weighted_effects = vec![
             WeightedEffect {
@@ -1394,36 +1414,40 @@ mod tests {
             determine_effect_priority(&JokerId::Joker, "multiplicative_mult", "X2 Mult"),
             EffectPriority::Critical
         );
-        
+
         // Test destructive effects get Critical priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "special", "destroy all cards"),
             EffectPriority::Critical
         );
-        
+
         // Test economy effects get High priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "economy", "Earn $5 when played"),
             EffectPriority::High
         );
-        
+
         // Test hand modification effects get High priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "hand_modification", "+1 hand size"),
             EffectPriority::High
         );
-        
+
         // Test specific joker overrides
         assert_eq!(
-            determine_effect_priority(&JokerId::IceCream, "conditional_chips", "conditional effect"),
+            determine_effect_priority(
+                &JokerId::IceCream,
+                "conditional_chips",
+                "conditional effect"
+            ),
             EffectPriority::Low
         );
-        
+
         assert_eq!(
             determine_effect_priority(&JokerId::EggJoker, "special", "affects sell values"),
             EffectPriority::High
         );
-        
+
         // Test standard jokers get Normal priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "additive_mult", "+4 Mult"),
@@ -1498,12 +1522,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
@@ -1824,12 +1848,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
         // First call should miss cache and store result
