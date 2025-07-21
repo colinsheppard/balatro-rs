@@ -36,6 +36,7 @@ pub mod vouchers;
 pub mod scaling_joker;
 pub mod scaling_joker_impl;
 pub mod scaling_joker_custom;
+pub mod special_jokers;
 
 #[cfg(test)]
 mod tests {

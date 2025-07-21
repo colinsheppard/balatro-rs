@@ -692,7 +692,7 @@ impl TestContextBuilder {
     pub fn build(self) -> GameContext<'static> {
         let jokers: Vec<Box<dyn Joker>> = Vec::new();
         let joker_state_manager = Arc::new(JokerStateManager::new());
-        let rng = GameRng::new();
+        let rng = GameRng::for_testing(42);
 
         // Convert to static references (this is unsafe but okay for tests)
         let stage_ref: &'static Stage = Box::leak(Box::new(self.stage));
