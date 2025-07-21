@@ -814,7 +814,10 @@ pub fn assert_effect_empty(effect: &JokerEffect) {
     assert_eq!(effect.transform_cards, default_effect.transform_cards);
     assert_eq!(effect.hand_size_mod, default_effect.hand_size_mod);
     assert_eq!(effect.discard_mod, default_effect.discard_mod);
-    assert_eq!(effect.sell_value_increase, default_effect.sell_value_increase);
+    assert_eq!(
+        effect.sell_value_increase,
+        default_effect.sell_value_increase
+    );
     assert_eq!(effect.message, default_effect.message);
 }
 
@@ -1076,7 +1079,7 @@ mod tests {
 
         let hand = create_test_hand(cards.clone());
         assert_eq!(hand.cards().len(), 3);
-        
+
         // Verify the cards are in the hand
         let hand_cards = hand.cards();
         assert!(hand_cards.contains(&cards[0]));
@@ -1094,12 +1097,11 @@ mod tests {
             .build();
 
         // Create a joker that provides bonus for specific cards
-        let gameplay_joker = MockGameplayJoker::new()
-            .with_card_effect(JokerEffect::new().with_mult(3));
+        let gameplay_joker =
+            MockGameplayJoker::new().with_card_effect(JokerEffect::new().with_mult(3));
 
         // Create a modifier joker that doubles chips
-        let modifier_joker = MockModifierJoker::new()
-            .with_chips_modifier(|chips| chips * 2);
+        let modifier_joker = MockModifierJoker::new().with_chips_modifier(|chips| chips * 2);
 
         // Test the interaction
         let test_card = create_test_card(Rank::Ace, Suit::Spade);
@@ -1116,8 +1118,7 @@ mod tests {
         let mut initial_state = JokerState::new();
         initial_state.accumulated_value = 10.0;
 
-        let state_joker = MockStateJoker::new()
-            .with_initial_state(initial_state.clone());
+        let state_joker = MockStateJoker::new().with_initial_state(initial_state.clone());
 
         let lifecycle_joker = MockLifecycleJoker::new()
             .with_created_effect(JokerEffect::new().with_money(5))
