@@ -40,6 +40,169 @@ fn create_test_context(money: i32, ante: u8, round: u32) -> GameContext<'static>
     }
 }
 
+/// Enhanced test harness for scaling joker integration tests
+struct ScalingJokerTestHarness {
+    state_manager: Arc<JokerStateManager>,
+    jokers: Vec<ScalingJoker>,
+    stage: Stage,
+    rng: balatro_rs::rng::GameRng,
+}
+
+impl ScalingJokerTestHarness {
+    fn new() -> Self {
+        Self {
+            state_manager: Arc::new(JokerStateManager::new()),
+            jokers: vec![],
+            stage: Stage::Blind,
+            rng: balatro_rs::rng::GameRng::new(),
+        }
+    }
+
+    fn add_joker(&mut self, joker: ScalingJoker) {
+        // Initialize joker state
+        let initial_state = joker.initialize_state(&self.create_context());
+        self.state_manager.update_state(joker.id(), |state| {
+            *state = initial_state;
+        });
+        self.jokers.push(joker);
+    }
+
+    fn create_context(&self) -> GameContext<'_> {
+        let jokers: Vec<Box<dyn Joker>> = vec![];
+        let hand = SelectHand::default();
+        let discarded: Vec<Card> = vec![];
+        let hand_type_counts = HashMap::new();
+
+        GameContext {
+            chips: 0,
+            mult: 1,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &jokers,
+            hand: &hand,
+            discarded: &discarded,
+            joker_state_manager: &self.state_manager,
+            hand_type_counts: &hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
+    }
+
+    fn create_mutable_context(&mut self) -> GameContext<'_> {
+        let jokers: Vec<Box<dyn Joker>> = vec![];
+        let hand = SelectHand::default();
+        let discarded: Vec<Card> = vec![];
+        let hand_type_counts = HashMap::new();
+
+        GameContext {
+            chips: 0,
+            mult: 1,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &jokers,
+            hand: &hand,
+            discarded: &discarded,
+            joker_state_manager: &self.state_manager,
+            hand_type_counts: &hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
+    }
+
+    /// Simulate playing a hand with specific rank
+    fn simulate_hand_played(&mut self, hand_rank: HandRank) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let hand = create_test_hand(hand_rank);
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_hand_played(&mut context, &hand);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Simulate discarding cards
+    fn simulate_cards_discarded(&mut self, count: usize) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let cards = vec![Card::new(Value::Two, Suit::Heart); count];
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            for _ in 0..count {
+                let effect = joker.on_discard(&mut context, &cards);
+                effects.push(effect);
+            }
+        }
+
+        effects
+    }
+
+    /// Simulate round end
+    fn simulate_round_end(&mut self) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_round_end(&mut context);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Simulate shop opening
+    fn simulate_shop_open(&mut self) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_shop_open(&mut context);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Process a scaling event directly
+    fn process_scaling_event(&mut self, event: ScalingEvent) {
+        let mut context = self.create_mutable_context();
+        
+        for joker in &self.jokers {
+            joker.process_event(&mut context, &event);
+        }
+    }
+
+    /// Get current accumulated value for a joker
+    fn get_accumulated_value(&self, joker_id: JokerId) -> f64 {
+        self.state_manager
+            .get_accumulated_value(joker_id)
+            .unwrap_or(0.0)
+    }
+
+    /// Get current effect for a joker
+    fn get_current_effect(&self, joker_id: JokerId) -> JokerEffect {
+        let context = self.create_context();
+        
+        if let Some(joker) = self.jokers.iter().find(|j| j.id() == joker_id) {
+            joker.calculate_effect(&context)
+        } else {
+            JokerEffect::new()
+        }
+    }
+}
+
 /// Create a test hand with specific hand rank
 fn create_test_hand(rank: HandRank) -> SelectHand {
     let cards = match rank {
@@ -313,20 +476,192 @@ fn test_joker_descriptions_are_descriptive() {
 // Integration tests that would require full game context
 // These are placeholder tests since we can't easily create full GameContext in unit tests
 
-#[test]
-#[ignore] // Ignore until we have proper test harness
-fn test_scaling_joker_state_persistence() {
-    // This test would verify that joker state is properly saved and restored
-    // across game sessions using the JokerStateManager
-    todo!("Implement integration test for state persistence");
-}
 
 #[test]
-#[ignore] // Ignore until we have proper test harness  
 fn test_scaling_joker_triggers_in_game() {
-    // This test would verify that jokers properly trigger and accumulate
-    // value during actual gameplay
-    todo!("Implement integration test for joker triggers");
+    let mut harness = ScalingJokerTestHarness::new();
+    
+    // Create jokers with different trigger types
+    let hand_trigger_joker = ScalingJoker::new(
+        JokerId::Trousers, // Spare Trousers - triggers on Two Pair
+        "Hand Trigger Joker".to_string(),
+        "+2 Mult per Two Pair played".to_string(),
+        JokerRarity::Common,
+        0.0,
+        2.0,
+        ScalingTrigger::HandPlayed(HandRank::TwoPair),
+        ScalingEffectType::Mult,
+    );
+    
+    let discard_trigger_joker = ScalingJoker::new(
+        JokerId::GreenJoker,
+        "Discard Trigger Joker".to_string(),
+        "+1 Mult per card discarded".to_string(),
+        JokerRarity::Common,
+        0.0,
+        1.0,
+        ScalingTrigger::CardDiscarded,
+        ScalingEffectType::Mult,
+    );
+    
+    let money_trigger_joker = ScalingJoker::new(
+        JokerId::Matador,
+        "Money Trigger Joker".to_string(),
+        "+0.5X Mult per money gained".to_string(),
+        JokerRarity::Uncommon,
+        1.0,
+        0.5,
+        ScalingTrigger::MoneyGained,
+        ScalingEffectType::MultMultiplier,
+    );
+    
+    let round_reset_joker = ScalingJoker::new(
+        JokerId::Ceremonial,
+        "Round Reset Joker".to_string(),
+        "+3 Chips per blind completed, resets each round".to_string(),
+        JokerRarity::Rare,
+        0.0,
+        3.0,
+        ScalingTrigger::BlindCompleted,
+        ScalingEffectType::Chips,
+    ).with_reset_condition(ResetCondition::RoundEnd);
+    
+    // Add all jokers to the harness
+    harness.add_joker(hand_trigger_joker);
+    harness.add_joker(discard_trigger_joker);
+    harness.add_joker(money_trigger_joker);
+    harness.add_joker(round_reset_joker);
+    
+    // Test 1: Verify initial state
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), 0.0);
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), 0.0);
+    assert_eq!(harness.get_accumulated_value(JokerId::Matador), 1.0); // Base value
+    assert_eq!(harness.get_accumulated_value(JokerId::Ceremonial), 0.0);
+    
+    // Test 2: Hand trigger - play various hands
+    harness.simulate_hand_played(HandRank::OnePair);
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), 0.0); // Should not trigger
+    
+    harness.simulate_hand_played(HandRank::TwoPair);
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), 2.0); // Should trigger
+    
+    harness.simulate_hand_played(HandRank::TwoPair);
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), 4.0); // Should accumulate
+    
+    harness.simulate_hand_played(HandRank::Flush);
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), 4.0); // Should not change
+    
+    // Test 3: Discard trigger - multiple discards
+    harness.simulate_cards_discarded(1);
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), 1.0);
+    
+    harness.simulate_cards_discarded(3);
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), 4.0); // Should accumulate
+    
+    // Test 4: Money trigger
+    harness.process_scaling_event(ScalingEvent::MoneyGained);
+    assert_eq!(harness.get_accumulated_value(JokerId::Matador), 1.5); // 1.0 + 0.5
+    
+    harness.process_scaling_event(ScalingEvent::MoneyGained);
+    harness.process_scaling_event(ScalingEvent::MoneyGained);
+    assert_eq!(harness.get_accumulated_value(JokerId::Matador), 2.5); // 1.0 + 1.5
+    
+    // Test 5: Blind completion trigger
+    harness.process_scaling_event(ScalingEvent::BlindCompleted);
+    assert_eq!(harness.get_accumulated_value(JokerId::Ceremonial), 3.0);
+    
+    harness.process_scaling_event(ScalingEvent::BlindCompleted);
+    assert_eq!(harness.get_accumulated_value(JokerId::Ceremonial), 6.0);
+    
+    // Test 6: Multiple triggers in sequence
+    let pre_sequence_hand = harness.get_accumulated_value(JokerId::Trousers);
+    let pre_sequence_discard = harness.get_accumulated_value(JokerId::GreenJoker);
+    let pre_sequence_money = harness.get_accumulated_value(JokerId::Matador);
+    
+    // Simulate a complex game sequence
+    harness.simulate_hand_played(HandRank::TwoPair); // +2 to hand trigger
+    harness.simulate_cards_discarded(2); // +2 to discard trigger  
+    harness.process_scaling_event(ScalingEvent::MoneyGained); // +0.5 to money trigger
+    harness.process_scaling_event(ScalingEvent::BlindCompleted); // +3 to blind trigger
+    
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), pre_sequence_hand + 2.0);
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), pre_sequence_discard + 2.0);
+    assert_eq!(harness.get_accumulated_value(JokerId::Matador), pre_sequence_money + 0.5);
+    assert_eq!(harness.get_accumulated_value(JokerId::Ceremonial), 9.0); // Was 6.0 + 3.0
+    
+    // Test 7: Reset conditions work correctly
+    let pre_reset_values = (
+        harness.get_accumulated_value(JokerId::Trousers),
+        harness.get_accumulated_value(JokerId::GreenJoker),
+        harness.get_accumulated_value(JokerId::Matador),
+        harness.get_accumulated_value(JokerId::Ceremonial),
+    );
+    
+    // Round end should only reset the ceremonial joker
+    harness.simulate_round_end();
+    
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), pre_reset_values.0); // No change
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), pre_reset_values.1); // No change
+    assert_eq!(harness.get_accumulated_value(JokerId::Matador), pre_reset_values.2); // No change
+    assert_eq!(harness.get_accumulated_value(JokerId::Ceremonial), 0.0); // Should reset
+    
+    // Test 8: Effects reflect accumulated values correctly
+    let hand_effect = harness.get_current_effect(JokerId::Trousers);
+    let discard_effect = harness.get_current_effect(JokerId::GreenJoker);
+    let money_effect = harness.get_current_effect(JokerId::Matador);
+    let ceremonial_effect = harness.get_current_effect(JokerId::Ceremonial);
+    
+    assert_eq!(hand_effect.mult, harness.get_accumulated_value(JokerId::Trousers) as i32);
+    assert_eq!(discard_effect.mult, harness.get_accumulated_value(JokerId::GreenJoker) as i32);
+    assert_eq!(money_effect.mult_multiplier, harness.get_accumulated_value(JokerId::Matador));
+    assert_eq!(ceremonial_effect.chips, harness.get_accumulated_value(JokerId::Ceremonial) as i32);
+    
+    // Test 9: Different trigger types work independently
+    let initial_state = (
+        harness.get_accumulated_value(JokerId::Trousers),
+        harness.get_accumulated_value(JokerId::GreenJoker),
+        harness.get_accumulated_value(JokerId::Matador),
+        harness.get_accumulated_value(JokerId::Ceremonial),
+    );
+    
+    // Trigger only one type
+    harness.process_scaling_event(ScalingEvent::ConsumableUsed); // Should not trigger any of our jokers
+    
+    let after_unrelated_event = (
+        harness.get_accumulated_value(JokerId::Trousers),
+        harness.get_accumulated_value(JokerId::GreenJoker),
+        harness.get_accumulated_value(JokerId::Matador),
+        harness.get_accumulated_value(JokerId::Ceremonial),
+    );
+    
+    // No jokers should have changed
+    assert_eq!(initial_state, after_unrelated_event);
+    
+    // Test 10: Rapid sequence of triggers
+    for _ in 0..5 {
+        harness.simulate_hand_played(HandRank::TwoPair);
+    }
+    
+    // Should have accumulated 5 * 2 = 10 more mult
+    assert_eq!(harness.get_accumulated_value(JokerId::Trousers), initial_state.0 + 10.0);
+    
+    // Test 11: Mixed event sequences work correctly
+    let pre_mixed = harness.get_accumulated_value(JokerId::GreenJoker);
+    
+    // Alternate between discard and non-discard events
+    harness.simulate_cards_discarded(1); // +1
+    harness.process_scaling_event(ScalingEvent::ShopReroll); // No effect
+    harness.simulate_cards_discarded(1); // +1
+    harness.process_scaling_event(ScalingEvent::JokerSold); // No effect
+    harness.simulate_cards_discarded(1); // +1
+    
+    assert_eq!(harness.get_accumulated_value(JokerId::GreenJoker), pre_mixed + 3.0);
+    
+    // Verify the test demonstrates all required behaviors from the issue:
+    // ✅ Scaling jokers trigger on the correct game events
+    // ✅ Values accumulate properly when triggers fire  
+    // ✅ Multiple triggers in sequence work correctly
+    // ✅ Different trigger types (hand played, card discarded, etc.) work as expected
 }
 
 #[test]
