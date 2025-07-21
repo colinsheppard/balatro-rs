@@ -19,7 +19,6 @@
 
 use crate::card::Card;
 use crate::game::Game;
-use crate::joker::{Joker, JokerId};
 use crate::rank::HandRank;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -240,6 +239,19 @@ impl Target {
     }
 }
 
+
+/// Represents different collections of cards that can be targeted
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards in the player's hand
+    Hand,
+    /// Cards in the player's deck
+    Deck,
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that have been played
+    PlayedCards,
+}
 
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -691,9 +703,13 @@ impl ConsumableSlots {
     /// assert_eq!(slots.available_slots(), 5);
     /// ```
     pub fn with_capacity(capacity: usize) -> Self {
+        let mut slots = Vec::with_capacity(capacity);
+        for _ in 0..capacity {
+            slots.push(None);
+        }
         Self {
             capacity,
-            slots: vec![None; capacity],
+            slots,
             default_capacity: 2,
         }
     }
@@ -910,7 +926,7 @@ impl ConsumableSlots {
     ///     // Modify consumable if needed
     /// }
     /// ```
-    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut dyn Consumable> {
+    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut (dyn Consumable + '_)> {
         if index >= self.capacity {
             return None;
         }
@@ -1008,4 +1024,3 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
-pub use SlotError;
