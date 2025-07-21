@@ -1710,24 +1710,26 @@ mod tests {
         config.enabled = false;
         processor_without_cache.set_cache_config(config);
         
-        // Create test data that would be expensive to process
-        let game_context = GameContext {
-            chips: 100,
-            mult: 4,
-            money: 100,
-            ante: 1,
-            round: 1,
-            stage: &crate::stage::Stage::PreBlind(),
-            hands_played: 0,
-            discards_used: 0,
-            jokers: &[],
-            hand: &crate::hand::Hand::new(vec![]),
-            discarded: &[],
-            joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
-            hand_type_counts: &HashMap::new(),
-            cards_in_deck: 52,
-            stone_cards_in_deck: 0,
-            rng: &crate::rng::GameRng::secure(),
+        // Helper function to create fresh GameContext instances
+        let create_game_context = || {
+            GameContext {
+                chips: 100,
+                mult: 4,
+                money: 100,
+                ante: 1,
+                round: 1,
+                stage: &crate::stage::Stage::PreBlind(),
+                hands_played: 0,
+                discards_used: 0,
+                jokers: &[],
+                hand: &crate::hand::Hand::new(vec![]),
+                discarded: &[],
+                joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
+                hand_type_counts: &HashMap::new(),
+                cards_in_deck: 52,
+                stone_cards_in_deck: 0,
+                rng: &crate::rng::GameRng::secure(),
+            }
         };
         
         let hand = SelectHand {
@@ -1748,16 +1750,16 @@ mod tests {
         // Test with cache
         let start_cached = Instant::now();
         for _ in 0..iterations {
-            let mut game_context_copy = game_context.clone();
-            processor_with_cache.process_hand_effects(&jokers, &mut game_context_copy, &hand);
+            let mut game_context = create_game_context();
+            processor_with_cache.process_hand_effects(&jokers, &mut game_context, &hand);
         }
         let cached_duration = start_cached.elapsed();
         
         // Test without cache
         let start_uncached = Instant::now();
         for _ in 0..iterations {
-            let mut game_context_copy = game_context.clone();
-            processor_without_cache.process_hand_effects(&jokers, &mut game_context_copy, &hand);
+            let mut game_context = create_game_context();
+            processor_without_cache.process_hand_effects(&jokers, &mut game_context, &hand);
         }
         let uncached_duration = start_uncached.elapsed();
         
