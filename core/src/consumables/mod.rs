@@ -930,7 +930,10 @@ impl ConsumableSlots {
         if index >= self.capacity {
             return None;
         }
-        self.slots[index].as_mut().map(|boxed| boxed.as_mut())
+        match &mut self.slots[index] {
+            Some(boxed) => Some(boxed.as_mut()),
+            None => None,
+        }
     }
 
     /// Finds the first empty slot

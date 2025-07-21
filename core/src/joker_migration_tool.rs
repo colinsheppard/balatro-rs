@@ -1,4 +1,5 @@
-use crate::joker::{Joker, JokerId, JokerRarity};
+use crate::joker::{JokerId, JokerRarity};
+use crate::joker::Joker;
 use crate::joker_toml_schema::{
     JokerConfig, TomlJokerDefinition, TomlJokerRarity, TomlJokerEffect, 
     TomlJokerCondition, TomlJokerAction, TomlSuit, TomlHandRank

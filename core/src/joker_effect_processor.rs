@@ -384,6 +384,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: self.resolution_strategy,
             validate_effects: self.validate_effects,
             max_retriggered_effects: self.max_retriggered_effects,
+            cache_config: CacheConfig::default(),
         }
     }
 }
@@ -800,8 +801,8 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash hand composition
-        for card in &hand.cards {
-            card.rank.hash(&mut hasher);
+        for card in &hand.cards() {
+            card.value.hash(&mut hasher);
             card.suit.hash(&mut hasher);
         }
         
@@ -834,7 +835,7 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash card
-        card.rank.hash(&mut hasher);
+        card.value.hash(&mut hasher);
         card.suit.hash(&mut hasher);
         
         // Hash processing context settings
@@ -1455,7 +1456,7 @@ mod tests {
 
     #[test]
     fn test_cache_key_generation() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1693,7 +1694,7 @@ mod tests {
 
     #[test]
     fn test_cache_performance_improvement() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1780,7 +1781,7 @@ mod tests {
 
     #[test]
     fn test_cache_integration_with_processing() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;

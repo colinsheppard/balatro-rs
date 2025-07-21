@@ -35,14 +35,14 @@
 //! assert_effect_mult(&effect, 10);
 //! ```
 
-use crate::card::{Card, Rank, Suit};
+use crate::card::{Card, Value, Suit};
 use crate::hand::{Hand, SelectHand};
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker_state::{JokerState, JokerStateManager};
 use crate::rank::HandRank;
 use crate::rng::GameRng;
 use crate::stage::Stage;
-use serde_json::Value;
+use JsonValue as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -819,7 +819,7 @@ pub fn assert_effect_empty(effect: &JokerEffect) {
 }
 
 /// Create a simple test card for testing purposes.
-pub fn create_test_card(rank: Rank, suit: Suit) -> Card {
+pub fn create_test_card(rank: Value, suit: Suit) -> Card {
     Card::new(rank, suit)
 }
 
@@ -835,7 +835,7 @@ pub fn create_test_hand(cards: Vec<Card>) -> Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{Rank, Suit};
+    use crate::card::{Value, Suit};
     use crate::hand::SelectHand;
     use crate::joker_state::JokerState;
     use crate::rank::HandRank;
@@ -903,7 +903,7 @@ mod tests {
             .with_blind_start_effect(blind_effect.clone());
 
         let mut context = TestContextBuilder::new().build();
-        let test_card = create_test_card(Rank::Ace, Suit::Spade);
+        let test_card = create_test_card(Value::Ace, Suit::Spade);
         let hand = SelectHand::new(vec![test_card.clone()]);
 
         let effect = joker.on_hand_played(&mut context, &hand);
@@ -1061,17 +1061,17 @@ mod tests {
 
     #[test]
     fn test_create_test_card() {
-        let card = create_test_card(Rank::King, Suit::Heart);
-        assert_eq!(card.rank, Rank::King);
+        let card = create_test_card(Value::King, Suit::Heart);
+        assert_eq!(card.value, Value::King);
         assert_eq!(card.suit, Suit::Heart);
     }
 
     #[test]
     fn test_create_test_hand() {
         let cards = vec![
-            create_test_card(Rank::Ace, Suit::Spade),
-            create_test_card(Rank::King, Suit::Heart),
-            create_test_card(Rank::Queen, Suit::Diamond),
+            create_test_card(Value::Ace, Suit::Spade),
+            create_test_card(Value::King, Suit::Heart),
+            create_test_card(Value::Queen, Suit::Diamond),
         ];
 
         let hand = create_test_hand(cards.clone());
@@ -1102,7 +1102,7 @@ mod tests {
             .with_chips_modifier(|chips| chips * 2);
 
         // Test the interaction
-        let test_card = create_test_card(Rank::Ace, Suit::Spade);
+        let test_card = create_test_card(Value::Ace, Suit::Spade);
         let card_effect = gameplay_joker.on_card_scored(&mut context, &test_card);
         assert_effect_mult(&card_effect, 3);
 
