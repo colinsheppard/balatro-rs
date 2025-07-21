@@ -384,6 +384,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: self.resolution_strategy,
             validate_effects: self.validate_effects,
             max_retriggered_effects: self.max_retriggered_effects,
+            cache_config: CacheConfig::default(),
         }
     }
 }
@@ -800,8 +801,8 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash hand composition
-        for card in &hand.cards {
-            card.rank.hash(&mut hasher);
+        for card in hand.cards() {
+            card.value.hash(&mut hasher);
             card.suit.hash(&mut hasher);
         }
         
@@ -834,7 +835,7 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash card
-        card.rank.hash(&mut hasher);
+        card.value.hash(&mut hasher);
         card.suit.hash(&mut hasher);
         
         // Hash processing context settings
