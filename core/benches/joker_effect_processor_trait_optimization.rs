@@ -4,7 +4,7 @@
 //! optimization paths in JokerEffectProcessor, as implemented for issue #431.
 
 use criterion::{black_box, criterion_group, criterion_main, Criterion, BenchmarkId};
-use balatro_rs::card::{Card, Rank, Suit};
+use balatro_rs::card::{Card, Value, Suit};
 use balatro_rs::hand::SelectHand;
 use balatro_rs::joker::{GameContext, Joker, JokerEffect, JokerId};
 use balatro_rs::joker_effect_processor::{JokerEffectProcessor, ProcessingContext};
@@ -38,11 +38,11 @@ fn create_test_game_context() -> GameContext<'static> {
 fn create_test_hand() -> SelectHand {
     SelectHand {
         cards: vec![
-            Card { rank: Rank::Ace, suit: Suit::Hearts },
-            Card { rank: Rank::King, suit: Suit::Hearts },
-            Card { rank: Rank::Queen, suit: Suit::Hearts },
-            Card { rank: Rank::Jack, suit: Suit::Hearts },
-            Card { rank: Rank::Ten, suit: Suit::Hearts },
+            Card { value: Value::Ace, suit: Suit::Hearts },
+            Card { value: Value::King, suit: Suit::Hearts },
+            Card { value: Value::Queen, suit: Suit::Hearts },
+            Card { value: Value::Jack, suit: Suit::Hearts },
+            Card { value: Value::Ten, suit: Suit::Hearts },
         ],
     }
 }
@@ -134,7 +134,7 @@ fn bench_card_processing_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("card_processing_comparison");
     
     let jokers = create_test_jokers(10);
-    let card = Card { rank: Rank::Ace, suit: Suit::Diamond };
+    let card = Card { value: Value::Ace, suit: Suit::Diamond };
     let stage = Stage::PreBlind();
     
     group.bench_function("legacy_card_processing", |b| {

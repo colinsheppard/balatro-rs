@@ -97,3 +97,23 @@ impl HandRank {
         }
     }
 }
+
+impl std::fmt::Display for HandRank {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::HighCard => write!(f, "High Card"),
+            Self::OnePair => write!(f, "One Pair"),
+            Self::TwoPair => write!(f, "Two Pair"),
+            Self::ThreeOfAKind => write!(f, "Three of a Kind"),
+            Self::Straight => write!(f, "Straight"),
+            Self::Flush => write!(f, "Flush"),
+            Self::FullHouse => write!(f, "Full House"),
+            Self::FourOfAKind => write!(f, "Four of a Kind"),
+            Self::StraightFlush => write!(f, "Straight Flush"),
+            Self::RoyalFlush => write!(f, "Royal Flush"),
+            Self::FiveOfAKind => write!(f, "Five of a Kind"),
+            Self::FlushHouse => write!(f, "Flush House"),
+            Self::FlushFive => write!(f, "Flush Five"),
+        }
+    }
+}

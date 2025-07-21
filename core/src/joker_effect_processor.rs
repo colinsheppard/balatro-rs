@@ -1,13 +1,12 @@
 use crate::card::Card;
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
-use crate::joker::traits::{JokerGameplay, JokerModifiers, JokerIdentity, ProcessContext, ProcessResult};
+use crate::joker::traits::{JokerGameplay, JokerModifiers, ProcessContext};
 use crate::joker_metadata::JokerMetadata;
 use crate::joker_registry;
 use crate::stage::Stage;
 #[cfg(feature = "python")]
 use pyo3::pyclass;
-use std::any::Any;
 use std::collections::HashMap;
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
@@ -239,6 +238,7 @@ pub struct ProcessingContextBuilder {
     resolution_strategy: ConflictResolutionStrategy,
     validate_effects: bool,
     max_retriggered_effects: u32,
+    cache_config: CacheConfig,
 }
 
 impl ProcessingContextBuilder {
@@ -260,6 +260,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: default_context.resolution_strategy,
             validate_effects: default_context.validate_effects,
             max_retriggered_effects: default_context.max_retriggered_effects,
+            cache_config: default_context.cache_config,
         }
     }
 
@@ -387,6 +388,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: self.resolution_strategy,
             validate_effects: self.validate_effects,
             max_retriggered_effects: self.max_retriggered_effects,
+            cache_config: self.cache_config,
         }
     }
 }
@@ -463,7 +465,6 @@ pub enum JokerTraitProfile {
 }
 
 /// Specialized processor wrapper for trait-optimized jokers
-#[derive(Debug)]
 pub struct TraitOptimizedJoker<'a> {
     /// Reference to the base joker object
     pub joker: &'a dyn Joker,
@@ -583,20 +584,10 @@ impl JokerEffectProcessor {
         
         self.trait_metrics.trait_detection_cache_misses += 1;
         
-        // Perform trait detection using Any trait
-        let joker_any = joker as &dyn Any;
-        
-        let has_gameplay = joker_any.downcast_ref::<dyn JokerGameplay>().is_some();
-        let has_modifiers = joker_any.downcast_ref::<dyn JokerModifiers>().is_some();
-        let has_identity = joker_any.downcast_ref::<dyn JokerIdentity>().is_some();
-        
-        let profile = match (has_gameplay, has_modifiers, has_identity) {
-            (true, true, true) => JokerTraitProfile::FullTraitOptimized,
-            (true, true, false) => JokerTraitProfile::HybridOptimized,
-            (true, false, _) => JokerTraitProfile::GameplayOptimized,
-            (false, true, _) => JokerTraitProfile::ModifierOptimized,
-            _ => JokerTraitProfile::LegacyOnly,
-        };
+        // For now, all jokers use the legacy path since the specialized traits
+        // aren't implemented by current jokers. This avoids the runtime type
+        // checking issues and provides a stable fallback.
+        let profile = JokerTraitProfile::LegacyOnly;
         
         // Cache the result
         self.trait_detection_cache.insert(joker_id, profile);
@@ -616,13 +607,13 @@ impl JokerEffectProcessor {
     /// A `TraitOptimizedJoker` wrapper with cached trait references
     fn create_optimized_joker<'a>(&mut self, joker: &'a dyn Joker) -> TraitOptimizedJoker<'a> {
         let trait_profile = self.detect_joker_traits(joker);
-        let joker_any = joker as &dyn Any;
         
         TraitOptimizedJoker {
             joker,
             trait_profile,
-            gameplay_trait: joker_any.downcast_ref::<dyn JokerGameplay>(),
-            modifiers_trait: joker_any.downcast_ref::<dyn JokerModifiers>(),
+            // For now, all jokers use the legacy path, so specialized traits are None
+            gameplay_trait: None,
+            modifiers_trait: None,
         }
     }
 
@@ -714,8 +705,8 @@ impl JokerEffectProcessor {
         // Check if the joker can trigger in the current context
         let mut process_context = ProcessContext {
             hand_score: &mut crate::joker::traits::HandScore { chips: 0, mult: 0.0 },
-            played_cards: hand.map(|h| h.cards.as_slice()).unwrap_or(&[]),
-            held_cards: game_context.hand.cards.as_slice(),
+            played_cards: hand.map(|h| h.cards().as_slice()).unwrap_or(&[]),
+            held_cards: game_context.hand.cards(),
             events: &mut Vec::new(),
         };
         
@@ -1221,8 +1212,8 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash hand composition
-        for card in &hand.cards {
-            card.rank.hash(&mut hasher);
+        for card in &hand.cards() {
+            card.value.hash(&mut hasher);
             card.suit.hash(&mut hasher);
         }
         
@@ -1255,7 +1246,7 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash card
-        card.rank.hash(&mut hasher);
+        card.value.hash(&mut hasher);
         card.suit.hash(&mut hasher);
         
         // Hash processing context settings
@@ -1929,7 +1920,7 @@ mod tests {
 
     #[test]
     fn test_cache_key_generation() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -1958,12 +1949,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts },
+                Card { value: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { value: Value::Queen, suit: Suit::Spades };
         
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
@@ -2167,7 +2158,7 @@ mod tests {
 
     #[test]
     fn test_cache_performance_improvement() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -2206,11 +2197,11 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
-                Card { rank: Rank::Queen, suit: Suit::Hearts },
-                Card { rank: Rank::Jack, suit: Suit::Hearts },
-                Card { rank: Rank::Ten, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts },
+                Card { value: Value::King, suit: Suit::Hearts },
+                Card { value: Value::Queen, suit: Suit::Hearts },
+                Card { value: Value::Jack, suit: Suit::Hearts },
+                Card { value: Value::Ten, suit: Suit::Hearts },
             ],
         };
         
@@ -2254,7 +2245,7 @@ mod tests {
 
     #[test]
     fn test_cache_integration_with_processing() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -2282,12 +2273,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts },
+                Card { value: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { value: Value::Queen, suit: Suit::Spades };
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
         // First call should miss cache and store result
@@ -2635,7 +2626,7 @@ mod tests {
 
     #[test]
     fn test_enhanced_processing_with_stage() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use crate::stage::Stage;
@@ -2665,8 +2656,8 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts },
+                Card { value: Value::King, suit: Suit::Hearts },
             ],
         };
         
@@ -2682,7 +2673,7 @@ mod tests {
 
     #[test] 
     fn test_legacy_compatibility_maintained() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::joker::{GameContext, JokerId};
         use crate::hand::SelectHand;
         use std::collections::HashMap;
@@ -2710,8 +2701,8 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts },
+                Card { value: Value::King, suit: Suit::Hearts },
             ],
         };
         
