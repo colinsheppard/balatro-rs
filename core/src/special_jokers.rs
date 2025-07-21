@@ -11,7 +11,6 @@ use crate::joker::traits::{
     ProcessContext, ProcessResult, Rarity
 };
 use crate::stage::Stage;
-use crate::rank::HandRank;
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 
@@ -288,7 +287,15 @@ impl Joker for FlowerPotJoker {
 /// BlueprintJoker: Copies ability of joker to the right
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct BlueprintJoker {
-    copied_effects: Vec<JokerEffect>,
+    pub copied_effects: Vec<JokerEffect>,
+}
+
+impl BlueprintJoker {
+    pub fn new() -> Self {
+        Self {
+            copied_effects: Vec::new(),
+        }
+    }
 }
 
 impl JokerIdentity for BlueprintJoker {
@@ -613,7 +620,15 @@ impl Joker for TheOrderJoker {
 /// PhotographJoker: First played face card gives X2 Mult when scored
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct PhotographJoker {
-    face_card_triggered: bool,
+    pub face_card_triggered: bool,
+}
+
+impl PhotographJoker {
+    pub fn new() -> Self {
+        Self {
+            face_card_triggered: false,
+        }
+    }
 }
 
 impl JokerIdentity for PhotographJoker {
@@ -724,7 +739,7 @@ impl Joker for PhotographJoker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{Card, Suit, Rank};
+    use crate::card::{Card, Suit, Value};
     use crate::hand::SelectHand;
     use crate::joker::{GameContext, JokerEffect, JokerId, JokerRarity};
     use crate::joker::traits::{
@@ -736,8 +751,8 @@ mod tests {
     use std::sync::Arc;
 
     /// Helper function to create a test card
-    fn create_card(suit: Suit, rank: Rank) -> Card {
-        Card { suit, rank }
+    fn create_card(suit: Suit, value: Value) -> Card {
+        Card::new(value, suit)
     }
 
     /// Helper function to create basic test context
