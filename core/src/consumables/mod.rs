@@ -1039,11 +1039,7 @@ impl ConsumableSlots {
         if index >= self.capacity {
             return None;
         }
-        if let Some(ref mut slot) = self.slots[index] {
-            Some(slot.as_mut())
-        } else {
-            None
-        }
+        self.slots[index].as_mut()
     }
 
     /// Finds the first empty slot
