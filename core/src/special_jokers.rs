@@ -43,7 +43,7 @@ impl JokerIdentity for ErosionJoker {
 impl JokerLifecycle for ErosionJoker {}
 
 impl JokerGameplay for ErosionJoker {
-    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         // Calculate cards missing from full deck (52)
         // Note: This would need access to deck size information
         // For now, use a placeholder calculation
@@ -126,13 +126,13 @@ impl JokerIdentity for FigureJoker {
 impl JokerLifecycle for FigureJoker {}
 
 impl JokerGameplay for FigureJoker {
-    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-        let mut money_earned = 0;
+    fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
+        let mut _money_earned = 0;
         
         // Award $3 for each face card played
-        for card in context.played_cards {
+        for card in _context.played_cards {
             if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
-                money_earned += 3;
+                _money_earned += 3;
             }
         }
         
@@ -174,7 +174,7 @@ impl Joker for FigureJoker {
         JokerRarity::Uncommon
     }
     
-    fn on_card_scored(&self, context: &mut GameContext, card: &Card) -> JokerEffect {
+    fn on_card_scored(&self, _context: &mut GameContext, card: &Card) -> JokerEffect {
         if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
             // Award money for face cards
             JokerEffect::new().with_money(3)
@@ -220,10 +220,10 @@ impl JokerIdentity for FlowerPotJoker {
 impl JokerLifecycle for FlowerPotJoker {}
 
 impl JokerGameplay for FlowerPotJoker {
-    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         // Check if all 4 suits are present
         let mut suits = HashSet::new();
-        for card in context.played_cards {
+        for card in _context.played_cards {
             suits.insert(card.suit);
         }
         
@@ -378,7 +378,7 @@ impl Joker for BlueprintJoker {
         JokerRarity::Rare
     }
     
-    fn on_hand_played(&self, context: &mut GameContext, hand: &SelectHand) -> JokerEffect {
+    fn on_hand_played(&self, _context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         // Complex logic needed to find joker to the right and copy its effect
         // This would require access to the full joker collection and position tracking
         // For now, return empty effect
@@ -570,7 +570,7 @@ impl JokerIdentity for TheOrderJoker {
 impl JokerLifecycle for TheOrderJoker {}
 
 impl JokerGameplay for TheOrderJoker {
-    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         // Check hand rank in played cards
         // This would need access to hand evaluation logic
         ProcessResult::default()
@@ -660,10 +660,10 @@ impl JokerLifecycle for PhotographJoker {
 }
 
 impl JokerGameplay for PhotographJoker {
-    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    fn process(&mut self, _stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         if !self.face_card_triggered {
             // Check if any played cards are face cards
-            for card in context.played_cards {
+            for card in _context.played_cards {
                 if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
                     self.face_card_triggered = true;
                     return ProcessResult {

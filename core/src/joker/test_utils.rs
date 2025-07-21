@@ -42,7 +42,7 @@ use crate::joker_state::{JokerState, JokerStateManager};
 use crate::rank::HandRank;
 use crate::rng::GameRng;
 use crate::stage::Stage;
-use JsonValue as JsonValue;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -528,10 +528,10 @@ impl Joker for MockStateJoker {
         &self,
         _context: &GameContext,
         state: &JokerState,
-    ) -> Result<Value, serde_json::Error> {
+    ) -> Result<JsonValue, serde_json::Error> {
         if self.custom_serialization {
             let mut custom_value = serde_json::to_value(state)?;
-            custom_value["custom_serialization"] = Value::Bool(true);
+            custom_value["custom_serialization"] = JsonValue::Bool(true);
             Ok(custom_value)
         } else {
             serde_json::to_value(state)
@@ -541,7 +541,7 @@ impl Joker for MockStateJoker {
     fn deserialize_state(
         &self,
         _context: &GameContext,
-        data: &Value,
+        data: &JsonValue,
     ) -> Result<JokerState, serde_json::Error> {
         if self.custom_deserialization {
             let mut state: JokerState = serde_json::from_value(data.clone())?;

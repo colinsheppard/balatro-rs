@@ -1,4 +1,4 @@
-use crate::scaling_joker::{ScalingJoker, ScalingEvent, ScalingEffectType};
+use crate::scaling_joker::ScalingJoker;
 use crate::joker::{Joker, JokerId, JokerRarity, JokerEffect, GameContext};
 use crate::joker_state::JokerState;
 use crate::hand::SelectHand;
@@ -53,7 +53,7 @@ impl Joker for GreenJoker {
         JokerEffect::new().with_mult(current_value as i32)
     }
 
-    fn on_discard(&self, context: &mut GameContext, cards: &[Card]) -> JokerEffect {
+    fn on_discard(&self, context: &mut GameContext, _cards: &[Card]) -> JokerEffect {
         // Decrease value for each discard action (not per card)
         context.joker_state_manager.update_state(self.id(), |state| {
             state.accumulated_value = (state.accumulated_value - 1.0).max(0.0);

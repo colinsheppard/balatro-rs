@@ -1037,19 +1037,19 @@ mod tests {
                 priority: EffectPriority::Low,
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_chips(5).with_mult(3).with_money(1),
                 priority: EffectPriority::Normal,
                 source_joker_id: JokerId::GreedyJoker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_mult_multiplier(1.5).with_money(2),
                 priority: EffectPriority::High,
                 source_joker_id: JokerId::LustyJoker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         let result = processor.accumulate_effects(&effects);
@@ -1095,19 +1095,19 @@ mod tests {
                 priority: EffectPriority::High,
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_chips(20),
                 priority: EffectPriority::Low,
                 source_joker_id: JokerId::GreedyJoker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_chips(30),
                 priority: EffectPriority::Critical,
                 source_joker_id: JokerId::LustyJoker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         // Sort by priority (higher priority applied later)
@@ -1129,18 +1129,18 @@ mod tests {
                 priority: EffectPriority::Normal,
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect {
                     chips: 5,
                     mult: 1,
                     retrigger: 2, // This effect should retrigger 2 times
                     ..Default::default()
-                },
+               },
                 priority: EffectPriority::Normal,
                 source_joker_id: JokerId::GreedyJoker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         let result = processor.process_weighted_effects(weighted_effects, 0);
@@ -1169,7 +1169,7 @@ mod tests {
                 chips: 10,
                 retrigger: 10, // Would cause 10 retriggers, but limit is 3
                 ..Default::default()
-            },
+           },
             priority: EffectPriority::Normal,
             source_joker_id: JokerId::Joker,
             is_retriggered: false,
@@ -1197,13 +1197,13 @@ mod tests {
                 priority: EffectPriority::Normal,
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_mult_multiplier(-1.0), // Invalid
                 priority: EffectPriority::Normal,
                 source_joker_id: JokerId::GreedyJoker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         let result = processor.process_weighted_effects(weighted_effects, 0);
@@ -1296,19 +1296,19 @@ mod tests {
                 priority: EffectPriority::High, // High priority
                 source_joker_id: JokerId::EggJoker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_chips(10),
                 priority: EffectPriority::Low, // Low priority
                 source_joker_id: JokerId::IceCream,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_chips(30),
                 priority: EffectPriority::Normal, // Normal priority
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         // Sort by priority (lower values processed first)
@@ -1346,19 +1346,19 @@ mod tests {
                 priority: EffectPriority::Normal, // Additive effect
                 source_joker_id: JokerId::Joker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_mult_multiplier(2.0),
                 priority: EffectPriority::Critical, // Multiplicative effect
                 source_joker_id: JokerId::SpaceJoker,
                 is_retriggered: false,
-            },
+           },
             WeightedEffect {
                 effect: JokerEffect::new().with_mult(5),
                 priority: EffectPriority::High, // High priority additive
                 source_joker_id: JokerId::EggJoker,
                 is_retriggered: false,
-            },
+           },
         ];
 
         let result = processor.accumulate_effects(&weighted_effects);
@@ -1485,12 +1485,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card::new(Value::Ace, Suit::Hearts),
+                Card::new(Value::King, Suit::Hearts),
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card::new(Value::Queen, Suit::Spades);
         
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
@@ -1733,11 +1733,11 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
-                Card { rank: Rank::Queen, suit: Suit::Hearts },
-                Card { rank: Rank::Jack, suit: Suit::Hearts },
-                Card { rank: Rank::Ten, suit: Suit::Hearts },
+                Card::new(Value::Ace, Suit::Hearts),
+                Card::new(Value::King, Suit::Hearts),
+                Card::new(Value::Queen, Suit::Hearts),
+                Card::new(Value::Jack, Suit::Hearts),
+                Card::new(Value::Ten, Suit::Hearts),
             ],
         };
         
@@ -1809,12 +1809,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card::new(Value::Ace, Suit::Hearts),
+                Card::new(Value::King, Suit::Hearts),
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card::new(Value::Queen, Suit::Spades);
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
         // First call should miss cache and store result
