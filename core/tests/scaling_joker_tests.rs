@@ -890,12 +890,6 @@ fn test_reset_conditions_with_different_events() {
 
 #[test]
 fn test_performance_with_many_scaling_jokers() {
-<<<<<<< HEAD
-    // This test would verify that having multiple scaling jokers
-    // doesn't significantly impact game performance
-    todo!("Implement performance test for multiple scaling jokers");
-}
-=======
     use std::time::Instant;
     
     // Performance baseline: operations should complete within reasonable time

@@ -1776,11 +1776,11 @@ mod tests {
 
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Value::Ace, suit: Suit::Hearts },
-                Card { rank: Value::King, suit: Suit::Hearts },
-                Card { rank: Value::Queen, suit: Suit::Hearts },
-                Card { rank: Value::Jack, suit: Suit::Hearts },
-                Card { rank: Value::Ten, suit: Suit::Hearts },
+                Card { value: Value::Ace, suit: Suit::Hearts, id: 1, edition: crate::card::Edition::Base, enhancement: None, seal: None },
+                Card { value: Value::King, suit: Suit::Hearts, id: 2, edition: crate::card::Edition::Base, enhancement: None, seal: None },
+                Card { value: Value::Queen, suit: Suit::Hearts, id: 3, edition: crate::card::Edition::Base, enhancement: None, seal: None },
+                Card { value: Value::Jack, suit: Suit::Hearts, id: 4, edition: crate::card::Edition::Base, enhancement: None, seal: None },
+                Card { value: Value::Ten, suit: Suit::Hearts, id: 5, edition: crate::card::Edition::Base, enhancement: None, seal: None },
             ],
         };
 

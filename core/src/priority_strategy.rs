@@ -210,6 +210,12 @@ impl PriorityStrategy for ContextAwarePriorityStrategy {
     }
 }
 
+impl Default for ContextAwarePriorityStrategy {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

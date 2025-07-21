@@ -25,6 +25,7 @@ use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 use thiserror::Error;
 
+
 /// Error types for consumable operations
 #[derive(Error, Debug, Clone)]
 pub enum ConsumableError {
