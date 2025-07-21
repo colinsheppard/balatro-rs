@@ -330,11 +330,201 @@ fn test_scaling_joker_triggers_in_game() {
 }
 
 #[test]
-#[ignore] // Ignore until we have proper test harness
 fn test_scaling_joker_reset_conditions() {
-    // This test would verify that reset conditions work properly
-    // in actual game flow
-    todo!("Implement integration test for reset conditions");
+    // Test that reset conditions work properly for scaling jokers
+    
+    // Create a ceremonial dagger with round end reset condition
+    let mut joker = create_ceremonial_dagger();
+    let context = create_test_context(100, 1, 1);
+    
+    // Initialize joker state
+    let initial_state = joker.initialize_state(&context);
+    assert_eq!(initial_state.accumulated_value, 1.0); // Base value
+    
+    // Create a mutable context for testing
+    let mut test_context = create_test_context(100, 1, 1);
+    
+    // Set up initial state in the state manager
+    test_context.joker_state_manager.set_state(joker.id, initial_state);
+    
+    // Trigger the joker to accumulate value (blind completed)
+    joker.process_event(&mut test_context, &ScalingEvent::BlindCompleted);
+    
+    // Verify value has increased
+    let current_value = test_context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(current_value, 2.0); // Should be base + increment (1.0 + 1.0)
+    
+    // Trigger again to accumulate more
+    joker.process_event(&mut test_context, &ScalingEvent::BlindCompleted);
+    let value_after_second_trigger = test_context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(value_after_second_trigger, 3.0); // Should be 2.0 + 1.0
+    
+    // Now trigger the reset condition (round end)
+    joker.process_event(&mut test_context, &ScalingEvent::RoundEnd);
+    
+    // Verify value has reset to base value
+    let value_after_reset = test_context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(value_after_reset, 1.0); // Should be back to base value
+    
+    // Test that triggering after reset starts accumulating again from base
+    joker.process_event(&mut test_context, &ScalingEvent::BlindCompleted);
+    let value_after_post_reset_trigger = test_context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(value_after_post_reset_trigger, 2.0); // Should be base + increment again
+}
+
+#[test]
+fn test_multiple_reset_conditions() {
+    // Test different types of reset conditions work correctly
+    
+    // Test 1: Round End reset condition (Ceremonial Dagger)
+    let mut ceremonial = create_ceremonial_dagger();
+    let mut context = create_test_context(100, 1, 1);
+    let initial_state = ceremonial.initialize_state(&context);
+    context.joker_state_manager.set_state(ceremonial.id, initial_state);
+    
+    // Accumulate value
+    ceremonial.process_event(&mut context, &ScalingEvent::BlindCompleted);
+    ceremonial.process_event(&mut context, &ScalingEvent::BlindCompleted);
+    
+    let accumulated = context.joker_state_manager
+        .get_accumulated_value(ceremonial.id)
+        .unwrap_or(ceremonial.base_value);
+    assert_eq!(accumulated, 3.0); // 1.0 + 1.0 + 1.0
+    
+    // Test round end reset
+    ceremonial.process_event(&mut context, &ScalingEvent::RoundEnd);
+    let after_reset = context.joker_state_manager
+        .get_accumulated_value(ceremonial.id)
+        .unwrap_or(ceremonial.base_value);
+    assert_eq!(after_reset, 1.0); // Back to base
+    
+    // Test 2: Never reset condition
+    let mut never_reset_joker = ScalingJoker::new(
+        JokerId::Reserved,
+        "Never Reset Test".to_string(),
+        "Never resets".to_string(),
+        JokerRarity::Common,
+        0.0,
+        5.0,
+        ScalingTrigger::CardDiscarded,
+        ScalingEffectType::Chips,
+    ).with_reset_condition(ResetCondition::Never);
+    
+    let initial_state = never_reset_joker.initialize_state(&context);
+    context.joker_state_manager.set_state(never_reset_joker.id, initial_state);
+    
+    // Accumulate value
+    never_reset_joker.process_event(&mut context, &ScalingEvent::CardDiscarded);
+    never_reset_joker.process_event(&mut context, &ScalingEvent::CardDiscarded);
+    
+    let accumulated = context.joker_state_manager
+        .get_accumulated_value(never_reset_joker.id)
+        .unwrap_or(never_reset_joker.base_value);
+    assert_eq!(accumulated, 10.0); // 0.0 + 5.0 + 5.0
+    
+    // Try various reset events - none should reset
+    never_reset_joker.process_event(&mut context, &ScalingEvent::RoundEnd);
+    never_reset_joker.process_event(&mut context, &ScalingEvent::AnteEnd);
+    never_reset_joker.process_event(&mut context, &ScalingEvent::ShopEntered);
+    
+    let still_accumulated = context.joker_state_manager
+        .get_accumulated_value(never_reset_joker.id)
+        .unwrap_or(never_reset_joker.base_value);
+    assert_eq!(still_accumulated, 10.0); // Should remain unchanged
+}
+
+#[test]
+fn test_reset_before_trigger_order() {
+    // Test that reset happens before trigger (as per the implementation)
+    
+    let mut joker = ScalingJoker::new(
+        JokerId::Reserved2,
+        "Test Order".to_string(),
+        "Tests reset/trigger order".to_string(),
+        JokerRarity::Common,
+        10.0, // Base value
+        5.0,  // Increment
+        ScalingTrigger::HandPlayed(HandRank::OnePair),
+        ScalingEffectType::Mult,
+    ).with_reset_condition(ResetCondition::HandPlayed(HandRank::OnePair));
+    
+    let mut context = create_test_context(100, 1, 1);
+    let initial_state = joker.initialize_state(&context);
+    context.joker_state_manager.set_state(joker.id, initial_state);
+    
+    // First accumulate some value with a different trigger
+    joker.process_event(&mut context, &ScalingEvent::BlindCompleted); // This won't trigger
+    let after_non_trigger = context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(after_non_trigger, 10.0); // Should remain at base (no trigger)
+    
+    // Manually increment to test reset order
+    context.joker_state_manager.update_state(joker.id, |state| {
+        state.accumulated_value = 25.0; // Set to accumulated value
+    });
+    
+    // Now trigger an event that both resets AND triggers
+    joker.process_event(&mut context, &ScalingEvent::HandPlayed(HandRank::OnePair));
+    
+    // This should reset FIRST (to base value 10.0) then trigger (add 5.0) = 15.0
+    let final_value = context.joker_state_manager
+        .get_accumulated_value(joker.id)
+        .unwrap_or(joker.base_value);
+    assert_eq!(final_value, 15.0); // 10.0 (reset to base) + 5.0 (trigger increment)
+}
+
+#[test]
+fn test_reset_conditions_with_different_events() {
+    // Test various reset conditions with their corresponding events
+    
+    let mut context = create_test_context(100, 1, 1);
+    
+    // Test ante end reset
+    let mut ante_reset_joker = ScalingJoker::new(
+        JokerId::Reserved3,
+        "Ante Reset Test".to_string(),
+        "Resets at ante end".to_string(),
+        JokerRarity::Common,
+        5.0,
+        3.0,
+        ScalingTrigger::MoneyGained,
+        ScalingEffectType::Chips,
+    ).with_reset_condition(ResetCondition::AnteEnd);
+    
+    let initial_state = ante_reset_joker.initialize_state(&context);
+    context.joker_state_manager.set_state(ante_reset_joker.id, initial_state);
+    
+    // Accumulate value
+    ante_reset_joker.process_event(&mut context, &ScalingEvent::MoneyGained);
+    ante_reset_joker.process_event(&mut context, &ScalingEvent::MoneyGained);
+    
+    let accumulated = context.joker_state_manager
+        .get_accumulated_value(ante_reset_joker.id)
+        .unwrap_or(ante_reset_joker.base_value);
+    assert_eq!(accumulated, 11.0); // 5.0 + 3.0 + 3.0
+    
+    // Round end should not reset this joker
+    ante_reset_joker.process_event(&mut context, &ScalingEvent::RoundEnd);
+    let after_round_end = context.joker_state_manager
+        .get_accumulated_value(ante_reset_joker.id)
+        .unwrap_or(ante_reset_joker.base_value);
+    assert_eq!(after_round_end, 11.0); // Should remain unchanged
+    
+    // Ante end should reset this joker
+    ante_reset_joker.process_event(&mut context, &ScalingEvent::AnteEnd);
+    let after_ante_end = context.joker_state_manager
+        .get_accumulated_value(ante_reset_joker.id)
+        .unwrap_or(ante_reset_joker.base_value);
+    assert_eq!(after_ante_end, 5.0); // Back to base value
 }
 
 #[test]
