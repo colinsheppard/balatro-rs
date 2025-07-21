@@ -21,6 +21,7 @@ pub mod joker_registry;
 pub mod joker_state;
 pub mod math_safe;
 pub mod memory_monitor;
+pub mod priority_strategy;
 pub mod rank;
 pub mod rng;
 pub mod security_tests;
