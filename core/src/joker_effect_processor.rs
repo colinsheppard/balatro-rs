@@ -1499,7 +1499,7 @@ mod tests {
     fn test_cache_key_generation() {
         use crate::card::{Suit, Value};
         use crate::hand::SelectHand;
-        use crate::joker::{GameContext, JokerId};
+        use crate::joker::GameContext;
         use std::collections::HashMap;
 
         let processor = JokerEffectProcessor::new();
@@ -1746,7 +1746,7 @@ mod tests {
     fn test_cache_performance_improvement() {
         use crate::card::{Suit, Value};
         use crate::hand::SelectHand;
-        use crate::joker::{GameContext, JokerId};
+        use crate::joker::GameContext;
         use std::collections::HashMap;
         use std::time::Instant;
 
@@ -1847,7 +1847,7 @@ mod tests {
     fn test_cache_integration_with_processing() {
         use crate::card::{Suit, Value};
         use crate::hand::SelectHand;
-        use crate::joker::{GameContext, JokerId};
+        use crate::joker::GameContext;
         use std::collections::HashMap;
 
         let mut processor = JokerEffectProcessor::new();

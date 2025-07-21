@@ -344,8 +344,6 @@ impl Joker for ScalingJoker {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::joker_state::JokerStateManager;
-    use std::sync::Arc;
 
     fn create_test_context() -> GameContext<'static> {
         // This is a simplified test context - in real tests we'd need proper initialization

@@ -748,9 +748,9 @@ mod tests {
     use crate::hand::SelectHand;
     use crate::joker::traits::{
         JokerGameplay, JokerIdentity, JokerLifecycle, JokerModifiers,
-        JokerState as JokerStateTrait, ProcessContext, ProcessResult, Rarity,
+        JokerState as JokerStateTrait, Rarity,
     };
-    use crate::joker::{GameContext, JokerEffect, JokerId, JokerRarity};
+    use crate::joker::GameContext;
     use crate::stage::Stage;
     use std::collections::HashMap;
     use std::sync::Arc;

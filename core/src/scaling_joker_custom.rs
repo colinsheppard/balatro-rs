@@ -459,9 +459,6 @@ pub fn get_custom_scaling_joker_by_id(id: JokerId) -> Option<Box<dyn Joker>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::joker_state::JokerStateManager;
-    use std::collections::HashMap;
-    use std::sync::Arc;
 
     fn create_test_context() -> GameContext<'static> {
         // Placeholder - in real tests we'd need proper context setup
