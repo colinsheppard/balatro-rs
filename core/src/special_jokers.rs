@@ -3,7 +3,7 @@
 //! This module implements jokers with unique mechanics that don't fit standard patterns.
 //! These jokers use the new 5-trait system for modular, maintainable implementations.
 
-use crate::card::{Card, Suit, Rank};
+use crate::card::{Card, Suit, Value};
 use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker::traits::{
@@ -132,7 +132,7 @@ impl JokerGameplay for FigureJoker {
         
         // Award $3 for each face card played
         for card in context.played_cards {
-            if matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King) {
+            if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
                 money_earned += 3;
             }
         }
@@ -147,7 +147,7 @@ impl JokerGameplay for FigureJoker {
     fn can_trigger(&self, _stage: &Stage, context: &ProcessContext) -> bool {
         // Can trigger if any face cards are played
         context.played_cards.iter().any(|card| 
-            matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King)
+            matches!(card.value, Value::Jack | Value::Queen | Value::King)
         )
     }
 }
@@ -176,7 +176,7 @@ impl Joker for FigureJoker {
     }
     
     fn on_card_scored(&self, context: &mut GameContext, card: &Card) -> JokerEffect {
-        if matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King) {
+        if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
             // Award money for face cards
             JokerEffect::new().with_money(3)
         } else {
@@ -649,7 +649,7 @@ impl JokerGameplay for PhotographJoker {
         if !self.face_card_triggered {
             // Check if any played cards are face cards
             for card in context.played_cards {
-                if matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King) {
+                if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
                     self.face_card_triggered = true;
                     return ProcessResult {
                         chips_added: 0,
@@ -664,7 +664,7 @@ impl JokerGameplay for PhotographJoker {
     
     fn can_trigger(&self, _stage: &Stage, context: &ProcessContext) -> bool {
         !self.face_card_triggered && context.played_cards.iter().any(|card| 
-            matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King)
+            matches!(card.value, Value::Jack | Value::Queen | Value::King)
         )
     }
 }
@@ -713,16 +713,11 @@ impl Joker for PhotographJoker {
     }
     
     fn on_card_scored(&self, _context: &mut GameContext, card: &Card) -> JokerEffect {
-        if !self.face_card_triggered && matches!(card.rank, Rank::Jack | Rank::Queen | Rank::King) {
+        if !self.face_card_triggered && matches!(card.value, Value::Jack | Value::Queen | Value::King) {
             JokerEffect::new().with_mult_multiplier(2.0)
         } else {
             JokerEffect::new()
         }
-    }
-    
-    fn on_round_start(&self, _context: &mut GameContext) -> JokerEffect {
-        // Reset state at round start handled by JokerLifecycle
-        JokerEffect::new()
     }
 }
 
@@ -837,8 +832,8 @@ mod tests {
         };
         
         // Test with face cards
-        let jack = create_card(Suit::Heart, Rank::Jack);
-        let ace = create_card(Suit::Club, Rank::Ace);
+        let jack = create_card(Suit::Heart, Value::Jack);
+        let ace = create_card(Suit::Club, Value::Ace);
         
         // Face cards should give money
         let effect_jack = joker.on_card_scored(&mut context, &jack);
@@ -867,10 +862,10 @@ mod tests {
         
         // Test with all 4 suits
         let cards_all_suits = vec![
-            create_card(Suit::Heart, Rank::Ace),
-            create_card(Suit::Diamond, Rank::Two),
-            create_card(Suit::Club, Rank::Three),
-            create_card(Suit::Spade, Rank::Four),
+            create_card(Suit::Heart, Value::Ace),
+            create_card(Suit::Diamond, Value::Two),
+            create_card(Suit::Club, Value::Three),
+            create_card(Suit::Spade, Value::Four),
         ];
         let hand_all_suits = SelectHand::new(cards_all_suits);
         

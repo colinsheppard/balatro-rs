@@ -52,8 +52,8 @@ impl JokerFactory {
             
             // Special mechanic jokers using new trait system
             JokerId::Erosion => Some(Box::new(ErosionJoker)),
-            JokerId::Blueprint => Some(Box::new(BlueprintJoker)),
-            JokerId::Photograph => Some(Box::new(PhotographJoker)), 
+            JokerId::Blueprint => Some(Box::new(BlueprintJoker { copied_effects: Vec::new() })),
+            JokerId::Photograph => Some(Box::new(PhotographJoker { face_card_triggered: false })), 
             JokerId::TheOrder => Some(Box::new(TheOrderJoker)),
             
             // TODO: Implement remaining jokers
