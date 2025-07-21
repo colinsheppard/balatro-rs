@@ -17,7 +17,9 @@
 //! - Provides extensible trait-based architecture
 //! - Ensures compatibility with existing game flow
 
+use crate::card::Card;
 use crate::game::Game;
+use crate::joker::{Joker, JokerId};
 use crate::rank::HandRank;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -35,6 +37,40 @@ pub enum ConsumableError {
     InvalidGameState(String),
     #[error("Effect failed to apply: {0}")]
     EffectFailed(String),
+}
+
+/// Error types for slot operations
+#[derive(Debug, Error)]
+pub enum SlotError {
+    #[error("Slot {index} is out of bounds (capacity: {capacity})")]
+    IndexOutOfBounds { index: usize, capacity: usize },
+    #[error("No empty slots available (capacity: {capacity})")]
+    NoEmptySlots { capacity: usize },
+    #[error("Slot {index} is already empty")]
+    SlotEmpty { index: usize },
+}
+
+/// Error types for target validation
+#[derive(Debug, Error, Clone)]
+pub enum TargetValidationError {
+    #[error("Card index {index} out of bounds (hand size: {hand_size})")]
+    CardIndexOutOfBounds { index: usize, hand_size: usize },
+    #[error("Card index {index} out of bounds (deck size: {deck_size})")]
+    DeckIndexOutOfBounds { index: usize, deck_size: usize },
+    #[error("Card index {index} out of bounds (discard pile size: {discard_size})")]
+    DiscardIndexOutOfBounds { index: usize, discard_size: usize },
+    #[error("Joker slot {slot} is empty or invalid (joker count: {joker_count})")]
+    JokerSlotInvalid { slot: usize, joker_count: usize },
+    #[error("Hand type {hand_type:?} is not available")]
+    HandTypeNotAvailable { hand_type: HandRank },
+    #[error("No cards available for targeting")]
+    NoCardsAvailable,
+    #[error("Shop slot {slot} is invalid or empty")]
+    ShopSlotInvalid { slot: usize },
+    #[error("Invalid number of cards selected: expected between {min} and {max}, got {actual}")]
+    InvalidCardCount { min: usize, max: usize, actual: usize },
+    #[error("Card at index {index} is already targeted")]
+    CardAlreadyTargeted { index: usize },
 }
 
 /// Categories of effects that consumables can have
@@ -86,8 +122,8 @@ pub enum TargetType {
 pub enum Target {
     /// No target required
     None,
-    /// Target specific cards by index in hand/deck
-    Cards(Vec<usize>),
+    /// Target specific cards with full validation
+    Cards(CardTarget),
     /// Target a specific hand type for planet cards
     HandType(HandRank),
     /// Target a joker by slot index
@@ -103,7 +139,7 @@ impl Target {
     pub fn target_type(&self) -> TargetType {
         match self {
             Target::None => TargetType::None,
-            Target::Cards(cards) => TargetType::Cards(cards.len()),
+            Target::Cards(cards) => TargetType::Cards(cards.indices.len()),
             Target::HandType(_) => TargetType::HandType,
             Target::Joker(_) => TargetType::Joker,
             Target::Deck => TargetType::Deck,
@@ -116,7 +152,7 @@ impl Target {
         match (self, expected) {
             (Target::None, TargetType::None) => true,
             (Target::Cards(cards), TargetType::Cards(expected_count)) => {
-                cards.len() == expected_count
+                cards.indices.len() == expected_count
             }
             (Target::HandType(_), TargetType::HandType) => true,
             (Target::Joker(_), TargetType::Joker) => true,
@@ -130,7 +166,7 @@ impl Target {
     pub fn card_count(&self) -> usize {
         match self {
             Target::None => 0,
-            Target::Cards(cards) => cards.len(),
+            Target::Cards(cards) => cards.indices.len(),
             Target::HandType(_) => 0,
             Target::Joker(_) => 0,
             Target::Deck => 0,
@@ -138,20 +174,239 @@ impl Target {
         }
     }
 
-    /// Validate if this target is valid for the current game state
-    pub fn is_valid(&self, game_state: &Game) -> bool {
+    /// Check if this target is valid for the current game state (simple boolean check)
+    pub fn is_valid(&self, game: &Game) -> bool {
+        self.validate(game).is_ok()
+    }
+
+    /// Validate this target against the current game state with detailed error reporting
+    pub fn validate(&self, game: &Game) -> Result<(), TargetValidationError> {
         match self {
-            Target::None => true,
-            Target::Cards(cards) => {
-                !cards.is_empty()
-                    && cards
-                        .iter()
-                        .all(|&i| i < game_state.available.cards().len())
+            Target::None => Ok(()),
+            Target::Cards(cards) => cards.validate(game),
+            Target::HandType(_hand_type) => {
+                // For now, all hand types are considered available
+                // In future implementations, we might check if the hand type
+                // has been discovered/unlocked by the player
+                Ok(())
             }
-            Target::HandType(_) => true,
-            Target::Joker(index) => *index < game_state.jokers.len(),
-            Target::Deck => true,
-            Target::Shop(_) => true, // Shop validation would require shop state
+            Target::Joker(slot) => {
+                let joker_count = game.jokers.len();
+                if *slot >= joker_count {
+                    Err(TargetValidationError::JokerSlotInvalid {
+                        slot: *slot,
+                        joker_count,
+                    })
+                } else {
+                    Ok(())
+                }
+            }
+            Target::Deck => Ok(()), // Deck is always a valid target
+            Target::Shop(_slot) => {
+                // Shop validation would require shop state implementation
+                // For now, we'll accept any shop slot as valid
+                // In future: check against actual shop inventory
+                Ok(())
+            }
+        }
+    }
+
+    /// Extract the CardTarget if this is a Cards target
+    pub fn as_card_target(&self) -> Option<&CardTarget> {
+        match self {
+            Target::Cards(card_target) => Some(card_target),
+            _ => None,
+        }
+    }
+
+    /// Create a target for cards in hand
+    pub fn cards_in_hand(indices: Vec<usize>) -> Self {
+        Target::Cards(CardTarget::new(CardCollection::Hand, indices))
+    }
+
+    /// Create a target for cards in deck
+    pub fn cards_in_deck(indices: Vec<usize>) -> Self {
+        Target::Cards(CardTarget::new(CardCollection::Deck, indices))
+    }
+
+    /// Create a target for cards in discard pile
+    pub fn cards_in_discard(indices: Vec<usize>) -> Self {
+        Target::Cards(CardTarget::new(CardCollection::DiscardPile, indices))
+    }
+
+    /// Create a target for played cards
+    pub fn cards_in_played(indices: Vec<usize>) -> Self {
+        Target::Cards(CardTarget::new(CardCollection::PlayedCards, indices))
+    }
+}
+
+
+/// Represents targeting specific cards with validation
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct CardTarget {
+    /// Indices of targeted cards
+    pub indices: Vec<usize>,
+    /// Which collection the cards are from
+    pub collection: CardCollection,
+    /// Minimum number of cards required
+    pub min_cards: usize,
+    /// Maximum number of cards allowed
+    pub max_cards: usize,
+}
+
+impl CardTarget {
+    /// Create a new card target with specified indices and collection
+    pub fn new(collection: CardCollection, indices: Vec<usize>) -> Self {
+        let count = indices.len();
+        Self {
+            indices,
+            collection,
+            min_cards: count,
+            max_cards: count,
+        }
+    }
+
+    /// Create a target for a single card
+    pub fn single_card(collection: CardCollection, index: usize) -> Self {
+        Self {
+            indices: vec![index],
+            collection,
+            min_cards: 1,
+            max_cards: 1,
+        }
+    }
+
+    /// Create a target with variable card count
+    pub fn with_count_range(
+        collection: CardCollection,
+        indices: Vec<usize>,
+        min_cards: usize,
+        max_cards: usize,
+    ) -> Self {
+        Self {
+            indices,
+            collection,
+            min_cards,
+            max_cards,
+        }
+    }
+
+    /// Validate this target against the current game state
+    pub fn validate(&self, game: &Game) -> Result<(), TargetValidationError> {
+        // Validate card count
+        let count = self.indices.len();
+        if count < self.min_cards || count > self.max_cards {
+            return Err(TargetValidationError::InvalidCardCount {
+                min: self.min_cards,
+                max: self.max_cards,
+                actual: count,
+            });
+        }
+
+        // Validate indices based on collection
+        match self.collection {
+            CardCollection::Hand => {
+                let hand_size = game.available.cards().len();
+                for &index in &self.indices {
+                    if index >= hand_size {
+                        return Err(TargetValidationError::CardIndexOutOfBounds {
+                            index,
+                            hand_size,
+                        });
+                    }
+                }
+            }
+            CardCollection::Deck => {
+                let deck_size = game.deck.len();
+                for &index in &self.indices {
+                    if index >= deck_size {
+                        return Err(TargetValidationError::DeckIndexOutOfBounds {
+                            index,
+                            deck_size,
+                        });
+                    }
+                }
+            }
+            CardCollection::DiscardPile => {
+                let discard_size = game.discarded.len();
+                for &index in &self.indices {
+                    if index >= discard_size {
+                        return Err(TargetValidationError::DiscardIndexOutOfBounds {
+                            index,
+                            discard_size,
+                        });
+                    }
+                }
+            }
+            CardCollection::PlayedCards => {
+                // For played cards, we check against selected cards
+                let selected_size = game.available.selected().len();
+                for &index in &self.indices {
+                    if index >= selected_size {
+                        return Err(TargetValidationError::CardIndexOutOfBounds {
+                            index,
+                            hand_size: selected_size,
+                        });
+                    }
+                }
+            }
+        }
+
+        // Check for duplicate indices
+        let mut seen = std::collections::HashSet::new();
+        for &index in &self.indices {
+            if !seen.insert(index) {
+                return Err(TargetValidationError::CardAlreadyTargeted { index });
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Get immutable references to the targeted cards
+    pub fn get_cards<'a>(&self, game: &'a Game) -> Result<Vec<&'a Card>, TargetValidationError> {
+        self.validate(game)?;
+
+        match self.collection {
+            CardCollection::Hand => {
+                // For now, we'll return an error as accessing individual cards from Available
+                // may require modifications to the Available struct
+                Err(TargetValidationError::NoCardsAvailable)
+            }
+            CardCollection::Deck => {
+                // Note: This requires deck to expose cards, which may need modification
+                Err(TargetValidationError::NoCardsAvailable)
+            }
+            CardCollection::DiscardPile => {
+                let cards: Vec<&Card> = self.indices.iter().map(|&i| &game.discarded[i]).collect();
+                Ok(cards)
+            }
+            CardCollection::PlayedCards => {
+                // This also may require modifications to access individual selected cards
+                Err(TargetValidationError::NoCardsAvailable)
+            }
+        }
+    }
+
+    /// Get mutable references to the targeted cards
+    pub fn get_cards_mut<'a>(
+        &self,
+        game: &'a mut Game,
+    ) -> Result<Vec<&'a mut Card>, TargetValidationError> {
+        self.validate(game)?;
+
+        match self.collection {
+            CardCollection::Hand => {
+                // This is tricky due to borrowing rules - would need to modify Available struct
+                Err(TargetValidationError::NoCardsAvailable)
+            }
+            CardCollection::Deck => Err(TargetValidationError::NoCardsAvailable),
+            CardCollection::DiscardPile => {
+                // Can't easily get mutable references to multiple cards due to borrowing rules
+                // Would need to modify implementation to handle this differently
+                Err(TargetValidationError::NoCardsAvailable)
+            }
+            CardCollection::PlayedCards => Err(TargetValidationError::NoCardsAvailable),
         }
     }
 }
@@ -387,12 +642,12 @@ impl ConsumableId {
 /// let large_slots = ConsumableSlots::with_capacity(5);
 /// assert_eq!(large_slots.capacity(), 5);
 /// ```
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug)]
 pub struct ConsumableSlots {
     /// Current maximum capacity of slots
     capacity: usize,
-    /// Vector of optional consumable slots (storing IDs for now, will expand to full objects later)
-    slots: Vec<Option<ConsumableId>>,
+    /// Vector of optional consumable slots
+    slots: Vec<Option<Box<dyn Consumable>>>,
     /// Default capacity for new instances (always 2 as per Balatro base game)
     default_capacity: usize,
 }
@@ -523,6 +778,220 @@ impl ConsumableSlots {
     pub fn available_slots(&self) -> usize {
         self.capacity - self.len()
     }
+
+    /// Adds a consumable to the first available slot
+    ///
+    /// Returns the index where the consumable was placed, or an error if no slots are available.
+    ///
+    /// # Arguments
+    ///
+    /// * `consumable` - The consumable to add
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::NoEmptySlots` - If all slots are currently occupied
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let consumable = create_consumable(); // Some consumable
+    /// 
+    /// match slots.add_consumable(consumable) {
+    ///     Ok(index) => println!("Added to slot {}", index),
+    ///     Err(SlotError::NoEmptySlots { capacity }) => {
+    ///         println!("No empty slots (capacity: {})", capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn add_consumable(&mut self, consumable: Box<dyn Consumable>) -> Result<usize, SlotError> {
+        if let Some(index) = self.find_empty_slot() {
+            self.slots[index] = Some(consumable);
+            Ok(index)
+        } else {
+            Err(SlotError::NoEmptySlots {
+                capacity: self.capacity,
+            })
+        }
+    }
+
+    /// Removes a consumable from the specified slot
+    ///
+    /// Returns the removed consumable, or an error if the index is invalid or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to remove from
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    /// * `SlotError::SlotEmpty` - If the slot at index is already empty
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// // Add a consumable first
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Remove it
+    /// match slots.remove_consumable(index) {
+    ///     Ok(consumable) => println!("Removed consumable"),
+    ///     Err(SlotError::SlotEmpty { index }) => {
+    ///         println!("Slot {} is empty", index);
+    ///     }
+    ///     Err(SlotError::IndexOutOfBounds { index, capacity }) => {
+    ///         println!("Index {} out of bounds (capacity: {})", index, capacity);
+    ///     }
+    ///     _ => unreachable!(),
+    /// }
+    /// ```
+    pub fn remove_consumable(&mut self, index: usize) -> Result<Box<dyn Consumable>, SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+
+        self.slots[index].take().ok_or(SlotError::SlotEmpty { index })
+    }
+
+    /// Gets a reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable(index) {
+    ///     println!("Found consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn get_consumable(&self, index: usize) -> Option<&dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_ref().map(|boxed| boxed.as_ref())
+    }
+
+    /// Gets a mutable reference to the consumable at the specified index
+    ///
+    /// Returns None if the index is out of bounds or the slot is empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to access
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// let index = slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// if let Some(consumable) = slots.get_consumable_mut(index) {
+    ///     // Modify consumable if needed
+    /// }
+    /// ```
+    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut dyn Consumable> {
+        if index >= self.capacity {
+            return None;
+        }
+        self.slots[index].as_mut().map(|boxed| boxed.as_mut())
+    }
+
+    /// Finds the first empty slot
+    ///
+    /// Returns Some(index) if an empty slot is found, None otherwise.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// assert_eq!(slots.find_empty_slot(), Some(0)); // First slot is empty
+    /// 
+    /// // Fill first slot
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// assert_eq!(slots.find_empty_slot(), Some(1)); // Second slot is empty
+    /// ```
+    pub fn find_empty_slot(&self) -> Option<usize> {
+        self.slots.iter().position(|slot| slot.is_none())
+    }
+
+    /// Clears a specific slot, removing any consumable in it
+    ///
+    /// # Arguments
+    ///
+    /// * `index` - The index of the slot to clear
+    ///
+    /// # Errors
+    ///
+    /// * `SlotError::IndexOutOfBounds` - If the index is >= capacity
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::{ConsumableSlots, SlotError};
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// // Clear the first slot
+    /// slots.clear_slot(0).unwrap();
+    /// assert_eq!(slots.len(), 0);
+    /// ```
+    pub fn clear_slot(&mut self, index: usize) -> Result<(), SlotError> {
+        if index >= self.capacity {
+            return Err(SlotError::IndexOutOfBounds {
+                index,
+                capacity: self.capacity,
+            });
+        }
+        self.slots[index] = None;
+        Ok(())
+    }
+
+    /// Returns an iterator over all consumables in the slots
+    ///
+    /// This iterates only over occupied slots, skipping empty ones.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use balatro_rs::consumables::ConsumableSlots;
+    ///
+    /// let mut slots = ConsumableSlots::new();
+    /// slots.add_consumable(create_consumable()).unwrap();
+    /// 
+    /// for consumable in slots.iter() {
+    ///     println!("Consumable: {:?}", consumable);
+    /// }
+    /// ```
+    pub fn iter(&self) -> impl Iterator<Item = &dyn Consumable> {
+        self.slots
+            .iter()
+            .filter_map(|slot| slot.as_ref())
+            .map(|boxed| boxed.as_ref())
+    }
 }
 
 impl Default for ConsumableSlots {
@@ -539,3 +1008,4 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
+pub use SlotError;
