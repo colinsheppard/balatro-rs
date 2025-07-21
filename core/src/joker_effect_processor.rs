@@ -3,14 +3,19 @@ use crate::hand::SelectHand;
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
 use crate::joker_metadata::JokerMetadata;
 use crate::joker_registry;
+use crate::priority_strategy::{MetadataPriorityStrategy, PriorityStrategy};
+pub use crate::priority_strategy::{ContextAwarePriorityStrategy, CustomPriorityStrategy, DefaultPriorityStrategy};
 #[cfg(feature = "python")]
 use pyo3::pyclass;
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::hash::{Hash, Hasher};
 use std::time::{Duration, Instant};
 
 /// Priority level for effect processing
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 #[cfg_attr(feature = "python", pyclass(eq))]
 pub enum EffectPriority {
     /// Lowest priority - applied first
@@ -151,6 +156,8 @@ pub struct ProcessingContext {
     pub validate_effects: bool,
     /// Maximum number of retriggered effects to prevent infinite loops
     pub max_retriggered_effects: u32,
+    /// Strategy for determining joker effect priorities
+    pub priority_strategy: Arc<dyn PriorityStrategy>,
     /// Cache configuration
     pub cache_config: CacheConfig,
 }
@@ -162,6 +169,7 @@ impl Default for ProcessingContext {
             resolution_strategy: ConflictResolutionStrategy::default(),
             validate_effects: true,
             max_retriggered_effects: 100,
+            priority_strategy: Arc::new(MetadataPriorityStrategy::default()),
             cache_config: CacheConfig::default(),
         }
     }
@@ -185,6 +193,12 @@ impl ProcessingContext {
     /// ```
     pub fn builder() -> ProcessingContextBuilder {
         ProcessingContextBuilder::new()
+    }
+    
+    /// Set the priority strategy for this context
+    pub fn with_priority_strategy(mut self, strategy: Arc<dyn PriorityStrategy>) -> Self {
+        self.priority_strategy = strategy;
+        self
     }
 }
 
@@ -236,6 +250,7 @@ pub struct ProcessingContextBuilder {
     resolution_strategy: ConflictResolutionStrategy,
     validate_effects: bool,
     max_retriggered_effects: u32,
+    priority_strategy: Arc<dyn PriorityStrategy>,
 }
 
 impl ProcessingContextBuilder {
@@ -257,6 +272,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: default_context.resolution_strategy,
             validate_effects: default_context.validate_effects,
             max_retriggered_effects: default_context.max_retriggered_effects,
+            priority_strategy: default_context.priority_strategy,
         }
     }
 
@@ -364,6 +380,12 @@ impl ProcessingContextBuilder {
         self.max_retriggered_effects = max;
         self
     }
+    
+    /// Set the priority strategy
+    pub fn priority_strategy(mut self, strategy: Arc<dyn PriorityStrategy>) -> Self {
+        self.priority_strategy = strategy;
+        self
+    }
 
     /// Build the final ProcessingContext instance.
     ///
@@ -384,6 +406,7 @@ impl ProcessingContextBuilder {
             resolution_strategy: self.resolution_strategy,
             validate_effects: self.validate_effects,
             max_retriggered_effects: self.max_retriggered_effects,
+            priority_strategy: self.priority_strategy,
             cache_config: CacheConfig::default(),
         }
     }
@@ -747,17 +770,9 @@ impl JokerEffectProcessor {
             && effect.message.is_none()
     }
 
-    /// Get processing priority for a joker based on its metadata
+    /// Get processing priority for a joker using the configured strategy
     fn get_joker_priority(&self, joker_id: JokerId) -> EffectPriority {
-        // Try to get the joker definition and create metadata
-        if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
-            // Create metadata to get the computed priority
-            let metadata = JokerMetadata::from_definition(&definition, true);
-            metadata.effect_priority
-        } else {
-            // Fallback to Normal priority if definition not found
-            EffectPriority::Normal
-        }
+        self.context.priority_strategy.get_priority(joker_id)
     }
 
     /// Validate a single effect
@@ -1274,15 +1289,33 @@ mod tests {
         let processor = JokerEffectProcessor::new();
 
         // Test with jokers that are actually registered in the registry
-        assert_eq!(processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+        assert_eq!(
+            processor.get_joker_priority(JokerId::Joker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::GreedyJoker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::LustyJoker),
+            EffectPriority::Normal
+        );
 
         // Test fallback behavior for unregistered jokers
         // These jokers exist in the enum but aren't registered in the registry
-        assert_eq!(processor.get_joker_priority(JokerId::IceCream), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::EggJoker), EffectPriority::Normal);
-        assert_eq!(processor.get_joker_priority(JokerId::SpaceJoker), EffectPriority::Normal);
+        assert_eq!(
+            processor.get_joker_priority(JokerId::IceCream),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::EggJoker),
+            EffectPriority::Normal
+        );
+        assert_eq!(
+            processor.get_joker_priority(JokerId::SpaceJoker),
+            EffectPriority::Normal
+        );
     }
 
     #[test]
@@ -1317,16 +1350,16 @@ mod tests {
         // Verify the ordering: Low (1) -> Normal (5) -> High (10)
         assert_eq!(weighted_effects[0].source_joker_id, JokerId::IceCream);
         assert_eq!(weighted_effects[0].priority, EffectPriority::Low);
-        
+
         assert_eq!(weighted_effects[1].source_joker_id, JokerId::Joker);
         assert_eq!(weighted_effects[1].priority, EffectPriority::Normal);
-        
+
         assert_eq!(weighted_effects[2].source_joker_id, JokerId::EggJoker);
         assert_eq!(weighted_effects[2].priority, EffectPriority::High);
 
         // Test that the accumulation works correctly with priority ordering
         let result = processor.accumulate_effects(&weighted_effects);
-        
+
         // All chips should be summed: 10 + 30 + 50 = 90
         assert_eq!(result.chips, 90);
     }
@@ -1336,9 +1369,9 @@ mod tests {
         let processor = JokerEffectProcessor::new();
 
         // Test that multiplicative effects would get critical priority
-        // (We test the priority assignment logic, even though these specific jokers 
+        // (We test the priority assignment logic, even though these specific jokers
         // might not actually have multiplicative effects in the current implementation)
-        
+
         // Create effects simulating what would happen with multiplicative jokers
         let weighted_effects = vec![
             WeightedEffect {
@@ -1381,36 +1414,40 @@ mod tests {
             determine_effect_priority(&JokerId::Joker, "multiplicative_mult", "X2 Mult"),
             EffectPriority::Critical
         );
-        
+
         // Test destructive effects get Critical priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "special", "destroy all cards"),
             EffectPriority::Critical
         );
-        
+
         // Test economy effects get High priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "economy", "Earn $5 when played"),
             EffectPriority::High
         );
-        
+
         // Test hand modification effects get High priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "hand_modification", "+1 hand size"),
             EffectPriority::High
         );
-        
+
         // Test specific joker overrides
         assert_eq!(
-            determine_effect_priority(&JokerId::IceCream, "conditional_chips", "conditional effect"),
+            determine_effect_priority(
+                &JokerId::IceCream,
+                "conditional_chips",
+                "conditional effect"
+            ),
             EffectPriority::Low
         );
-        
+
         assert_eq!(
             determine_effect_priority(&JokerId::EggJoker, "special", "affects sell values"),
             EffectPriority::High
         );
-        
+
         // Test standard jokers get Normal priority
         assert_eq!(
             determine_effect_priority(&JokerId::Joker, "additive_mult", "+4 Mult"),
@@ -1485,12 +1522,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
@@ -1735,11 +1772,11 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
-                Card { rank: Rank::Queen, suit: Suit::Hearts },
-                Card { rank: Rank::Jack, suit: Suit::Hearts },
-                Card { rank: Rank::Ten, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
+                Card { rank: Value::Queen, suit: Suit::Hearts },
+                Card { rank: Value::Jack, suit: Suit::Hearts },
+                Card { rank: Value::Ten, suit: Suit::Hearts },
             ],
         };
         
@@ -1811,12 +1848,12 @@ mod tests {
         
         let hand = SelectHand {
             cards: vec![
-                Card { rank: Rank::Ace, suit: Suit::Hearts },
-                Card { rank: Rank::King, suit: Suit::Hearts },
+                Card { rank: Value::Ace, suit: Suit::Hearts },
+                Card { rank: Value::King, suit: Suit::Hearts },
             ],
         };
         
-        let card = Card { rank: Rank::Queen, suit: Suit::Spades };
+        let card = Card { rank: Value::Queen, suit: Suit::Spades };
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
         
         // First call should miss cache and store result
@@ -2074,5 +2111,120 @@ mod tests {
             original_context.max_retriggered_effects,
             cloned_context.max_retriggered_effects
         );
+    }
+
+    #[test]
+    fn test_configurable_priority_strategies() {
+        // Test default behavior (should use MetadataPriorityStrategy)
+        let default_processor = JokerEffectProcessor::new();
+        let default_priority = default_processor.get_joker_priority(JokerId::Joker);
+        assert_eq!(default_priority, EffectPriority::Normal);
+
+        // Test with DefaultPriorityStrategy
+        let default_context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(DefaultPriorityStrategy))
+            .build();
+        let default_strategy_processor = JokerEffectProcessor::with_context(default_context);
+        
+        // Should always return Normal for any joker
+        assert_eq!(default_strategy_processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
+        assert_eq!(default_strategy_processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Normal);
+        assert_eq!(default_strategy_processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+
+        // Test with CustomPriorityStrategy
+        let mut custom_mappings = std::collections::HashMap::new();
+        custom_mappings.insert(JokerId::Joker, EffectPriority::High);
+        custom_mappings.insert(JokerId::GreedyJoker, EffectPriority::Critical);
+        
+        let custom_context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(CustomPriorityStrategy::new(custom_mappings)))
+            .build();
+        let custom_processor = JokerEffectProcessor::with_context(custom_context);
+        
+        // Should use custom mappings
+        assert_eq!(custom_processor.get_joker_priority(JokerId::Joker), EffectPriority::High);
+        assert_eq!(custom_processor.get_joker_priority(JokerId::GreedyJoker), EffectPriority::Critical);
+        // Should fall back to metadata strategy for unmapped jokers
+        assert_eq!(custom_processor.get_joker_priority(JokerId::LustyJoker), EffectPriority::Normal);
+
+        // Test with ContextAwarePriorityStrategy
+        let context_aware_context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(ContextAwarePriorityStrategy::new()))
+            .build();
+        let context_aware_processor = JokerEffectProcessor::with_context(context_aware_context);
+        
+        // Should provide context-aware priorities
+        let joker_priority = context_aware_processor.get_joker_priority(JokerId::Joker);
+        let lusty_priority = context_aware_processor.get_joker_priority(JokerId::LustyJoker);
+        
+        // LustyJoker should get boosted priority (Normal -> High in this implementation)
+        assert_eq!(joker_priority, EffectPriority::Normal);
+        assert_eq!(lusty_priority, EffectPriority::High);
+    }
+
+    #[test]
+    fn test_priority_strategy_api_from_issue() {
+        // Test the exact API proposed in the issue
+        let context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(MetadataPriorityStrategy::new()))
+            .build();
+            
+        let processor = JokerEffectProcessor::with_context(context);
+        
+        // Verify it works
+        let priority = processor.get_joker_priority(JokerId::Joker);
+        assert_eq!(priority, EffectPriority::Normal);
+    }
+
+    #[test]
+    fn test_processing_context_builder_api() {
+        // Test the builder pattern works correctly
+        let context = ProcessingContext::builder()
+            .processing_mode(ProcessingMode::Delayed)
+            .validate_effects(false)
+            .max_retriggered_effects(50)
+            .priority_strategy(Arc::new(DefaultPriorityStrategy))
+            .build();
+            
+        assert_eq!(context.processing_mode, ProcessingMode::Delayed);
+        assert_eq!(context.validate_effects, false);
+        assert_eq!(context.max_retriggered_effects, 50);
+        
+        // Test the processor can be created with this context
+        let processor = JokerEffectProcessor::with_context(context);
+        assert_eq!(processor.get_joker_priority(JokerId::Joker), EffectPriority::Normal);
+    }
+
+    #[test]
+    fn test_priority_strategy_runtime_changes() {
+        // Test that priority strategy can be changed at runtime
+        let mut processor = JokerEffectProcessor::new();
+        
+        // Initial priority (using default MetadataPriorityStrategy)
+        let initial_priority = processor.get_joker_priority(JokerId::Joker);
+        assert_eq!(initial_priority, EffectPriority::Normal);
+        
+        // Change to DefaultPriorityStrategy
+        let new_context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(DefaultPriorityStrategy))
+            .build();
+        processor.set_context(new_context);
+        
+        // Should still return Normal (DefaultPriorityStrategy always returns Normal)
+        let new_priority = processor.get_joker_priority(JokerId::Joker);
+        assert_eq!(new_priority, EffectPriority::Normal);
+        
+        // Change to custom strategy with different priorities
+        let mut custom_mappings = std::collections::HashMap::new();
+        custom_mappings.insert(JokerId::Joker, EffectPriority::Critical);
+        
+        let custom_context = ProcessingContext::builder()
+            .priority_strategy(Arc::new(CustomPriorityStrategy::new(custom_mappings)))
+            .build();
+        processor.set_context(custom_context);
+        
+        // Should now return Critical for Joker
+        let custom_priority = processor.get_joker_priority(JokerId::Joker);
+        assert_eq!(custom_priority, EffectPriority::Critical);
     }
 }
