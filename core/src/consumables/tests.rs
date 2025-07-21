@@ -2,15 +2,18 @@
 
 #[cfg(test)]
 mod tests {
-    use super::{CardCollection, CardTarget, ConsumableSlots, Target, TargetType, TargetValidationError};
     use crate::card::{Card, Suit, Value};
+    use crate::config::Config;
+    use crate::consumables::{
+        CardCollection, CardTarget, ConsumableSlots, Target, TargetType, TargetValidationError,
+    };
     use crate::game::Game;
     use crate::rank::HandRank;
 
     /// Create a test game with some cards in hand and discard pile
     fn create_test_game() -> Game {
-        let mut game = Game::new(42); // seed 42 for reproducibility
-        
+        let mut game = Game::new(Config::new()); // Create with default config
+
         // Add some cards to discard pile for testing
         for i in 0..5 {
             let card = Card::new(
@@ -21,15 +24,15 @@ mod tests {
                     _ => Value::Queen,
                 },
                 match i % 4 {
-                    0 => Suit::Hearts,
-                    1 => Suit::Diamonds,
-                    2 => Suit::Clubs,
-                    _ => Suit::Spades,
+                    0 => Suit::Heart,
+                    1 => Suit::Diamond,
+                    2 => Suit::Club,
+                    _ => Suit::Spade,
                 },
             );
             game.discarded.push(card);
         }
-        
+
         game
     }
 
@@ -61,11 +64,11 @@ mod tests {
     #[test]
     fn test_card_target_validation_success() {
         let game = create_test_game();
-        
+
         // Test valid discard pile targeting
         let target = CardTarget::new(CardCollection::DiscardPile, vec![0, 1, 2]);
         assert!(target.validate(&game).is_ok());
-        
+
         // Test single card targeting
         let target = CardTarget::single_card(CardCollection::DiscardPile, 3);
         assert!(target.validate(&game).is_ok());
@@ -74,14 +77,17 @@ mod tests {
     #[test]
     fn test_card_target_validation_out_of_bounds() {
         let game = create_test_game();
-        
+
         // Test out of bounds for discard pile (we have 5 cards, so index 5 is invalid)
         let target = CardTarget::single_card(CardCollection::DiscardPile, 5);
         let result = target.validate(&game);
         assert!(result.is_err());
-        
+
         match result.unwrap_err() {
-            TargetValidationError::DiscardIndexOutOfBounds { index, discard_size } => {
+            TargetValidationError::DiscardIndexOutOfBounds {
+                index,
+                discard_size,
+            } => {
                 assert_eq!(index, 5);
                 assert_eq!(discard_size, 5);
             }
@@ -92,12 +98,12 @@ mod tests {
     #[test]
     fn test_card_target_validation_duplicate_indices() {
         let game = create_test_game();
-        
+
         // Test duplicate indices
         let target = CardTarget::new(CardCollection::DiscardPile, vec![0, 1, 0]);
         let result = target.validate(&game);
         assert!(result.is_err());
-        
+
         match result.unwrap_err() {
             TargetValidationError::CardAlreadyTargeted { index } => {
                 assert_eq!(index, 0);
@@ -134,11 +140,11 @@ mod tests {
         assert_eq!(card_target.target_type(), TargetType::Cards(2));
         assert!(card_target.is_valid_type(TargetType::Cards(2)));
         assert!(!card_target.is_valid_type(TargetType::Cards(3)));
-        
+
         let hand_target = Target::HandType(HandRank::OnePair);
         assert_eq!(hand_target.target_type(), TargetType::HandType);
         assert!(hand_target.is_valid_type(TargetType::HandType));
-        
+
         let joker_target = Target::Joker(0);
         assert_eq!(joker_target.target_type(), TargetType::Joker);
         assert!(joker_target.is_valid_type(TargetType::Joker));
@@ -147,12 +153,12 @@ mod tests {
     #[test]
     fn test_card_target_get_cards_discard_pile() {
         let game = create_test_game();
-        
+
         // Test getting cards from discard pile (this should work)
         let target = CardTarget::new(CardCollection::DiscardPile, vec![0, 2]);
         let result = target.get_cards(&game);
         assert!(result.is_ok());
-        
+
         let cards = result.unwrap();
         assert_eq!(cards.len(), 2);
     }
@@ -160,12 +166,12 @@ mod tests {
     #[test]
     fn test_card_target_get_cards_hand_not_implemented() {
         let game = create_test_game();
-        
+
         // Test that hand card access returns NoCardsAvailable (not yet implemented)
         let target = CardTarget::new(CardCollection::Hand, vec![0]);
         let result = target.get_cards(&game);
         assert!(result.is_err());
-        
+
         match result.unwrap_err() {
             TargetValidationError::NoCardsAvailable => {
                 // Expected - this functionality isn't fully implemented yet
@@ -177,14 +183,14 @@ mod tests {
     #[test]
     fn test_consumable_slots_basic_operations() {
         let mut slots = ConsumableSlots::new();
-        
+
         // Test initial state
         assert_eq!(slots.capacity(), 2);
         assert_eq!(slots.len(), 0);
         assert!(slots.is_empty());
         assert!(!slots.is_full());
         assert_eq!(slots.available_slots(), 2);
-        
+
         // Test find empty slot
         assert_eq!(slots.find_empty_slot(), Some(0));
     }
@@ -199,7 +205,7 @@ mod tests {
     #[test]
     fn test_target_validation_with_game_state() {
         let game = create_test_game();
-        
+
         // Test valid targets
         let valid_targets = vec![
             Target::None,
@@ -207,19 +213,27 @@ mod tests {
             Target::HandType(HandRank::OnePair),
             Target::Deck,
         ];
-        
+
         for target in valid_targets {
-            assert!(target.is_valid(&game), "Target should be valid: {:?}", target);
+            assert!(
+                target.is_valid(&game),
+                "Target should be valid: {:?}",
+                target
+            );
         }
-        
+
         // Test invalid targets
         let invalid_targets = vec![
             Target::cards_in_discard(vec![10]), // out of bounds
-            Target::Joker(5), // out of bounds (no jokers in test game)
+            Target::Joker(5),                   // out of bounds (no jokers in test game)
         ];
-        
+
         for target in invalid_targets {
-            assert!(!target.is_valid(&game), "Target should be invalid: {:?}", target);
+            assert!(
+                !target.is_valid(&game),
+                "Target should be invalid: {:?}",
+                target
+            );
         }
     }
 }
