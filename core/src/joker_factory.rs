@@ -1,6 +1,7 @@
 use crate::joker::{Joker, JokerId, JokerRarity};
 use crate::joker_impl::*;
 use crate::static_joker_factory::StaticJokerFactory;
+use crate::special_jokers::*;
 
 /// Factory for creating joker instances by ID
 pub struct JokerFactory;
@@ -58,7 +59,12 @@ impl JokerFactory {
             JokerId::Fortune => Some(Box::new(MysteryJoker)),
             JokerId::VagabondJoker => Some(Box::new(VagabondJokerImpl)),
             JokerId::Reserved9 => Some(Box::new(ChaoticJoker)),
-
+            
+            // Special mechanic jokers using new trait system
+            JokerId::Erosion => Some(Box::new(ErosionJoker)),
+            JokerId::Blueprint => Some(Box::new(BlueprintJoker)),
+            JokerId::Photograph => Some(Box::new(PhotographJoker)), 
+            JokerId::TheOrder => Some(Box::new(TheOrderJoker)),
             // TODO: Implement remaining jokers
             _ => None,
         }
@@ -102,6 +108,9 @@ impl JokerFactory {
                 // RNG-based jokers (Issue #442)
                 Reserved7, // SixShooterJoker
                 LuckyCharm, // LuckyCardJoker
+                // Special mechanic jokers
+                Erosion,
+                Photograph,
             ],
             JokerRarity::Uncommon => vec![
                 // Money-based conditional jokers
@@ -112,11 +121,15 @@ impl JokerFactory {
                 Oops, // OopsAllSixesJoker
                 Reserved8, // GrimJoker
                 VagabondJoker,
+                // Special mechanic jokers
+                TheOrder,
             ],
             JokerRarity::Rare => vec![
                 // RNG-based jokers (Issue #442)
                 AcrobatJoker,
                 Fortune, // MysteryJoker
+                // Special mechanic jokers
+                Blueprint,
             ],
             JokerRarity::Legendary => vec![
                 // RNG-based jokers (Issue #442)
@@ -168,6 +181,11 @@ impl JokerFactory {
             Fortune, // MysteryJoker
             VagabondJoker,
             Reserved9, // ChaoticJoker
+            // Special mechanic jokers using new trait system
+            Erosion,
+            Blueprint,
+            Photograph,
+            TheOrder,
             // Note: HalfJoker, Banner, AbstractJoker, and SteelJoker are placeholders
         ]
     }
