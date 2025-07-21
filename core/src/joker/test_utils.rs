@@ -35,14 +35,14 @@
 //! assert_effect_mult(&effect, 10);
 //! ```
 
-use crate::card::{Card, Rank, Suit};
+use crate::card::{Card, Value, Suit};
 use crate::hand::{Hand, SelectHand};
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker_state::{JokerState, JokerStateManager};
 use crate::rank::HandRank;
 use crate::rng::GameRng;
 use crate::stage::Stage;
-use serde_json::Value;
+use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -835,7 +835,7 @@ pub fn create_test_hand(cards: Vec<Card>) -> Hand {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::card::{Rank, Suit};
+    use crate::card::{Value, Suit};
     use crate::hand::SelectHand;
     use crate::joker_state::JokerState;
     use crate::rank::HandRank;
