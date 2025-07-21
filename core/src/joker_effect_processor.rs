@@ -1484,7 +1484,7 @@ mod tests {
 
     #[test]
     fn test_cache_key_generation() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::hand::SelectHand;
         use crate::joker::{GameContext, JokerId};
         use std::collections::HashMap;
@@ -1731,7 +1731,7 @@ mod tests {
 
     #[test]
     fn test_cache_performance_improvement() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::hand::SelectHand;
         use crate::joker::{GameContext, JokerId};
         use std::collections::HashMap;
@@ -1747,6 +1747,7 @@ mod tests {
         let mut config = CacheConfig::default();
         config.enabled = false;
         processor_without_cache.set_cache_config(config);
+<<<<<<< HEAD
 
         // Helper function to create fresh GameContext instances
         let create_game_context = || GameContext {
@@ -1766,6 +1767,29 @@ mod tests {
             cards_in_deck: 52,
             stone_cards_in_deck: 0,
             rng: &crate::rng::GameRng::secure(),
+=======
+        
+        // Helper function to create fresh GameContext instances
+        let create_game_context = || {
+            GameContext {
+                chips: 100,
+                mult: 4,
+                money: 100,
+                ante: 1,
+                round: 1,
+                stage: &crate::stage::Stage::PreBlind(),
+                hands_played: 0,
+                discards_used: 0,
+                jokers: &[],
+                hand: &crate::hand::Hand::new(vec![]),
+                discarded: &[],
+                joker_state_manager: &std::sync::Arc::new(crate::joker_state::JokerStateManager::new()),
+                hand_type_counts: &HashMap::new(),
+                cards_in_deck: 52,
+                stone_cards_in_deck: 0,
+                rng: &crate::rng::GameRng::secure(),
+            }
+>>>>>>> main
         };
 
         let hand = SelectHand {
@@ -1833,7 +1857,7 @@ mod tests {
 
     #[test]
     fn test_cache_integration_with_processing() {
-        use crate::card::{Rank, Suit};
+        use crate::card::{Value, Suit};
         use crate::hand::SelectHand;
         use crate::joker::{GameContext, JokerId};
         use std::collections::HashMap;
