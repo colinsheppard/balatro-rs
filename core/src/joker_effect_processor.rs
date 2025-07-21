@@ -323,10 +323,6 @@ impl ProcessingContextBuilder {
         self.resolution_strategy = strategy;
         self
     }
-<<<<<<< HEAD
-    
-    /// Set whether to validate effects
-=======
 
     /// Set whether to validate effects during processing.
     ///
@@ -820,8 +816,8 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash hand composition
-        for card in &hand.cards {
-            card.rank.hash(&mut hasher);
+        for card in hand.cards() {
+            card.value.hash(&mut hasher);
             card.suit.hash(&mut hasher);
         }
         
@@ -854,7 +850,7 @@ impl JokerEffectProcessor {
         game_context.round.hash(&mut hasher);
         
         // Hash card
-        card.rank.hash(&mut hasher);
+        card.value.hash(&mut hasher);
         card.suit.hash(&mut hasher);
         
         // Hash processing context settings
