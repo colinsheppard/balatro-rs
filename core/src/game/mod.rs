@@ -646,14 +646,8 @@ impl Game {
             .unwrap();
 
             if hand_result.retriggered_count > 0 {
-                write!(
-                    &mut debug_msg,
-                    " ({} retriggers)",
-                    hand_result.retriggered_count
-                )
-                .unwrap();
+                write!(&mut debug_msg, " ({} retriggers)", hand_result.retriggered_count).unwrap();
             }
-
             messages.push(debug_msg);
         }
 
@@ -668,10 +662,7 @@ impl Game {
 
         // Process card-level effects using the cached processor
         for card in hand.hand.cards() {
-            let card_result =
-                self.joker_effect_processor
-                    .process_card_effects(&self.jokers, &mut context, &card);
-
+            let card_result = self.joker_effect_processor.process_card_effects(&self.jokers, &mut context, &card);
             // Accumulate card effects
             total_chips += card_result.accumulated_effect.chips;
             total_mult += card_result.accumulated_effect.mult;

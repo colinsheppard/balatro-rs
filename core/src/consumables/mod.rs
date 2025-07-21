@@ -100,6 +100,7 @@ pub enum TargetValidationError {
     CardAlreadyTargeted { index: usize },
 }
 
+
 /// Categories of effects that consumables can have
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
 pub enum ConsumableEffect {
@@ -1107,11 +1108,11 @@ impl ConsumableSlots {
     ///     // Modify consumable if needed
     /// }
     /// ```
-    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut Box<dyn Consumable>> {
+    pub fn get_consumable_mut(&mut self, index: usize) -> Option<&mut (dyn Consumable + '_)> {
         if index >= self.capacity {
             return None;
         }
-        self.slots[index].as_mut()
+        self.slots[index].as_mut().map(move |boxed| boxed.as_mut())
     }
 
     /// Finds the first empty slot
