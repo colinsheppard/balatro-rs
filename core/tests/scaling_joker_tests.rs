@@ -18,7 +18,7 @@ fn create_test_context(money: i32, ante: u8, round: u32) -> GameContext<'static>
     let discarded: Vec<Card> = vec![];
     let hand_type_counts = HashMap::new();
     let stage = Stage::Blind; // Default stage
-    let rng = &balatro_rs::rng::GameRng::new();
+    let rng = &balatro_rs::rng::GameRng::for_testing(42);
 
     GameContext {
         chips: 0,
