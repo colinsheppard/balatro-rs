@@ -734,7 +734,6 @@ impl Joker for PhotographJoker {
             JokerEffect::new()
         }
     }
-    
 }
 
 #[cfg(test)]
