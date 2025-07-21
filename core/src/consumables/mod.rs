@@ -49,6 +49,30 @@ pub enum SlotError {
     SlotEmpty { index: usize },
 }
 
+/// Collections where cards can be found for targeting
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards currently in the player's hand
+    Hand,
+    /// Cards in the deck (not yet drawn)
+    Deck,
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that have been played this round
+    PlayedCards,
+}
+
+impl fmt::Display for CardCollection {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CardCollection::Hand => write!(f, "Hand"),
+            CardCollection::Deck => write!(f, "Deck"),
+            CardCollection::DiscardPile => write!(f, "Discard Pile"),
+            CardCollection::PlayedCards => write!(f, "Played Cards"),
+        }
+    }
+}
+
 /// Error types for target validation
 #[derive(Debug, Error, Clone)]
 pub enum TargetValidationError {
@@ -326,18 +350,6 @@ fn generate_combinations_recursive(
 }
 
 
-/// Represents different collections of cards that can be targeted
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum CardCollection {
-    /// Cards in the player's hand
-    Hand,
-    /// Cards in the player's deck
-    Deck,
-    /// Cards in the discard pile
-    DiscardPile,
-    /// Cards that have been played
-    PlayedCards,
-}
 
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1016,7 +1028,11 @@ impl ConsumableSlots {
         if index >= self.capacity {
             return None;
         }
-        self.slots[index].as_mut().map(|boxed| boxed.as_mut())
+        if let Some(ref mut slot) = self.slots[index] {
+            Some(slot.as_mut())
+        } else {
+            None
+        }
     }
 
     /// Finds the first empty slot
@@ -1107,6 +1123,10 @@ impl Default for ConsumableSlots {
 // pub mod tarot;
 // pub mod planet;
 // pub mod spectral;
+
+// Test module
+#[cfg(test)]
+mod tests;
 
 // Re-export commonly used types
 pub use ConsumableId::*;
