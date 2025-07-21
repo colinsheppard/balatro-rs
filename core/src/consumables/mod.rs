@@ -240,6 +240,18 @@ impl Target {
     }
 }
 
+/// Represents different card collections that can be targeted
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards in the player's hand
+    Hand,
+    /// Cards in the deck
+    Deck,
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that were played this hand
+    PlayedCards,
+}
 
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1008,4 +1020,3 @@ impl Default for ConsumableSlots {
 
 // Re-export commonly used types
 pub use ConsumableId::*;
-pub use SlotError;

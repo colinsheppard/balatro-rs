@@ -18,7 +18,7 @@ fn create_test_context(money: i32, ante: u8, round: u32) -> GameContext<'static>
     let discarded: Vec<Card> = vec![];
     let hand_type_counts = HashMap::new();
     let stage = Stage::Blind; // Default stage
-    let rng = &balatro_rs::rng::GameRng::new();
+    let rng = &balatro_rs::rng::GameRng::for_testing(42);
 
     GameContext {
         chips: 0,
@@ -37,6 +37,169 @@ fn create_test_context(money: i32, ante: u8, round: u32) -> GameContext<'static>
         cards_in_deck: 52,
         stone_cards_in_deck: 0,
         rng,
+    }
+}
+
+/// Enhanced test harness for scaling joker integration tests
+struct ScalingJokerTestHarness {
+    state_manager: Arc<JokerStateManager>,
+    jokers: Vec<ScalingJoker>,
+    stage: Stage,
+    rng: balatro_rs::rng::GameRng,
+}
+
+impl ScalingJokerTestHarness {
+    fn new() -> Self {
+        Self {
+            state_manager: Arc::new(JokerStateManager::new()),
+            jokers: vec![],
+            stage: Stage::Blind,
+            rng: balatro_rs::rng::GameRng::for_testing(42),
+        }
+    }
+
+    fn add_joker(&mut self, joker: ScalingJoker) {
+        // Initialize joker state
+        let initial_state = joker.initialize_state(&self.create_context());
+        self.state_manager.update_state(joker.id(), |state| {
+            *state = initial_state;
+        });
+        self.jokers.push(joker);
+    }
+
+    fn create_context(&self) -> GameContext<'_> {
+        let jokers: Vec<Box<dyn Joker>> = vec![];
+        let hand = SelectHand::default();
+        let discarded: Vec<Card> = vec![];
+        let hand_type_counts = HashMap::new();
+
+        GameContext {
+            chips: 0,
+            mult: 1,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &jokers,
+            hand: &hand,
+            discarded: &discarded,
+            joker_state_manager: &self.state_manager,
+            hand_type_counts: &hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
+    }
+
+    fn create_mutable_context(&mut self) -> GameContext<'_> {
+        let jokers: Vec<Box<dyn Joker>> = vec![];
+        let hand = SelectHand::default();
+        let discarded: Vec<Card> = vec![];
+        let hand_type_counts = HashMap::new();
+
+        GameContext {
+            chips: 0,
+            mult: 1,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &jokers,
+            hand: &hand,
+            discarded: &discarded,
+            joker_state_manager: &self.state_manager,
+            hand_type_counts: &hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
+    }
+
+    /// Simulate playing a hand with specific rank
+    fn simulate_hand_played(&mut self, hand_rank: HandRank) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let hand = create_test_hand(hand_rank);
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_hand_played(&mut context, &hand);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Simulate discarding cards
+    fn simulate_cards_discarded(&mut self, count: usize) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let cards = vec![Card::new(Value::Two, Suit::Heart); count];
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            for _ in 0..count {
+                let effect = joker.on_discard(&mut context, &cards);
+                effects.push(effect);
+            }
+        }
+
+        effects
+    }
+
+    /// Simulate round end
+    fn simulate_round_end(&mut self) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_round_end(&mut context);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Simulate shop opening
+    fn simulate_shop_open(&mut self) -> Vec<JokerEffect> {
+        let mut context = self.create_mutable_context();
+        let mut effects = vec![];
+
+        for joker in &self.jokers {
+            let effect = joker.on_shop_open(&mut context);
+            effects.push(effect);
+        }
+
+        effects
+    }
+
+    /// Process a scaling event directly
+    fn process_scaling_event(&mut self, event: ScalingEvent) {
+        let mut context = self.create_mutable_context();
+        
+        for joker in &self.jokers {
+            joker.process_event(&mut context, &event);
+        }
+    }
+
+    /// Get current accumulated value for a joker
+    fn get_accumulated_value(&self, joker_id: JokerId) -> f64 {
+        self.state_manager
+            .get_accumulated_value(joker_id)
+            .unwrap_or(0.0)
+    }
+
+    /// Get current effect for a joker
+    fn get_current_effect(&self, joker_id: JokerId) -> JokerEffect {
+        let context = self.create_context();
+        
+        if let Some(joker) = self.jokers.iter().find(|j| j.id() == joker_id) {
+            joker.calculate_effect(&context)
+        } else {
+            JokerEffect::new()
+        }
     }
 }
 

@@ -44,3 +44,7 @@ harness = false
 [[bench]]
 name = "actionspace_benchmark"
 harness = false
+
+[[bench]]
+name = "trait_benchmark"
+harness = false
