@@ -765,13 +765,13 @@ mod tests {
         Arc<crate::joker_state::JokerStateManager>,
         HashMap<crate::rank::HandRank, u32>,
         crate::rng::GameRng,
-        SelectHand,
+        crate::hand::Hand,
         Vec<Card>,
     ) {
         let state_manager = Arc::new(crate::joker_state::JokerStateManager::new());
         let hand_counts = HashMap::new();
-        let rng = crate::rng::GameRng::new();
-        let hand = SelectHand::new(vec![]);
+        let rng = crate::rng::GameRng::new(crate::rng::RngMode::Testing(42));
+        let hand = crate::hand::Hand::new(vec![]);
         let discarded = vec![];
 
         (state_manager, hand_counts, rng, hand, discarded)
@@ -782,12 +782,12 @@ mod tests {
         let joker = ErosionJoker;
 
         assert_eq!(joker.joker_type(), "Erosion");
-        assert_eq!(joker.name(), "Erosion");
+        assert_eq!(JokerIdentity::name(&joker), "Erosion");
         assert_eq!(
-            joker.description(),
+            JokerIdentity::description(&joker),
             "+4 Mult for each card below 52 in deck"
         );
-        assert_eq!(joker.rarity(), Rarity::Common);
+        assert_eq!(JokerIdentity::rarity(&joker), Rarity::Common);
         assert_eq!(joker.base_cost(), 6);
     }
 
@@ -802,7 +802,7 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind(Default::default()),
+            stage: &Stage::Blind(crate::stage::Blind::Small),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
@@ -815,7 +815,8 @@ mod tests {
             rng: &rng,
         };
 
-        let effect = joker.on_hand_played(&mut context, &hand);
+        let select_hand = SelectHand::new(vec![]);
+        let effect = joker.on_hand_played(&mut context, &select_hand);
         assert_eq!(effect.mult, 16); // 4 missing * 4 mult each = 16
     }
 
@@ -824,9 +825,9 @@ mod tests {
         let joker = FigureJoker;
 
         assert_eq!(joker.joker_type(), "Figure");
-        assert_eq!(joker.name(), "Figure");
+        assert_eq!(JokerIdentity::name(&joker), "Figure");
         assert_eq!(
-            joker.description(),
+            JokerIdentity::description(&joker),
             "$3 when face card played, face cards give +0 Chips"
         );
         assert_eq!(JokerIdentity::rarity(&joker), Rarity::Uncommon);
@@ -844,7 +845,7 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind(Default::default()),
+            stage: &Stage::Blind(crate::stage::Blind::Small),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
@@ -875,9 +876,9 @@ mod tests {
         let joker = FlowerPotJoker;
 
         assert_eq!(joker.joker_type(), "FlowerPot");
-        assert_eq!(joker.name(), "Flower Pot");
+        assert_eq!(JokerIdentity::name(&joker), "Flower Pot");
         assert_eq!(
-            joker.description(),
+            JokerIdentity::description(&joker),
             "+3 Mult if poker hand contains Diamond, Spade, Heart, Club"
         );
         assert_eq!(JokerIdentity::rarity(&joker), Rarity::Uncommon);
@@ -896,7 +897,8 @@ mod tests {
             create_card(Suit::Club, Value::Three),
             create_card(Suit::Spade, Value::Four),
         ];
-        let hand_all_suits = SelectHand::new(cards_all_suits);
+        let hand_all_suits = SelectHand::new(cards_all_suits.clone());
+        let hand_for_context = crate::hand::Hand::new(cards_all_suits);
 
         let mut context = GameContext {
             chips: 0,
@@ -904,11 +906,11 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind(Default::default()),
+            stage: &Stage::Blind(crate::stage::Blind::Small),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
-            hand: &hand_all_suits.hand,
+            hand: &hand_for_context,
             discarded: &discarded,
             joker_state_manager: &state_manager,
             hand_type_counts: &hand_counts,

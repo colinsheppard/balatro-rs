@@ -609,10 +609,10 @@ impl TestContextBuilder {
             money: 5,
             ante: 1,
             round: 1,
-            stage: Stage::Blind,
+            stage: Stage::Blind(crate::stage::Blind::Small),
             hands_played: 0,
             discards_used: 0,
-            hand: Hand::new(),
+            hand: Hand::new(vec![]),
             discarded: Vec::new(),
             hand_type_counts: HashMap::new(),
             cards_in_deck: 52,
@@ -842,11 +842,7 @@ pub fn create_test_card(rank: Value, suit: Suit) -> Card {
 
 /// Create a simple test hand with specified cards.
 pub fn create_test_hand(cards: Vec<Card>) -> Hand {
-    let mut hand = Hand::new();
-    for card in cards {
-        hand.add(card);
-    }
-    hand
+    Hand::new(cards)
 }
 
 #[cfg(test)]
@@ -956,7 +952,7 @@ mod tests {
         let state = JokerState::new();
 
         let serialized = joker.serialize_state(&context, &state).unwrap();
-        assert_eq!(serialized["custom_serialization"], Value::Bool(true));
+        assert_eq!(serialized["custom_serialization"], JsonValue::Bool(true));
     }
 
     #[test]
@@ -1009,7 +1005,7 @@ mod tests {
             .with_money(100)
             .with_ante(5)
             .with_round(12)
-            .with_stage(Stage::Shop)
+            .with_stage(Stage::Shop())
             .with_hands_played(3)
             .with_discards_used(2)
             .with_hand_type_count(HandRank::OnePair, 5)
@@ -1022,7 +1018,7 @@ mod tests {
         assert_eq!(context.money, 100);
         assert_eq!(context.ante, 5);
         assert_eq!(context.round, 12);
-        assert_eq!(*context.stage, Stage::Shop);
+        assert_eq!(*context.stage, Stage::Shop());
         assert_eq!(context.hands_played, 3);
         assert_eq!(context.discards_used, 2);
         assert_eq!(context.get_hand_type_count(HandRank::OnePair), 5);
