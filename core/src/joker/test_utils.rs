@@ -337,7 +337,6 @@ impl Joker for MockGameplayJoker {
 ///
 /// This mock allows you to specify custom modifiers for base game values
 /// (chips, mult, hand size, discards).
-#[derive(Clone)]
 pub struct MockModifierJoker {
     pub id: JokerId,
     pub name: String,
@@ -730,7 +729,7 @@ impl TestContextBuilder {
             jokers: jokers_ref,
             hand: hand_ref,
             discarded: discarded_ref,
-            joker_state_manager: &joker_state_manager,
+            joker_state_manager: Box::leak(Box::new(joker_state_manager)),
             hand_type_counts: hand_type_counts_ref,
             cards_in_deck: self.cards_in_deck,
             stone_cards_in_deck: self.stone_cards_in_deck,

@@ -802,7 +802,7 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind,
+            stage: &Stage::Blind(Default::default()),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
@@ -829,7 +829,7 @@ mod tests {
             joker.description(),
             "$3 when face card played, face cards give +0 Chips"
         );
-        assert_eq!(joker.rarity(), Rarity::Uncommon);
+        assert_eq!(JokerIdentity::rarity(&joker), Rarity::Uncommon);
         assert_eq!(joker.base_cost(), 8);
     }
 
@@ -844,7 +844,7 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind,
+            stage: &Stage::Blind(Default::default()),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
@@ -880,7 +880,7 @@ mod tests {
             joker.description(),
             "+3 Mult if poker hand contains Diamond, Spade, Heart, Club"
         );
-        assert_eq!(joker.rarity(), Rarity::Uncommon);
+        assert_eq!(JokerIdentity::rarity(&joker), Rarity::Uncommon);
         assert_eq!(joker.base_cost(), 7);
     }
 
@@ -904,11 +904,11 @@ mod tests {
             money: 0,
             ante: 1,
             round: 1,
-            stage: &Stage::Blind,
+            stage: &Stage::Blind(Default::default()),
             hands_played: 0,
             discards_used: 0,
             jokers: &[],
-            hand: &hand_all_suits,
+            hand: &hand_all_suits.hand,
             discarded: &discarded,
             joker_state_manager: &state_manager,
             hand_type_counts: &hand_counts,
