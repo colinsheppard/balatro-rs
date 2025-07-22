@@ -393,7 +393,7 @@ mod tests {
     #[test]
     fn test_scaling_trigger_display() {
         assert_eq!(
-            format!("{}", ScalingTrigger::HandPlayed(HandRank::Pair)),
+            format!("{}", ScalingTrigger::HandPlayed(HandRank::OnePair)),
             "Pair played"
         );
         assert_eq!(

@@ -1524,23 +1524,12 @@ mod tests {
             rng: &crate::rng::GameRng::secure(),
         };
 
-        let hand = SelectHand {
-            cards: vec![
-                Card {
-                    value: Value::Ace,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::King,
-                    suit: Suit::Hearts,
-                },
-            ],
-        };
+        let hand = SelectHand::new(vec![
+            Card::new(Value::Ace, Suit::Heart),
+            Card::new(Value::King, Suit::Heart),
+        ]);
 
-        let card = Card {
-            value: Value::Queen,
-            suit: Suit::Spades,
-        };
+        let card = Card::new(Value::Queen, Suit::Spade);
 
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
 
@@ -1760,6 +1749,17 @@ mod tests {
         let mut config = CacheConfig::default();
         config.enabled = false;
         processor_without_cache.set_cache_config(config);
+        // Create long-lived values for the context
+        let stage = Box::leak(Box::new(crate::stage::Stage::PreBlind()));
+        let hand = Box::leak(Box::new(crate::hand::Hand::new(vec![])));
+        let discarded: &'static [Card] = Box::leak(Box::new([]));
+        let state_manager = Box::leak(Box::new(std::sync::Arc::new(
+            crate::joker_state::JokerStateManager::new(),
+        )));
+        let hand_counts = Box::leak(Box::new(HashMap::new()));
+        let rng = Box::leak(Box::new(crate::rng::GameRng::secure()));
+        let jokers: &'static [Box<dyn crate::joker::Joker>] = Box::leak(Box::new([]));
+
         // Helper function to create fresh GameContext instances
         let create_game_context = || -> GameContext {
             GameContext {
@@ -1768,46 +1768,27 @@ mod tests {
                 money: 100,
                 ante: 1,
                 round: 1,
-                stage: &crate::stage::Stage::PreBlind(),
+                stage,
                 hands_played: 0,
                 discards_used: 0,
-                jokers: &[],
-                hand: &crate::hand::Hand::new(vec![]),
-                discarded: &[],
-                joker_state_manager: &std::sync::Arc::new(
-                    crate::joker_state::JokerStateManager::new(),
-                ),
-                hand_type_counts: &HashMap::new(),
+                jokers,
+                hand,
+                discarded,
+                joker_state_manager: state_manager,
+                hand_type_counts: hand_counts,
                 cards_in_deck: 52,
                 stone_cards_in_deck: 0,
-                rng: &crate::rng::GameRng::secure(),
+                rng,
             }
         };
 
-        let hand = SelectHand {
-            cards: vec![
-                Card {
-                    value: Value::Ace,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::King,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::Queen,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::Jack,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::Ten,
-                    suit: Suit::Hearts,
-                },
-            ],
-        };
+        let hand = SelectHand::new(vec![
+            Card::new(Value::Ace, Suit::Heart),
+            Card::new(Value::King, Suit::Heart),
+            Card::new(Value::Queen, Suit::Heart),
+            Card::new(Value::Jack, Suit::Heart),
+            Card::new(Value::Ten, Suit::Heart),
+        ]);
 
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
 
@@ -1875,23 +1856,12 @@ mod tests {
             rng: &crate::rng::GameRng::secure(),
         };
 
-        let hand = SelectHand {
-            cards: vec![
-                Card {
-                    value: Value::Ace,
-                    suit: Suit::Hearts,
-                },
-                Card {
-                    value: Value::King,
-                    suit: Suit::Hearts,
-                },
-            ],
-        };
+        let hand = SelectHand::new(vec![
+            Card::new(Value::Ace, Suit::Heart),
+            Card::new(Value::King, Suit::Heart),
+        ]);
 
-        let card = Card {
-            value: Value::Queen,
-            suit: Suit::Spades,
-        };
+        let card = Card::new(Value::Queen, Suit::Spade);
 
         let jokers: Vec<Box<dyn crate::joker::Joker>> = vec![];
 
@@ -2223,7 +2193,7 @@ mod tests {
     fn test_priority_strategy_api_from_issue() {
         // Test the exact API proposed in the issue
         let context = ProcessingContext::builder()
-            .priority_strategy(Arc::new(MetadataPriorityStrategy::new()))
+            .priority_strategy(Arc::new(MetadataPriorityStrategy::default()))
             .build();
 
         let processor = JokerEffectProcessor::with_context(context);
