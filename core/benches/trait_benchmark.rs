@@ -28,7 +28,6 @@ pub fn trait_dispatch_benchmark(c: &mut Criterion) {
 
     for joker_id in joker_ids {
         if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
-
             group.bench_with_input(
                 BenchmarkId::new("trait_method_call", format!("{:?}", joker_id)),
                 &joker,
