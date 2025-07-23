@@ -653,7 +653,6 @@ impl Game {
                 )
                 .unwrap();
             }
-
             messages.push(debug_msg);
         }
 
