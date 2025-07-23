@@ -28,7 +28,7 @@ pub enum ScalingTrigger {
 impl fmt::Display for ScalingTrigger {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ScalingTrigger::HandPlayed(hand_rank) => write!(f, "{hand_rank:?} played"),
+            ScalingTrigger::HandPlayed(hand_rank) => write!(f, "{hand_rank} played"),
             ScalingTrigger::CardDiscarded => write!(f, "card discarded"),
             ScalingTrigger::MoneyGained => write!(f, "money gained"),
             ScalingTrigger::BlindCompleted => write!(f, "blind completed"),
@@ -62,7 +62,7 @@ pub enum ResetCondition {
 impl fmt::Display for ResetCondition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ResetCondition::HandPlayed(hand_rank) => write!(f, "reset on {hand_rank:?} played"),
+            ResetCondition::HandPlayed(hand_rank) => write!(f, "reset on {hand_rank} played"),
             ResetCondition::RoundEnd => write!(f, "reset at round end"),
             ResetCondition::AnteEnd => write!(f, "reset at ante end"),
             ResetCondition::MoneySpent => write!(f, "reset when money spent"),
