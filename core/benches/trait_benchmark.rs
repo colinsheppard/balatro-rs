@@ -27,8 +27,7 @@ pub fn trait_dispatch_benchmark(c: &mut Criterion) {
     let joker_ids = vec![JokerId::Joker, JokerId::GreedyJoker, JokerId::LustyJoker];
 
     for joker_id in joker_ids {
-        if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
-            let joker = definition.create();
+        if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
 
             group.bench_with_input(
                 BenchmarkId::new("trait_method_call", format!("{:?}", joker_id)),
@@ -195,7 +194,7 @@ pub fn shop_generation_benchmark(c: &mut Criterion) {
         game.start();
 
         b.iter(|| {
-            let shop = Shop::new(&game);
+            let shop = Shop::new();
             black_box(shop);
         });
     });
@@ -206,14 +205,13 @@ pub fn shop_generation_benchmark(c: &mut Criterion) {
 
         // Add some jokers to the game state
         for joker_id in [JokerId::Joker, JokerId::GreedyJoker, JokerId::LustyJoker] {
-            if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
-                let joker = definition.create();
-                game.add_joker(joker).ok(); // Ignore errors for benchmark
+            if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
+                // game.add_joker(joker).ok(); // TODO: Fix - add_joker method doesn't exist
             }
         }
 
         b.iter(|| {
-            let shop = Shop::new(&game);
+            let shop = Shop::new();
             black_box(shop);
         });
     });
@@ -241,9 +239,8 @@ pub fn action_generation_benchmark(c: &mut Criterion) {
 
         // Add jokers that might affect action generation
         for joker_id in [JokerId::Joker, JokerId::GreedyJoker] {
-            if let Ok(Some(definition)) = joker_registry::registry::get_definition(&joker_id) {
-                let joker = definition.create();
-                game.add_joker(joker).ok(); // Ignore errors for benchmark
+            if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
+                // game.add_joker(joker).ok(); // TODO: Fix - add_joker method doesn't exist
             }
         }
 
