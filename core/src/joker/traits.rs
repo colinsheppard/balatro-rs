@@ -67,7 +67,7 @@
 //! }
 //!
 //! impl JokerGameplay for PlusMultJoker {
-//!     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+//!     fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
 //!         if matches!(stage, Stage::Scoring) {
 //!             ProcessResult { chips_added: 0, mult_added: 4.0, retriggered: false }
 //!         } else {
@@ -103,7 +103,7 @@
 //! }
 //!
 //! impl JokerGameplay for CountingJoker {
-//!     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+//!     fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
 //!         if matches!(stage, Stage::Scoring) {
 //!             ProcessResult {
 //!                 chips_added: 0,
@@ -726,7 +726,7 @@ pub trait JokerLifecycle: Send + Sync {
 /// struct BasicMultJoker;
 ///
 /// impl JokerGameplay for BasicMultJoker {
-///     fn process(&mut self, stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
+///     fn process(&self, stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
 ///         if matches!(stage, Stage::Scoring) {
 ///             ProcessResult {
 ///                 chips_added: 0,
@@ -752,7 +752,7 @@ pub trait JokerLifecycle: Send + Sync {
 /// struct PairBonusJoker;
 ///
 /// impl JokerGameplay for PairBonusJoker {
-///     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+///     fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
 ///         if !matches!(stage, Stage::Scoring) {
 ///             return ProcessResult::default();
 ///         }
@@ -786,19 +786,27 @@ pub trait JokerLifecycle: Send + Sync {
 /// ```rust
 /// # use crate::joker::traits::{JokerGameplay, ProcessContext, ProcessResult};
 /// # use crate::stage::Stage;
-/// #[derive(Debug, Clone)]
+/// # use std::cell::Cell;
+/// #[derive(Debug)]
 /// struct BuildingJoker {
-///     times_triggered: u32,
+///     times_triggered: Cell<u32>,
+/// }
+///
+/// impl BuildingJoker {
+///     fn new() -> Self {
+///         Self { times_triggered: Cell::new(0) }
+///     }
 /// }
 ///
 /// impl JokerGameplay for BuildingJoker {
-///     fn process(&mut self, stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
+///     fn process(&self, stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
 ///         if !matches!(stage, Stage::Scoring) {
 ///             return ProcessResult::default();
 ///         }
 ///
-///         self.times_triggered += 1;
-///         let bonus = self.times_triggered as f64 * 0.5; // Grows stronger over time
+///         let current = self.times_triggered.get();
+///         self.times_triggered.set(current + 1);
+///         let bonus = current as f64 * 0.5; // Grows stronger over time
 ///
 ///         ProcessResult {
 ///             chips_added: 0,
@@ -813,7 +821,7 @@ pub trait JokerLifecycle: Send + Sync {
 ///
 ///     fn get_priority(&self, _stage: &Stage) -> i32 {
 ///         // Higher priority for stronger jokers
-///         self.times_triggered as i32
+///         self.times_triggered.get() as i32
 ///     }
 /// }
 /// ```
@@ -822,7 +830,7 @@ pub trait JokerLifecycle: Send + Sync {
 ///
 /// ### Stage-Specific Processing
 /// ```rust
-/// fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+/// fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
 ///     match stage {
 ///         Stage::Scoring => {
 ///             // Main scoring effect
@@ -883,7 +891,7 @@ pub trait JokerGameplay: Send + Sync {
     /// # use crate::stage::Stage;
     /// # struct MyJoker;
     /// # impl JokerGameplay for MyJoker {
-    /// fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    /// fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
     ///     match stage {
     ///         Stage::Scoring => ProcessResult {
     ///             chips_added: 20,
@@ -896,7 +904,7 @@ pub trait JokerGameplay: Send + Sync {
     /// # fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool { true }
     /// # }
     /// ```
-    fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult;
+    fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult;
 
     /// Checks if this joker can trigger for the current stage and context.
     ///
@@ -928,7 +936,7 @@ pub trait JokerGameplay: Send + Sync {
     ///         && self.enabled
     ///         && !context.played_cards.is_empty()
     /// }
-    /// # fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    /// # fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
     /// #     ProcessResult::default()
     /// # }
     /// # }
@@ -969,7 +977,7 @@ pub trait JokerGameplay: Send + Sync {
     ///         _ => 0,                                        // Default for others
     ///     }
     /// }
-    /// # fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+    /// # fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
     /// #     ProcessResult::default()
     /// # }
     /// # fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool { true }
