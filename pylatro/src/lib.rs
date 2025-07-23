@@ -23,24 +23,6 @@ const MAX_CUSTOM_DATA_KEY_LENGTH: usize = 256;
 const MAX_CUSTOM_DATA_VALUE_LENGTH: usize = 8192;
 const MAX_SEARCH_QUERY_LENGTH: usize = 1024;
 
-// Helper functions for consistent error handling
-fn value_error(message: &str) -> PyErr {
-    PyErr::new::<pyo3::exceptions::PyValueError, _>(message)
-}
-
-fn runtime_error(message: &str) -> PyErr {
-    PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(message)
-}
-
-fn deprecation_warning(py: Python, message: &str) -> PyResult<()> {
-    let warnings = py.import("warnings")?;
-    warnings.call_method1(
-        "warn",
-        (message, py.get_type::<pyo3::exceptions::PyDeprecationWarning>(), 2),
-    )?;
-    Ok(())
-}
-
 /// Optimized game state snapshot that minimizes memory allocations
 ///
 /// This implementation stores scalar values immediately and uses OnceCell
@@ -292,7 +274,7 @@ impl GameStateSnapshot {
     }
 }
 
-#[pyclass(module = "pylatro")]
+#[pyclass]
 struct GameEngine {
     game: Game,
 }
@@ -652,10 +634,7 @@ impl GameEngine {
 
                 // Get actual state from the joker state manager
                 if let Some(joker_state) = self.game.joker_state_manager.get_state(joker_id) {
-                    let _ = state_dict.set_item(
-                        "accumulated_value",
-                        joker_state.accumulated_value,
-                    );
+                    let _ = state_dict.set_item("accumulated_value", joker_state.accumulated_value);
                     let _ =
                         state_dict.set_item("triggers_remaining", joker_state.triggers_remaining);
 
@@ -692,7 +671,7 @@ impl GameEngine {
     fn search_jokers(&self, query: &str) -> PyResult<Vec<JokerMetadata>> {
         // Input validation for security
         if query.len() > MAX_SEARCH_QUERY_LENGTH {
-            return Err(value_error(&format!(
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Search query too long (max {MAX_SEARCH_QUERY_LENGTH} characters)"
             )));
         }
@@ -915,19 +894,21 @@ impl GameEngine {
     ) -> PyResult<bool> {
         // Input validation for security
         if key.len() > MAX_CUSTOM_DATA_KEY_LENGTH {
-            return Err(value_error(&format!(
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Key too long (max {MAX_CUSTOM_DATA_KEY_LENGTH} characters)"
             )));
         }
 
         if value.len() > MAX_CUSTOM_DATA_VALUE_LENGTH {
-            return Err(value_error(&format!(
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
                 "Value too long (max {MAX_CUSTOM_DATA_VALUE_LENGTH} characters)"
             )));
         }
 
         if key.is_empty() {
-            return Err(value_error("Key cannot be empty"));
+            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(
+                "Key cannot be empty",
+            ));
         }
 
         // Check if joker is active
@@ -1019,10 +1000,7 @@ impl GameEngine {
 
                 // Get actual state from the joker state manager
                 if let Some(joker_state) = self.game.joker_state_manager.get_state(joker_id) {
-                    let _ = state_dict.set_item(
-                        "accumulated_value",
-                        joker_state.accumulated_value,
-                    );
+                    let _ = state_dict.set_item("accumulated_value", joker_state.accumulated_value);
                     let _ =
                         state_dict.set_item("triggers_remaining", joker_state.triggers_remaining);
 
@@ -1102,7 +1080,7 @@ impl GameEngine {
     }
 }
 
-#[pyclass(module = "pylatro")]
+#[pyclass]
 struct GameState {
     snapshot: GameStateSnapshot,
 }
@@ -1158,12 +1136,18 @@ impl GameState {
     fn jokers(&self) -> PyResult<Vec<Jokers>> {
         // Emit deprecation warning
         Python::with_gil(|py| {
-            deprecation_warning(
-                py,
-                "GameState.jokers is deprecated. Use GameState.joker_ids with \
-                 The jokers property will be removed in a future version. \
-                 See migration guide for details.",
-            )
+            let warnings = py.import("warnings")?;
+            warnings.call_method1(
+                "warn",
+                (
+                    "GameState.jokers is deprecated. Use GameState.joker_ids with \
+                     The jokers property will be removed in a future version. \
+                     See migration guide for details.",
+                    py.get_type::<pyo3::exceptions::PyDeprecationWarning>(),
+                    2, // stacklevel - show warning at caller's location
+                ),
+            )?;
+            Ok::<(), PyErr>(())
         })?;
 
         // TODO: Convert new joker system to old Jokers enum for Python compatibility
@@ -1241,21 +1225,24 @@ impl GameState {
     fn gen_actions(&self) -> PyResult<Vec<Action>> {
         // Issue deprecation warning
         Python::with_gil(|py| -> PyResult<()> {
-            deprecation_warning(
-                py,
-                "GameState.gen_actions() is deprecated. Use GameEngine.gen_actions() \
-                 instead. GameState should only be used for reading game state, \
-                 not performing actions.",
+            let warnings = py.import("warnings")?;
+            warnings.call_method1(
+                "warn",
+                (
+                    "GameState.gen_actions() is deprecated. Use GameEngine.gen_actions() \
+                     instead. GameState should only be used for reading game state, \
+                     not performing actions.",
+                ),
             )?;
-            deprecation_warning(
-                py,
-                "This method will be removed in version 2.0. Migration guide: https://github.com/spencerduncan/balatro-rs/wiki/Python-API-Migration",
+            warnings.call_method1(
+                "warn",
+                ("This method will be removed in version 2.0. Migration guide: https://github.com/spencerduncan/balatro-rs/wiki/Python-API-Migration",),
             )?;
             Ok(())
         })?;
 
         // This method cannot work without access to the actual Game instance
-        Err(runtime_error(
+        Err(PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(
             "GameState.gen_actions() is deprecated and no longer functional. Use GameEngine.gen_actions() instead. GameState is now a read-only snapshot of the game state."
         ))
     }
@@ -1362,10 +1349,11 @@ impl GameState {
     }
 }
 
-/// Safely convert serde_json::Value to Python object using modern PyO3 API
+/// Safely convert serde_json::Value to Python object using proper lifetime management
 ///
-/// This uses the modern PyO3 Bound API for better memory safety and performance.
-/// Updated to use PyO3 0.24+ patterns for improved lifetime management.
+/// This replaces the deprecated to_object() calls with a safer approach that avoids
+/// creating unnecessary Python object references that could cause memory leaks.
+#[allow(deprecated)] // TODO: Migrate to new PyO3 API in future version
 fn safe_json_to_py(py: Python, value: &serde_json::Value) -> PyResult<pyo3::PyObject> {
     match value {
         serde_json::Value::Null => Ok(py.None()),
@@ -1379,20 +1367,20 @@ fn safe_json_to_py(py: Python, value: &serde_json::Value) -> PyResult<pyo3::PyOb
                 Ok(py.None())
             }
         }
-        serde_json::Value::String(s) => Ok(s.clone().into_py(py)),
+        serde_json::Value::String(s) => Ok(s.into_py(py)),
         serde_json::Value::Array(arr) => {
-            let py_list: PyResult<Vec<pyo3::PyObject>> = arr
+            let py_list: Vec<pyo3::PyObject> = arr
                 .iter()
                 .map(|item| safe_json_to_py(py, item))
-                .collect();
-            Ok(py_list?.into_py(py))
+                .collect::<PyResult<Vec<_>>>()?;
+            Ok(py_list.into_py(py))
         }
         serde_json::Value::Object(obj) => {
-            let py_dict: PyResult<std::collections::HashMap<String, pyo3::PyObject>> = obj
+            let py_dict: std::collections::HashMap<String, pyo3::PyObject> = obj
                 .iter()
                 .map(|(k, v)| safe_json_to_py(py, v).map(|py_val| (k.clone(), py_val)))
-                .collect();
-            Ok(py_dict?.into_py(py))
+                .collect::<PyResult<std::collections::HashMap<_, _>>>()?;
+            Ok(py_dict.into_py(py))
         }
     }
 }
