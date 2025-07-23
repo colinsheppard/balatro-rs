@@ -242,8 +242,8 @@ fn test_single_card_level_joker() {
     // Based on the actual behavior, card-level effects seem to be applied once, not per card
     // This documents the current implementation behavior
     assert_eq!(chips, 2); // Card-level joker triggers once, not per card
-    assert_eq!(mult, 1); 
-    assert_eq!(money, 1); 
+    assert_eq!(mult, 1);
+    assert_eq!(money, 1);
     assert_eq!(mult_multiplier, 1.0);
 }
 
@@ -313,9 +313,8 @@ fn test_zero_mult_multiplier_edge_case() {
 
 #[test]
 fn test_killscreen_detection() {
-    let jokers: Vec<Box<dyn Joker>> = vec![
-        Box::new(TestCardLevelJoker::new(0, 0, 0, f64::INFINITY, 0)),
-    ];
+    let jokers: Vec<Box<dyn Joker>> =
+        vec![Box::new(TestCardLevelJoker::new(0, 0, 0, f64::INFINITY, 0))];
     let mut game = create_test_game_with_jokers(jokers);
     let hand = create_single_card_hand(); // Use single card to trigger killscreen
 
