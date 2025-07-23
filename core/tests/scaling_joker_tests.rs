@@ -1,6 +1,5 @@
-#![cfg(feature = "disabled-for-emergency")]
-// EMERGENCY DISABLE: This entire test file is temporarily disabled due to complex lifetime issues
-// These tests will be re-enabled once the API lifecycle issues are resolved
+// Re-enabled scaling joker tests with proper lifetime management
+// Fixed: No longer using Box::leak() for memory safety
 
 use balatro_rs::card::{Card, Suit, Value};
 use balatro_rs::hand::{Hand, SelectHand};
@@ -14,113 +13,84 @@ use balatro_rs::stage::Stage;
 use std::collections::HashMap;
 use std::sync::Arc;
 
-/// Helper function to create a basic test context
-fn create_test_context(money: i32, ante: u8, round: u32) -> GameContext<'static> {
-    let state_manager = Box::leak(Box::new(Arc::new(JokerStateManager::new())));
-    let jokers: &'static [Box<dyn Joker>] = Box::leak(Box::new([]));
-    let hand = Box::leak(Box::new(Hand::new(vec![])));
-    let discarded: &'static [Card] = Box::leak(Box::new([]));
-    let hand_type_counts = Box::leak(Box::new(HashMap::new()));
-    let stage = Box::leak(Box::new(Stage::Blind(balatro_rs::stage::Blind::Small))); // Default stage
-    let rng = Box::leak(Box::new(balatro_rs::rng::GameRng::for_testing(42)));
+/// Test data holder for proper lifetime management
+struct TestData {
+    state_manager: Arc<JokerStateManager>,
+    jokers: Vec<Box<dyn Joker>>,
+    hand: Hand,
+    discarded: Vec<Card>,
+    hand_type_counts: HashMap<HandRank, u32>,
+    stage: Stage,
+    rng: balatro_rs::rng::GameRng,
+}
 
-    GameContext {
-        chips: 0,
-        mult: 1,
-        money,
-        ante,
-        round,
-        stage,
-        hands_played: 0,
-        discards_used: 0,
-        jokers,
-        hand,
-        discarded,
-        joker_state_manager: state_manager,
-        hand_type_counts,
-        cards_in_deck: 52,
-        stone_cards_in_deck: 0,
-        rng,
+impl TestData {
+    fn new() -> Self {
+        Self {
+            state_manager: Arc::new(JokerStateManager::new()),
+            jokers: vec![],
+            hand: Hand::new(vec![]),
+            discarded: vec![],
+            hand_type_counts: HashMap::new(),
+            stage: Stage::Blind(balatro_rs::stage::Blind::Small),
+            rng: balatro_rs::rng::GameRng::for_testing(42),
+        }
+    }
+
+    fn create_context(&self, money: i32, ante: u8, round: u32) -> GameContext<'_> {
+        GameContext {
+            chips: 0,
+            mult: 1,
+            money,
+            ante,
+            round,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &self.jokers,
+            hand: &self.hand,
+            discarded: &self.discarded,
+            joker_state_manager: &self.state_manager,
+            hand_type_counts: &self.hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
     }
 }
 
 /// Enhanced test harness for scaling joker integration tests
 struct ScalingJokerTestHarness {
-    state_manager: Arc<JokerStateManager>,
+    test_data: TestData,
     jokers: Vec<ScalingJoker>,
-    stage: Stage,
-    rng: balatro_rs::rng::GameRng,
 }
 
 impl ScalingJokerTestHarness {
     fn new() -> Self {
         Self {
-            state_manager: Arc::new(JokerStateManager::new()),
+            test_data: TestData::new(),
             jokers: vec![],
-            stage: Stage::Blind(balatro_rs::stage::Blind::Small),
-            rng: balatro_rs::rng::GameRng::new(balatro_rs::rng::RngMode::Testing(42)),
         }
     }
 
     fn add_joker(&mut self, joker: ScalingJoker) {
         // Initialize joker state
-        let initial_state = joker.initialize_state(&self.create_context());
-        self.state_manager.update_state(joker.id(), |state| {
-            *state = initial_state;
-        });
+        let context = self.test_data.create_context(100, 1, 1);
+        let initial_state = joker.initialize_state(&context);
+        self.test_data
+            .state_manager
+            .update_state(joker.id(), |state| {
+                *state = initial_state;
+            });
         self.jokers.push(joker);
     }
 
-    fn create_context(&self) -> GameContext<'static> {
-        let jokers: &'static [Box<dyn Joker>] = Box::leak(Box::new([]));
-        let hand = Box::leak(Box::new(Hand::new(vec![])));
-        let discarded: &'static [Card] = Box::leak(Box::new([]));
-        let hand_type_counts = Box::leak(Box::new(HashMap::new()));
-
-        GameContext {
-            chips: 0,
-            mult: 1,
-            money: 100,
-            ante: 1,
-            round: 1,
-            stage: &self.stage,
-            hands_played: 0,
-            discards_used: 0,
-            jokers,
-            hand,
-            discarded,
-            joker_state_manager: &self.state_manager,
-            hand_type_counts,
-            cards_in_deck: 52,
-            stone_cards_in_deck: 0,
-            rng: &self.rng,
-        }
+    fn create_context(&self) -> GameContext<'_> {
+        self.test_data.create_context(100, 1, 1)
     }
 
     fn create_mutable_context(&mut self) -> GameContext<'_> {
-        let jokers: Vec<Box<dyn Joker>> = vec![];
-        let hand = Hand::new(vec![]);
-        let discarded: Vec<Card> = vec![];
-        let hand_type_counts = HashMap::new();
-
-        GameContext {
-            chips: 0,
-            mult: 1,
-            money: 100,
-            ante: 1,
-            round: 1,
-            stage: &self.stage,
-            hands_played: 0,
-            discards_used: 0,
-            jokers: &jokers,
-            hand: &hand,
-            discarded: &discarded,
-            joker_state_manager: &self.state_manager,
-            hand_type_counts: &hand_type_counts,
-            cards_in_deck: 52,
-            stone_cards_in_deck: 0,
-            rng: &self.rng,
-        }
+        self.test_data.create_context(100, 1, 1)
     }
 
     /// Simulate playing a hand with specific rank
@@ -190,7 +160,8 @@ impl ScalingJokerTestHarness {
 
     /// Get current accumulated value for a joker
     fn get_accumulated_value(&self, joker_id: JokerId) -> f64 {
-        self.state_manager
+        self.test_data
+            .state_manager
             .get_accumulated_value(joker_id)
             .unwrap_or(0.0)
     }
@@ -794,7 +765,8 @@ fn test_multiple_reset_conditions() {
 
     // Test 1: Round End reset condition (Ceremonial Dagger)
     let mut ceremonial = create_ceremonial_dagger();
-    let mut context = create_test_context(100, 1, 1);
+    let test_data = TestData::new();
+    let mut context = test_data.create_context(100, 1, 1);
     let initial_state = ceremonial.initialize_state(&context);
     context
         .joker_state_manager
@@ -874,7 +846,8 @@ fn test_reset_before_trigger_order() {
     )
     .with_reset_condition(ResetCondition::HandPlayed(HandRank::OnePair));
 
-    let mut context = create_test_context(100, 1, 1);
+    let test_data = TestData::new();
+    let mut context = test_data.create_context(100, 1, 1);
     let initial_state = joker.initialize_state(&context);
     context
         .joker_state_manager
@@ -908,7 +881,8 @@ fn test_reset_before_trigger_order() {
 fn test_reset_conditions_with_different_events() {
     // Test various reset conditions with their corresponding events
 
-    let mut context = create_test_context(100, 1, 1);
+    let test_data = TestData::new();
+    let mut context = test_data.create_context(100, 1, 1);
 
     // Test ante end reset
     let mut ante_reset_joker = ScalingJoker::new(

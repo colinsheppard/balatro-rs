@@ -28,7 +28,7 @@ pub enum ScalingTrigger {
 impl fmt::Display for ScalingTrigger {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ScalingTrigger::HandPlayed(hand_rank) => write!(f, "{:?} played", hand_rank),
+            ScalingTrigger::HandPlayed(hand_rank) => write!(f, "{hand_rank:?} played"),
             ScalingTrigger::CardDiscarded => write!(f, "card discarded"),
             ScalingTrigger::MoneyGained => write!(f, "money gained"),
             ScalingTrigger::BlindCompleted => write!(f, "blind completed"),
@@ -62,7 +62,7 @@ pub enum ResetCondition {
 impl fmt::Display for ResetCondition {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ResetCondition::HandPlayed(hand_rank) => write!(f, "reset on {:?} played", hand_rank),
+            ResetCondition::HandPlayed(hand_rank) => write!(f, "reset on {hand_rank:?} played"),
             ResetCondition::RoundEnd => write!(f, "reset at round end"),
             ResetCondition::AnteEnd => write!(f, "reset at ante end"),
             ResetCondition::MoneySpent => write!(f, "reset when money spent"),
@@ -338,6 +338,11 @@ impl Joker for ScalingJoker {
 
     fn initialize_state(&self, _context: &GameContext) -> JokerState {
         JokerState::with_accumulated_value(self.base_value)
+    }
+
+    fn process_scaling_event(&self, context: &mut GameContext, event: &ScalingEvent) -> bool {
+        self.process_event(context, event);
+        true // Return true to indicate the event was processed
     }
 }
 
