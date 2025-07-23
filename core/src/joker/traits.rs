@@ -30,7 +30,6 @@
 //! ### Better Testing
 //! Each aspect can be tested in complete isolation:
 //! ```rust
-//! #[test] 
 //! fn test_identity_only() {
 //!     let joker = TestJoker;
 //!     assert_eq!(joker.name(), "Expected Name");
@@ -45,7 +44,7 @@
 //!
 //! The original `Joker` trait is now a super trait that requires all five focused traits:
 //! ```rust
-//! pub trait Joker: JokerIdentity + JokerLifecycle + JokerGameplay + 
+//! pub trait Joker: JokerIdentity + JokerLifecycle + JokerGameplay +
 //!                  JokerModifiers + JokerState + Send + Sync + Debug {}
 //! ```
 //!
@@ -89,7 +88,7 @@
 //! ```
 //!
 //! ### Stateful Joker
-//! ```rust 
+//! ```rust
 //! #[derive(Debug, Clone)]
 //! struct CountingJoker {
 //!     hands_played: u32,
@@ -106,10 +105,10 @@
 //! impl JokerGameplay for CountingJoker {
 //!     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
 //!         if matches!(stage, Stage::Scoring) {
-//!             ProcessResult { 
-//!                 chips_added: 0, 
-//!                 mult_added: self.hands_played as f64, 
-//!                 retriggered: false 
+//!             ProcessResult {
+//!                 chips_added: 0,
+//!                 mult_added: self.hands_played as f64,
+//!                 retriggered: false
 //!             }
 //!         } else {
 //!             ProcessResult::default()
@@ -620,7 +619,7 @@ pub trait JokerLifecycle: Send + Sync {
     /// fn on_round_end(&mut self) {
     ///     self.rounds_completed += 1;
     ///     self.bonus_mult += 0.5;  // Grow stronger each round
-    ///     println!("Round {} complete, bonus now {}", 
+    ///     println!("Round {} complete, bonus now {}",
     ///              self.rounds_completed, self.bonus_mult);
     /// }
     /// # }
@@ -677,7 +676,7 @@ pub trait JokerLifecycle: Send + Sync {
     /// fn on_joker_removed(&mut self, other_joker_type: &str) {
     ///     self.departed_friends += 1;
     ///     self.sadness_bonus += 1.0;  // Gets stronger when alone
-    ///     println!("Lost friend {} - sadness bonus now {}", 
+    ///     println!("Lost friend {} - sadness bonus now {}",
     ///              other_joker_type, self.sadness_bonus);
     /// }
     /// # }
@@ -842,7 +841,7 @@ pub trait JokerLifecycle: Send + Sync {
 /// ### Conditional Triggering
 /// ```rust
 /// fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool {
-///     matches!(stage, Stage::Scoring) 
+///     matches!(stage, Stage::Scoring)
 ///         && !context.played_cards.is_empty()
 ///         && self.some_internal_condition()
 /// }
@@ -863,7 +862,7 @@ pub trait JokerGameplay: Send + Sync {
     ///
     /// This is the core method where jokers implement their gameplay effects.
     /// Called by the game engine during various stages, this method should:
-    /// 
+    ///
     /// 1. Check if the joker should activate for the given stage
     /// 2. Apply the joker's effect (modify scoring, trigger events, etc.)
     /// 3. Return the appropriate `ProcessResult` describing what happened
@@ -925,8 +924,8 @@ pub trait JokerGameplay: Send + Sync {
     /// # impl JokerGameplay for ConditionalJoker {
     /// fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool {
     ///     // Only trigger during scoring if enabled and cards were played
-    ///     matches!(stage, Stage::Scoring) 
-    ///         && self.enabled 
+    ///     matches!(stage, Stage::Scoring)
+    ///         && self.enabled
     ///         && !context.played_cards.is_empty()
     /// }
     /// # fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
@@ -1382,7 +1381,7 @@ pub trait JokerState: Send + Sync {
     /// # struct LevelingJoker { level: u32, xp: u32, abilities: Vec<String> }
     /// # impl JokerState for LevelingJoker {
     /// fn debug_state(&self) -> String {
-    ///     format!("Level {}, XP: {}/{}, Abilities: {:?}", 
+    ///     format!("Level {}, XP: {}/{}, Abilities: {:?}",
     ///             self.level, self.xp, self.xp_needed(), self.abilities)
     /// }
     /// # fn xp_needed(&self) -> u32 { 100 }
@@ -1403,7 +1402,7 @@ pub trait JokerState: Send + Sync {
     /// # Example
     /// ```rust
     /// # use crate::joker::traits::JokerState;
-    /// # struct ProgressJoker { 
+    /// # struct ProgressJoker {
     /// #     times_used: u32,
     /// #     accumulated_bonus: f64,
     /// #     achievements: Vec<String>
