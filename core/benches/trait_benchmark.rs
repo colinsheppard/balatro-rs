@@ -11,6 +11,7 @@ use balatro_rs::{
     joker::{GameContext, Joker, JokerEffect, JokerId},
     joker_effect_processor::{ConflictResolutionStrategy, JokerEffectProcessor, ProcessingContext},
     joker_registry,
+    rank::HandRank,
     rng::GameRng,
     shop::Shop,
     stage::Stage,
@@ -27,15 +28,16 @@ pub fn trait_dispatch_benchmark(c: &mut Criterion) {
     let joker_ids = vec![JokerId::Joker, JokerId::GreedyJoker, JokerId::LustyJoker];
 
     for joker_id in joker_ids {
-        if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
+        if let Ok(joker) = joker_registry::registry::create_joker(&joker_id) {
             group.bench_with_input(
                 BenchmarkId::new("trait_method_call", format!("{:?}", joker_id)),
                 &joker,
                 |b, joker| {
-                    let mut game_context = create_test_game_context();
+                    let test_data = TestGameData::new();
                     let test_card = Card::new(Value::Ace, Suit::Spade);
 
                     b.iter(|| {
+                        let mut game_context = test_data.create_context();
                         // Benchmark trait method dispatch
                         black_box(joker.id());
                         black_box(joker.on_card_scored(&mut game_context, &test_card));
@@ -63,10 +65,11 @@ pub fn effect_processor_benchmark(c: &mut Criterion) {
             |b, &count| {
                 let jokers = create_test_jokers(count);
                 let mut processor = JokerEffectProcessor::new();
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
                 let hand = create_test_hand();
 
                 b.iter(|| {
+                    let mut game_context = test_data.create_context();
                     let result = processor.process_hand_effects(
                         black_box(&jokers),
                         black_box(&mut game_context),
@@ -83,10 +86,11 @@ pub fn effect_processor_benchmark(c: &mut Criterion) {
             |b, &count| {
                 let jokers = create_test_jokers(count);
                 let mut processor = JokerEffectProcessor::new();
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
                 let test_card = Card::new(Value::King, Suit::Heart);
 
                 b.iter(|| {
+                    let mut game_context = test_data.create_context();
                     let result = processor.process_card_effects(
                         black_box(&jokers),
                         black_box(&mut game_context),
@@ -123,10 +127,11 @@ pub fn conflict_resolution_benchmark(c: &mut Criterion) {
                     .resolution_strategy(strategy.clone())
                     .build();
                 let mut processor = JokerEffectProcessor::with_context(context);
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
                 let hand = create_test_hand();
 
                 b.iter(|| {
+                    let mut game_context = test_data.create_context();
                     let result = processor.process_hand_effects(
                         black_box(&jokers),
                         black_box(&mut game_context),
@@ -166,10 +171,11 @@ pub fn memory_allocation_benchmark(c: &mut Criterion) {
             |b, &count| {
                 let jokers = create_test_jokers(count);
                 let mut processor = JokerEffectProcessor::new();
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
                 let hand = create_test_hand();
 
                 b.iter(|| {
+                    let mut game_context = test_data.create_context();
                     // This will create and accumulate many effects
                     for _ in 0..10 {
                         let result =
@@ -204,7 +210,7 @@ pub fn shop_generation_benchmark(c: &mut Criterion) {
 
         // Add some jokers to the game state
         for joker_id in [JokerId::Joker, JokerId::GreedyJoker, JokerId::LustyJoker] {
-            if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
+            if let Ok(joker) = joker_registry::registry::create_joker(&joker_id) {
                 // game.add_joker(joker).ok(); // TODO: Fix - add_joker method doesn't exist
             }
         }
@@ -238,7 +244,7 @@ pub fn action_generation_benchmark(c: &mut Criterion) {
 
         // Add jokers that might affect action generation
         for joker_id in [JokerId::Joker, JokerId::GreedyJoker] {
-            if let Ok(joker) = joker_registry::JokerRegistry::create_joker(&joker_id) {
+            if let Ok(joker) = joker_registry::registry::create_joker(&joker_id) {
                 // game.add_joker(joker).ok(); // TODO: Fix - add_joker method doesn't exist
             }
         }
@@ -259,10 +265,11 @@ pub fn cache_performance_benchmark(c: &mut Criterion) {
     group.bench_function("with_cache", |b| {
         let jokers = create_test_jokers(5);
         let mut processor = JokerEffectProcessor::new(); // Cache enabled by default
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
         let hand = create_test_hand();
 
         b.iter(|| {
+            let mut game_context = test_data.create_context();
             // Process the same hand multiple times to benefit from caching
             for _ in 0..10 {
                 let result = processor.process_hand_effects(&jokers, &mut game_context, &hand);
@@ -280,10 +287,11 @@ pub fn cache_performance_benchmark(c: &mut Criterion) {
         cache_config.enabled = false;
         processor.set_cache_config(cache_config);
 
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
         let hand = create_test_hand();
 
         b.iter(|| {
+            let mut game_context = test_data.create_context();
             // Process the same hand multiple times without cache benefit
             for _ in 0..10 {
                 let result = processor.process_hand_effects(&jokers, &mut game_context, &hand);
@@ -331,37 +339,58 @@ pub fn retrigger_benchmark(c: &mut Criterion) {
 
 // Helper functions for creating test data
 
-fn create_test_game_context() -> GameContext<'static> {
-    GameContext {
-        chips: 100,
-        mult: 4,
-        money: 100,
-        ante: 1,
-        round: 1,
-        stage: &Stage::PreBlind(),
-        hands_played: 0,
-        discards_used: 0,
-        jokers: &[],
-        hand: &balatro_rs::hand::Hand::new(vec![]),
-        discarded: &[],
-        joker_state_manager: &std::sync::Arc::new(balatro_rs::joker_state::JokerStateManager::new()),
-        hand_type_counts: &HashMap::new(),
-        cards_in_deck: 52,
-        stone_cards_in_deck: 0,
-        rng: &GameRng::for_testing(12345),
+// Test data holder to maintain ownership
+struct TestGameData {
+    stage: Stage,
+    hand: balatro_rs::hand::Hand,
+    joker_state_manager: std::sync::Arc<balatro_rs::joker_state::JokerStateManager>,
+    hand_type_counts: HashMap<HandRank, u32>,
+    rng: GameRng,
+}
+
+impl TestGameData {
+    fn new() -> Self {
+        Self {
+            stage: Stage::PreBlind(),
+            hand: balatro_rs::hand::Hand::new(vec![]),
+            joker_state_manager: std::sync::Arc::new(
+                balatro_rs::joker_state::JokerStateManager::new(),
+            ),
+            hand_type_counts: HashMap::new(),
+            rng: GameRng::for_testing(12345),
+        }
+    }
+
+    fn create_context(&self) -> GameContext {
+        GameContext {
+            chips: 100,
+            mult: 4,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &[],
+            hand: &self.hand,
+            discarded: &[],
+            joker_state_manager: &self.joker_state_manager,
+            hand_type_counts: &self.hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
     }
 }
 
 fn create_test_hand() -> SelectHand {
-    SelectHand {
-        cards: vec![
-            Card::new(Value::Ace, Suit::Spade),
-            Card::new(Value::King, Suit::Spade),
-            Card::new(Value::Queen, Suit::Spade),
-            Card::new(Value::Jack, Suit::Spade),
-            Card::new(Value::Ten, Suit::Spade),
-        ],
-    }
+    SelectHand::new(vec![
+        Card::new(Value::Ace, Suit::Spade),
+        Card::new(Value::King, Suit::Spade),
+        Card::new(Value::Queen, Suit::Spade),
+        Card::new(Value::Jack, Suit::Spade),
+        Card::new(Value::Ten, Suit::Spade),
+    ])
 }
 
 fn create_test_jokers(count: usize) -> Vec<Box<dyn Joker>> {
@@ -370,8 +399,8 @@ fn create_test_jokers(count: usize) -> Vec<Box<dyn Joker>> {
 
     for i in 0..count {
         let joker_id = &joker_ids[i % joker_ids.len()];
-        if let Ok(Some(definition)) = joker_registry::registry::get_definition(joker_id) {
-            jokers.push(definition.create());
+        if let Ok(joker) = joker_registry::registry::create_joker(joker_id) {
+            jokers.push(joker);
         }
     }
 

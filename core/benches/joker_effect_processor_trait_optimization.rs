@@ -8,29 +8,53 @@ use balatro_rs::hand::SelectHand;
 use balatro_rs::joker::{GameContext, Joker, JokerEffect, JokerId};
 use balatro_rs::joker_effect_processor::{JokerEffectProcessor, ProcessingContext};
 use balatro_rs::joker_impl::{GreedyJoker, LustyJoker, TheJoker};
+use balatro_rs::rank::HandRank;
+use balatro_rs::rng::GameRng;
 use balatro_rs::stage::Stage;
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::collections::HashMap;
 
-/// Create a test game context for benchmarking
-fn create_test_game_context() -> GameContext<'static> {
-    GameContext {
-        chips: 100,
-        mult: 4,
-        money: 100,
-        ante: 1,
-        round: 1,
-        stage: &Stage::PreBlind(),
-        hands_played: 0,
-        discards_used: 0,
-        jokers: &[],
-        hand: &balatro_rs::hand::Hand::new(vec![]),
-        discarded: &[],
-        joker_state_manager: &std::sync::Arc::new(balatro_rs::joker_state::JokerStateManager::new()),
-        hand_type_counts: &HashMap::new(),
-        cards_in_deck: 52,
-        stone_cards_in_deck: 0,
-        rng: &balatro_rs::rng::GameRng::secure(),
+// Test data holder to maintain ownership
+struct TestGameData {
+    stage: Stage,
+    hand: balatro_rs::hand::Hand,
+    joker_state_manager: std::sync::Arc<balatro_rs::joker_state::JokerStateManager>,
+    hand_type_counts: HashMap<HandRank, u32>,
+    rng: GameRng,
+}
+
+impl TestGameData {
+    fn new() -> Self {
+        Self {
+            stage: Stage::PreBlind(),
+            hand: balatro_rs::hand::Hand::new(vec![]),
+            joker_state_manager: std::sync::Arc::new(
+                balatro_rs::joker_state::JokerStateManager::new(),
+            ),
+            hand_type_counts: HashMap::new(),
+            rng: GameRng::for_testing(12345),
+        }
+    }
+
+    fn create_context(&self) -> GameContext {
+        GameContext {
+            chips: 100,
+            mult: 4,
+            money: 100,
+            ante: 1,
+            round: 1,
+            stage: &self.stage,
+            hands_played: 0,
+            discards_used: 0,
+            jokers: &[],
+            hand: &self.hand,
+            discarded: &[],
+            joker_state_manager: &self.joker_state_manager,
+            hand_type_counts: &self.hand_type_counts,
+            cards_in_deck: 52,
+            stone_cards_in_deck: 0,
+            rng: &self.rng,
+        }
     }
 }
 
@@ -73,12 +97,10 @@ fn bench_legacy_hand_processing(c: &mut Criterion) {
                 let mut processor = JokerEffectProcessor::new();
                 let jokers = create_test_jokers(joker_count);
                 let hand = create_test_hand();
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
 
                 b.iter(|| {
-                    // Reset context for each iteration
-                    game_context.chips = 100;
-                    game_context.mult = 4;
+                    let mut game_context = test_data.create_context();
 
                     black_box(processor.process_hand_effects(
                         black_box(&jokers),
@@ -106,12 +128,10 @@ fn bench_optimized_hand_processing(c: &mut Criterion) {
                 let jokers = create_test_jokers(joker_count);
                 let hand = create_test_hand();
                 let stage = Stage::PreBlind();
-                let mut game_context = create_test_game_context();
+                let test_data = TestGameData::new();
 
                 b.iter(|| {
-                    // Reset context for each iteration
-                    game_context.chips = 100;
-                    game_context.mult = 4;
+                    let mut game_context = test_data.create_context();
 
                     black_box(processor.process_hand_effects_optimized(
                         black_box(&jokers),
@@ -137,11 +157,10 @@ fn bench_card_processing_comparison(c: &mut Criterion) {
 
     group.bench_function("legacy_card_processing", |b| {
         let mut processor = JokerEffectProcessor::new();
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
 
         b.iter(|| {
-            game_context.chips = 100;
-            game_context.mult = 4;
+            let mut game_context = test_data.create_context();
 
             black_box(processor.process_card_effects(
                 black_box(&jokers),
@@ -153,11 +172,10 @@ fn bench_card_processing_comparison(c: &mut Criterion) {
 
     group.bench_function("optimized_card_processing", |b| {
         let mut processor = JokerEffectProcessor::new();
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
 
         b.iter(|| {
-            game_context.chips = 100;
-            game_context.mult = 4;
+            let mut game_context = test_data.create_context();
 
             black_box(processor.process_card_effects_optimized(
                 black_box(&jokers),
@@ -226,11 +244,10 @@ fn bench_cache_performance(c: &mut Criterion) {
         config.enabled = false;
         processor.set_cache_config(config);
 
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
 
         b.iter(|| {
-            game_context.chips = 100;
-            game_context.mult = 4;
+            let mut game_context = test_data.create_context();
 
             black_box(processor.process_hand_effects(
                 black_box(&jokers),
@@ -243,11 +260,10 @@ fn bench_cache_performance(c: &mut Criterion) {
     group.bench_function("cache_enabled", |b| {
         let mut processor = JokerEffectProcessor::new();
         // Cache is enabled by default
-        let mut game_context = create_test_game_context();
+        let test_data = TestGameData::new();
 
         b.iter(|| {
-            game_context.chips = 100;
-            game_context.mult = 4;
+            let mut game_context = test_data.create_context();
 
             black_box(processor.process_hand_effects(
                 black_box(&jokers),
@@ -272,12 +288,11 @@ fn bench_comprehensive_comparison(c: &mut Criterion) {
     group.bench_function("legacy_full_scenario", |b| {
         b.iter(|| {
             let mut processor = JokerEffectProcessor::new();
-            let mut game_context = create_test_game_context();
+            let test_data = TestGameData::new();
 
             // Process 10 hands (simulating a blind)
             for _ in 0..10 {
-                game_context.chips = 100;
-                game_context.mult = 4;
+                let mut game_context = test_data.create_context();
 
                 black_box(processor.process_hand_effects(
                     black_box(&jokers),
@@ -291,12 +306,11 @@ fn bench_comprehensive_comparison(c: &mut Criterion) {
     group.bench_function("optimized_full_scenario", |b| {
         b.iter(|| {
             let mut processor = JokerEffectProcessor::new();
-            let mut game_context = create_test_game_context();
+            let test_data = TestGameData::new();
 
             // Process 10 hands (simulating a blind)
             for _ in 0..10 {
-                game_context.chips = 100;
-                game_context.mult = 4;
+                let mut game_context = test_data.create_context();
 
                 black_box(processor.process_hand_effects_optimized(
                     black_box(&jokers),

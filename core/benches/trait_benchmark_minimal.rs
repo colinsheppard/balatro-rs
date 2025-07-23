@@ -17,9 +17,7 @@ pub fn minimal_trait_benchmark(c: &mut Criterion) {
 
         b.iter(|| {
             // Test joker registry access
-            if let Ok(Some(definition)) = joker_registry::registry::get_definition(&JokerId::Joker)
-            {
-                let joker = joker_registry::JokerRegistry::create_joker(&JokerId::Joker).unwrap();
+            if let Ok(joker) = joker_registry::registry::create_joker(&JokerId::Joker) {
                 black_box(joker.id());
             }
             black_box(&test_card);
