@@ -25,6 +25,19 @@ use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 use thiserror::Error;
 
+/// Represents different collections of cards that can be targeted by consumables
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum CardCollection {
+    /// Cards currently in the player's hand
+    Hand,
+    /// Cards in the deck
+    Deck,
+    /// Cards in the discard pile
+    DiscardPile,
+    /// Cards that were played this round
+    PlayedCards,
+}
+
 /// Error types for consumable operations
 #[derive(Error, Debug, Clone)]
 pub enum ConsumableError {
@@ -47,19 +60,6 @@ pub enum SlotError {
     NoEmptySlots { capacity: usize },
     #[error("Slot {index} is already empty")]
     SlotEmpty { index: usize },
-}
-
-/// Collections where cards can be found for targeting
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub enum CardCollection {
-    /// Cards currently in the player's hand
-    Hand,
-    /// Cards in the deck (not yet drawn)
-    Deck,
-    /// Cards in the discard pile
-    DiscardPile,
-    /// Cards that have been played this round
-    PlayedCards,
 }
 
 impl fmt::Display for CardCollection {
@@ -359,7 +359,6 @@ fn generate_combinations_recursive(
         current.pop();
     }
 }
-
 /// Represents targeting specific cards with validation
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct CardTarget {

@@ -110,7 +110,7 @@ fn test_joker_target_validate_empty_slot() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        // EMERGENCY: JokerTargetError::EmptySlot { slot: 3 }
+        JokerTargetError::EmptySlot { slot: 3 }
     ));
 }
 
@@ -170,7 +170,7 @@ fn test_joker_target_get_joker_invalid() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        // EMERGENCY: JokerTargetError::EmptySlot { slot: 5 }
+        JokerTargetError::EmptySlot { slot: 5 }
     ));
 }
 
@@ -252,9 +252,8 @@ fn test_target_as_joker_target() {
     let card_target = Target::Cards(vec![0, 1]);
     let none_target = Target::None;
 
-    // EMERGENCY DISABLE: Missing JokerTarget types
-    /*
     // Test conversion from Target::Joker
+    /* EMERGENCY DISABLE: as_joker_target() method not found
     let result = joker_target.as_joker_target();
     assert!(result.is_some());
     let joker_target_struct = result.unwrap();
@@ -317,13 +316,13 @@ fn test_target_joker_invalid_slot() {
     let game = create_game_with_jokers(2);
 
     let target = Target::Joker(5);
-    // EMERGENCY DISABLE: let joker_target = target.as_joker_target().unwrap();
+    let joker_target = target.as_joker_target().unwrap();
     let validation_result = joker_target.validate(&game);
 
     assert!(validation_result.is_err());
     assert!(matches!(
         validation_result.unwrap_err(),
-        // EMERGENCY: JokerTargetError::EmptySlot { slot: 5 }
+        JokerTargetError::EmptySlot { slot: 5 }
     ));
 }
 
@@ -338,7 +337,7 @@ fn test_joker_target_edge_cases() {
     assert!(result.is_err());
     assert!(matches!(
         result.unwrap_err(),
-        // EMERGENCY: JokerTargetError::EmptySlot { slot: 0 }
+        JokerTargetError::EmptySlot { slot: 0 }
     ));
 
     // Test is_slot_occupied with empty game

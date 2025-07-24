@@ -9,7 +9,7 @@ use balatro_rs::rank::HandRank;
 use balatro_rs::scaling_joker::*;
 use balatro_rs::scaling_joker_custom::*;
 use balatro_rs::scaling_joker_impl::*;
-use balatro_rs::stage::Stage;
+use balatro_rs::stage::{Blind, Stage};
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -32,7 +32,7 @@ impl TestData {
             hand: Hand::new(vec![]),
             discarded: vec![],
             hand_type_counts: HashMap::new(),
-            stage: Stage::Blind(balatro_rs::stage::Blind::Small),
+            stage: Stage::Blind(Blind::Small),
             rng: balatro_rs::rng::GameRng::for_testing(42),
         }
     }
@@ -484,6 +484,14 @@ fn test_joker_descriptions_are_descriptive() {
 
 #[test]
 #[ignore] // Ignore until we have proper test harness
+fn test_scaling_joker_state_persistence() {
+    // This test would verify that joker state is properly saved and restored
+    // across game sessions using the JokerStateManager
+    todo!("Implement integration test for state persistence");
+}
+
+#[test]
+#[ignore] // Ignore until we have proper test harness
 fn test_scaling_joker_triggers_in_game() {
     let mut harness = ScalingJokerTestHarness::new();
 
@@ -906,7 +914,7 @@ fn test_performance_with_many_scaling_jokers() {
     let hand = Hand::new(vec![]);
     let discarded: Vec<Card> = vec![];
     let hand_type_counts = HashMap::new();
-    let stage = Stage::Blind(balatro_rs::stage::Blind::Small);
+    let stage = Stage::Blind(Blind::Small);
     let rng = &balatro_rs::rng::GameRng::new(balatro_rs::rng::RngMode::Testing(42));
 
     let context = GameContext {

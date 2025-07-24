@@ -41,7 +41,7 @@ use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::joker_state::{JokerState, JokerStateManager};
 use crate::rank::HandRank;
 use crate::rng::GameRng;
-use crate::stage::Stage;
+use crate::stage::{Blind, Stage};
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -609,7 +609,7 @@ impl TestContextBuilder {
             money: 5,
             ante: 1,
             round: 1,
-            stage: Stage::Blind(crate::stage::Blind::Small),
+            stage: Stage::Blind(Blind::Small),
             hands_played: 0,
             discards_used: 0,
             hand: Hand::new(vec![]),
@@ -960,7 +960,7 @@ mod tests {
         let joker = MockStateJoker::new().with_custom_deserialization();
         let context = TestContextBuilder::new().build();
 
-        let mut state_data = serde_json::to_value(JokerState::new()).unwrap();
+        let state_data = serde_json::to_value(JokerState::new()).unwrap();
         let original_value = state_data["accumulated_value"].as_f64().unwrap_or(0.0);
 
         let deserialized = joker.deserialize_state(&context, &state_data).unwrap();
