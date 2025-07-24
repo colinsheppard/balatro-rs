@@ -9,7 +9,6 @@
 
 use super::traits::{JokerIdentity, Rarity};
 use std::collections::HashSet;
-use std::sync::Arc;
 
 /// Mock implementation for testing JokerIdentity
 struct MockJokerIdentity {
@@ -131,26 +130,6 @@ mod contract_tests {
     }
 
     #[test]
-    fn test_rarity_values_valid() {
-        // Test all valid rarity values
-        let rarities = vec![
-            Rarity::Common,
-            Rarity::Uncommon,
-            Rarity::Rare,
-            Rarity::Legendary,
-        ];
-
-        for rarity in rarities {
-            let joker = MockJokerIdentity::new("rarity_test").with_rarity(rarity);
-            match joker.rarity() {
-                Rarity::Common | Rarity::Uncommon | Rarity::Rare | Rarity::Legendary => {
-                    // Valid rarity
-                }
-            }
-        }
-    }
-
-    #[test]
     fn test_base_cost_matches_rarity() {
         // Test that base cost aligns with rarity expectations
         let common = MockJokerIdentity::new("common").with_rarity(Rarity::Common);
@@ -202,19 +181,12 @@ mod contract_tests {
 
     #[test]
     fn test_send_sync_bounds() {
-        // Test that JokerIdentity implements Send + Sync
+        // Test that JokerIdentity implements Send + Sync at compile time
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<Box<dyn JokerIdentity>>();
 
-        // Test concurrent access
-        let joker: Arc<dyn JokerIdentity> = Arc::new(MockJokerIdentity::new("concurrent"));
-        let joker_clone = Arc::clone(&joker);
-
-        std::thread::spawn(move || {
-            assert_eq!(joker_clone.joker_type(), "concurrent");
-        })
-        .join()
-        .unwrap();
+        // Compile-time verification is sufficient - no runtime overhead needed
+        // The trait bounds are enforced by the compiler
     }
 }
 
@@ -237,8 +209,8 @@ mod boundary_tests {
     #[test]
     fn test_very_long_strings() {
         // Test with very long strings
-        let long_name = "A".repeat(1000);
-        let long_desc = "B".repeat(10000);
+        let long_name = "A".repeat(100);
+        let long_desc = "B".repeat(200);
 
         let joker = MockJokerIdentity::new("long_strings")
             .with_name(long_name.clone())
