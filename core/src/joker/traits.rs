@@ -5,7 +5,6 @@
 //! joker behavior, making the system more modular and maintainable.
 
 use crate::card::Card;
-use crate::hand::{HandEvalConfig, SelectHand};
 use crate::joker_state::JokerStateManager;
 use crate::stage::Stage;
 use serde::{Deserialize, Serialize};
@@ -82,60 +81,52 @@ pub trait JokerLifecycle: Send + Sync {
 /// This trait handles the core gameplay functionality of jokers,
 /// including scoring and card interactions.
 ///
-/// # State Management
+/// # State Management for Mutable Jokers
 ///
-/// The `process()` method takes a mutable `&mut self` reference, allowing jokers
-/// to maintain internal state directly. This enables cleaner, more efficient code
-/// compared to external state management.
+/// Since `process()` takes an immutable `&self` reference, jokers that need to
+/// maintain mutable state must use the `JokerStateManager` provided in the
+/// `ProcessContext`. This ensures thread safety and proper state persistence.
 ///
 /// ## Common Patterns
 ///
 /// ### Per-Round State
 /// ```rust,ignore
-/// struct MyJoker {
-///     triggered_this_round: bool,
-/// }
-///
 /// impl JokerGameplay for MyJoker {
-///     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-///         if !self.triggered_this_round && self.should_trigger(context) {
-///             self.triggered_this_round = true;
+///     fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+///         // Check if already triggered this round
+///         let triggered = context.joker_state_manager
+///             .get_custom_data::<bool>(self.id(), "triggered_this_round")
+///             .ok().flatten().unwrap_or(false);
+///
+///         if !triggered && self.should_trigger(context) {
+///             // Mark as triggered
+///             let _ = context.joker_state_manager.set_custom_data(
+///                 self.id(), "triggered_this_round", json!(true)
+///             );
 ///             // Return effect
-///             ProcessResult {
-///                 mult_added: 5.0,
-///                 ..Default::default()
-///             }
-///         } else {
-///             ProcessResult::default()
 ///         }
+///         ProcessResult::default()
 ///     }
 /// }
 /// ```
 ///
 /// ### Accumulating State
 /// ```rust,ignore
-/// struct AccumulatingJoker {
-///     accumulated_value: f64,
-/// }
-///
-/// impl JokerGameplay for AccumulatingJoker {
-///     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-///         self.accumulated_value += 1.0;
-///         ProcessResult {
-///             mult_added: self.accumulated_value,
-///             ..Default::default()
-///         }
-///     }
-/// }
+/// // Use the built-in accumulated_value field
+/// let current = context.joker_state_manager
+///     .get_accumulated_value(self.id()).unwrap_or(0.0);
+/// context.joker_state_manager
+///     .update_accumulated_value(self.id(), current + 1.0);
 /// ```
 ///
-/// ## Thread Safety
+/// ## Lifecycle Integration
 ///
-/// For jokers that need thread-safe state sharing, use interior mutability patterns
-/// like `Mutex`, `RwLock`, or atomic types. The joker itself must remain `Send + Sync`.
+/// Remember that lifecycle methods like `on_round_start()` should coordinate
+/// with the state manager. The game engine is responsible for resetting
+/// per-round state in the JokerStateManager when lifecycle events occur.
 pub trait JokerGameplay: Send + Sync {
     /// Processes the joker's effect during the specified stage.
-    fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult;
+    fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult;
 
     /// Checks if this joker can trigger based on the current game state.
     fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool;
@@ -169,12 +160,6 @@ pub trait JokerModifiers: Send + Sync {
     /// Returns the discard modifier this joker provides.
     fn get_discard_modifier(&self) -> i32 {
         0
-    }
-
-    /// Returns the hand evaluation configuration this joker provides.
-    /// If None, this joker doesn't affect hand evaluation rules.
-    fn get_hand_eval_config(&self) -> Option<HandEvalConfig> {
-        None
     }
 }
 
@@ -218,30 +203,32 @@ pub enum Rarity {
 
 /// Context provided to jokers during processing.
 ///
-/// This struct provides access to game state that jokers may need during their
-/// processing phase, such as current hand score, played cards, and game events.
+/// This struct provides access to all game state that jokers may need during their
+/// processing phase, including mutable state management through JokerStateManager.
 ///
 /// # State Management
 ///
-/// With the `process()` method now taking `&mut self`, jokers can maintain their
-/// own internal state directly. The `joker_state_manager` field is retained for
-/// backward compatibility during the migration period, but new jokers should
-/// use internal state instead.
+/// Since the `process()` method takes `&self` (immutable reference), jokers that need
+/// to maintain mutable state across calls must use the `joker_state_manager` field.
 ///
-/// ## Example: Direct state management
+/// ## Example: Tracking state between calls
 /// ```rust,ignore
-/// struct CounterJoker {
-///     counter: u32,
-/// }
+/// fn process(&self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+///     // Read state
+///     let counter: u32 = context.joker_state_manager
+///         .get_custom_data(self.id(), "counter")
+///         .ok()
+///         .flatten()
+///         .unwrap_or(0);
 ///
-/// impl JokerGameplay for CounterJoker {
-///     fn process(&mut self, stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-///         self.counter += 1;  // Direct state update
-///         ProcessResult {
-///             mult_added: self.counter as f64,
-///             ..Default::default()
-///         }
-///     }
+///     // Update state
+///     let _ = context.joker_state_manager.set_custom_data(
+///         self.id(),
+///         "counter",
+///         serde_json::json!(counter + 1),
+///     );
+///
+///     ProcessResult::default()
 /// }
 /// ```
 pub struct ProcessContext<'a> {
@@ -249,7 +236,6 @@ pub struct ProcessContext<'a> {
     pub played_cards: &'a [Card],
     pub held_cards: &'a [Card],
     pub events: &'a mut Vec<GameEvent>,
-    pub hand: &'a SelectHand,
     pub joker_state_manager: &'a JokerStateManager,
 }
 
