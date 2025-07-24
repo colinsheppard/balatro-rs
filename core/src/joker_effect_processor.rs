@@ -1,6 +1,6 @@
 use crate::card::Card;
 use crate::hand::SelectHand;
-use crate::joker::traits::{JokerGameplay, JokerModifiers};
+use crate::joker::traits::{JokerGameplay, JokerModifiers, ProcessContext};
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId};
 pub use crate::priority_strategy::{
     ContextAwarePriorityStrategy, CustomPriorityStrategy, DefaultPriorityStrategy,
@@ -494,6 +494,8 @@ pub struct TraitOptimizedJoker<'a> {
     /// Detected trait profile for optimization routing
     pub trait_profile: JokerTraitProfile,
     /// Cached gameplay trait reference if available
+    /// NOTE: Currently always None due to JokerGameplay requiring &mut self
+    /// TODO: Refactor optimization layer to support mutable trait references
     pub gameplay_trait: Option<&'a dyn JokerGameplay>,
     /// Cached modifiers trait reference if available
     pub modifiers_trait: Option<&'a dyn JokerModifiers>,
@@ -725,9 +727,11 @@ impl JokerEffectProcessor {
 
         let effect = match optimized_joker.trait_profile {
             JokerTraitProfile::GameplayOptimized => {
-                // Optimized path for gameplay-focused jokers
-                self.trait_metrics.gameplay_optimized_count += 1;
-                self.process_gameplay_optimized(optimized_joker.joker, game_context, hand, card)
+                // NOTE: Currently disabled due to JokerGameplay requiring &mut self
+                // gameplay_trait is always None in current implementation
+                // Fallback to legacy path until optimization layer is refactored
+                self.trait_metrics.legacy_path_count += 1;
+                self.process_legacy_joker(optimized_joker.joker, game_context, hand, card)
             }
             JokerTraitProfile::ModifierOptimized => {
                 // Optimized path for modifier-only jokers (fastest)
@@ -735,9 +739,10 @@ impl JokerEffectProcessor {
                 self.process_modifiers_optimized(optimized_joker.joker, game_context)
             }
             JokerTraitProfile::HybridOptimized | JokerTraitProfile::FullTraitOptimized => {
-                // Hybrid optimization path
-                self.trait_metrics.hybrid_optimized_count += 1;
-                self.process_hybrid_optimized(optimized_joker.joker, game_context, hand, card)
+                // NOTE: Currently disabled due to JokerGameplay requiring &mut self
+                // Fallback to legacy path until optimization layer is refactored
+                self.trait_metrics.legacy_path_count += 1;
+                self.process_legacy_joker(optimized_joker.joker, game_context, hand, card)
             }
             JokerTraitProfile::LegacyOnly => {
                 // Use legacy super trait path
@@ -766,6 +771,105 @@ impl JokerEffectProcessor {
         }
 
         effect
+    }
+
+    /// Process a joker using the JokerGameplay trait (optimized path)
+    ///
+    /// This method provides specialized processing for jokers that implement the
+    /// JokerGameplay trait, allowing for more efficient execution and better
+    /// type safety than the legacy super trait approach.
+    ///
+    /// NOTE: Currently unused due to JokerGameplay requiring &mut self.
+    /// TODO: Refactor optimization layer to support mutable trait references
+    #[allow(dead_code)]
+    fn process_gameplay_trait(
+        &self,
+        gameplay_trait: &mut dyn JokerGameplay,
+        game_context: &mut GameContext,
+        stage: &Stage,
+        hand: Option<&SelectHand>,
+        _card: Option<&Card>,
+    ) -> WeightedEffect {
+        // Check if the joker can trigger in the current context
+        let empty_vec = vec![];
+        let played_cards_vec = hand.map(|h| h.cards()).unwrap_or(empty_vec);
+        let mut process_context = ProcessContext {
+            hand_score: &mut crate::joker::traits::HandScore {
+                chips: 0,
+                mult: 0.0,
+            },
+            played_cards: played_cards_vec.as_slice(),
+            held_cards: game_context.hand.cards(),
+            events: &mut Vec::new(),
+            joker_state_manager: game_context.joker_state_manager,
+        };
+
+        if !gameplay_trait.can_trigger(stage, &process_context) {
+            return WeightedEffect {
+                effect: JokerEffect::new(),
+                priority: EffectPriority::Normal,
+                source_joker_id: JokerId::Joker, // We'd need to get this from the trait
+                is_retriggered: false,
+            };
+        }
+
+        // Process using the new trait interface
+        let result = gameplay_trait.process(stage, &mut process_context);
+
+        // Convert ProcessResult to JokerEffect
+        let mut effect = JokerEffect::new();
+        effect.chips = result.chips_added as i32;
+        effect.mult += result.mult_added as i32;
+        if result.retriggered {
+            effect.retrigger = 1;
+        }
+
+        WeightedEffect {
+            effect,
+            priority: EffectPriority::Normal, // Could get from gameplay_trait.get_priority()
+            source_joker_id: JokerId::Joker,  // We'd need to get this from the trait somehow
+            is_retriggered: false,
+        }
+    }
+
+    /// Process a joker using the JokerModifiers trait (static path)
+    ///
+    /// This method provides optimized processing for jokers that only implement
+    /// modifier traits, bypassing more complex processing logic for simple
+    /// multiplicative or additive effects.
+    #[allow(dead_code)]
+    fn process_modifiers_trait(
+        &self,
+        modifiers_trait: &dyn JokerModifiers,
+        _game_context: &mut GameContext,
+    ) -> WeightedEffect {
+        let mut effect = JokerEffect::new();
+
+        // Apply static modifiers
+        let chip_mult = modifiers_trait.get_chip_mult();
+        let score_mult = modifiers_trait.get_score_mult();
+
+        if chip_mult != 1.0 {
+            effect.mult_multiplier = chip_mult;
+        }
+        if score_mult != 1.0 {
+            effect.mult_multiplier = if effect.mult_multiplier == 0.0 {
+                score_mult
+            } else {
+                effect.mult_multiplier * score_mult
+            };
+        }
+
+        // Apply modifiers
+        effect.hand_size_mod = modifiers_trait.get_hand_size_modifier();
+        effect.discard_mod = modifiers_trait.get_discard_modifier();
+
+        WeightedEffect {
+            effect,
+            priority: EffectPriority::Normal,
+            source_joker_id: JokerId::Joker, // We'd need to get this somehow
+            is_retriggered: false,
+        }
     }
 
     /// Process a joker using the legacy Joker super trait (compatibility path)
@@ -799,6 +903,7 @@ impl JokerEffectProcessor {
     ///
     /// This path skips modifier checks and focuses on gameplay logic,
     /// providing 15-25% performance improvement for complex scoring jokers.
+    #[allow(dead_code)]
     fn process_gameplay_optimized(
         &self,
         joker: &dyn Joker,
@@ -869,6 +974,7 @@ impl JokerEffectProcessor {
     ///
     /// This path efficiently combines gameplay and modifier processing,
     /// providing balanced optimization for jokers with both capabilities.
+    #[allow(dead_code)]
     fn process_hybrid_optimized(
         &self,
         joker: &dyn Joker,
