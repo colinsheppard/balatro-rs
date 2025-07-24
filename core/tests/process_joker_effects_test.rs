@@ -50,14 +50,14 @@ fn test_single_hand_level_joker() {
     assert_eq!(mult, 5);
     assert_eq!(money, 2);
     assert_eq!(mult_multiplier, 1.5);
-    
+
     // Debug messages are generated in debug builds
     #[cfg(debug_assertions)]
     {
         assert!(messages.len() > 0);
         assert!(messages[0].contains("Hand effects"));
     }
-    
+
     #[cfg(not(debug_assertions))]
     {
         assert_eq!(messages.len(), 0);
@@ -89,13 +89,13 @@ fn test_single_card_level_joker() {
     assert_eq!(mult, 6); // 3 mult * 2 cards
     assert_eq!(money, 2); // 1 money * 2 cards
     assert_eq!(mult_multiplier, 1.0); // No multiplier
-    
+
     // Debug messages are generated in debug builds (one per card)
     #[cfg(debug_assertions)]
     {
         assert!(messages.len() > 0);
     }
-    
+
     #[cfg(not(debug_assertions))]
     {
         assert_eq!(messages.len(), 0);
@@ -130,7 +130,7 @@ fn test_mixed_hand_and_card_level_jokers() {
     assert_eq!(mult, 9); // 5 + 4
     assert_eq!(money, 4); // 2 + 2
     assert_eq!(mult_multiplier, 1.5); // From hand joker
-    
+
     #[cfg(debug_assertions)]
     {
         assert!(messages.len() > 0);
@@ -151,7 +151,7 @@ fn test_retrigger_effects() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, mult, money, mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // With 2 retriggers, effect triggers 3 times total (1 + 2)
     assert_eq!(chips, 30); // 10 * 3
@@ -175,7 +175,7 @@ fn test_mult_multiplier_accumulation() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (_chips, _mult, _money, mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // Multipliers accumulate multiplicatively: 1.0 * 2.0 * 1.5 = 3.0
     assert_eq!(mult_multiplier, 3.0);
@@ -195,7 +195,7 @@ fn test_zero_mult_multiplier_edge_case() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, mult, money, mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // Zero mult_multiplier should be treated as 1.0 (no effect)
     assert_eq!(chips, 10);
@@ -212,13 +212,15 @@ fn test_large_number_handling() {
     game.blind = Some(Blind::Small);
 
     // Add joker with very large values
-    let joker = Box::new(TestHandLevelJoker::new(1_000_000, 500_000, 100_000, 100.0, 0));
+    let joker = Box::new(TestHandLevelJoker::new(
+        1_000_000, 500_000, 100_000, 100.0, 0,
+    ));
     game.jokers = vec![joker];
 
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, mult, money, mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // Should handle large numbers without panic
     assert_eq!(chips, 1_000_000);
@@ -234,15 +236,16 @@ fn test_killscreen_detection() {
     game.stage = Stage::Blind(Blind::Small);
     game.blind = Some(Blind::Small);
 
-    // Add joker with very high mult_multiplier that causes infinity
-    let joker = Box::new(TestHandLevelJoker::new(0, 0, 0, f64::MAX, 0));
-    let joker2 = Box::new(TestHandLevelJoker::new(0, 0, 0, 2.0, 0));
+    // Add card-level joker with very high mult_multiplier that causes infinity
+    // KILLSCREEN messages are only generated for card-level effects
+    let joker = Box::new(TestCardLevelJoker::new(0, 0, 0, f64::MAX, 0));
+    let joker2 = Box::new(TestCardLevelJoker::new(0, 0, 0, 2.0, 0));
     game.jokers = vec![joker, joker2];
 
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (_chips, _mult, _money, mult_multiplier, messages) = game.process_joker_effects(&hand);
 
     // Should detect killscreen (infinity)
     assert!(mult_multiplier.is_infinite());
@@ -263,12 +266,12 @@ fn test_debug_message_generation() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, mult, money, _mult_multiplier, messages) = game.process_joker_effects(&hand);
 
     assert_eq!(chips, 10);
     assert_eq!(mult, 5);
     assert_eq!(money, 2);
-    
+
     // Debug messages should be generated in debug builds
     #[cfg(debug_assertions)]
     {
@@ -292,7 +295,7 @@ fn test_multiple_jokers_with_retriggers() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, mult, money, _mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // Joker1: 5 chips * 2 (1+1) = 10, 2 mult * 2 = 4, 1 money * 2 = 2
     // Joker2: 3 chips * 3 (1+2) = 9, 3 mult * 3 = 9, 0 money * 3 = 0
@@ -317,11 +320,11 @@ fn test_joker_evaluation_order() {
     let cards = vec![Card::new(Value::Ace, Suit::Heart)];
     let hand = SelectHand::new(cards).best_hand().unwrap();
 
-    let (chips, mult, money, mult_multiplier, messages) = game.process_joker_effects(&hand);
+    let (chips, _mult, _money, mult_multiplier, _messages) = game.process_joker_effects(&hand);
 
     // Jokers are evaluated in order
     assert_eq!(chips, 16); // 10 + 5 + 1
-    // Multipliers accumulate: 1.0 * 2.0 * 3.0 * 1.5 = 9.0
+                           // Multipliers accumulate: 1.0 * 2.0 * 3.0 * 1.5 = 9.0
     assert_eq!(mult_multiplier, 9.0);
 }
 
