@@ -5,6 +5,15 @@
 
 Game engine and move generator for a simplified version of [balatro](https://www.playbalatro.com/), written in rust with python bindings
 
+## ⚠️ Breaking Changes in v1.x
+
+**f64 Migration (In Progress)**: Core game state fields have been migrated to f64 for Lua compatibility. JokerEffect system migration is still in progress.
+
+- `Game.{chips, mult, score, money, round}`: `usize` → `f64` ✅ COMPLETE
+- `JokerEffect` numeric fields: `i32/f32` → `f64` ❌ IN PROGRESS
+- Save files are automatically migrated ✅
+- **See [F64_MIGRATION_GUIDE.md](F64_MIGRATION_GUIDE.md) for current status and migration instructions**
+
 ## Overview
 
 This library implements a subset of balatro's rules allowing execution of games or simulations. It provides an exhaustive list of actions a user could take at any given stage, as well as an engine to execute those actions and progress the game.
@@ -64,4 +73,40 @@ The following features are missing and may or may not be added
 
 ## Python bindings
 
-This library uses [pyo3](https://pyo3.rs) to provide python bindings. For more details on the python work and attempts at applying reinforcement learning, check the work in the directory [/pylatro](https://github.com/spencerduncan/balatro-rs/tree/main/pylatro).
+This library uses [pyo3](https://pyo3.rs) to provide python bindings with a clean, performance-oriented API. The Python interface follows a clear separation of concerns:
+
+- **GameEngine**: For performing actions and controlling game flow
+- **GameState**: For read-only access to game state (immutable snapshots)
+
+### Quick Python Example
+
+```python
+import pylatro
+
+# Create game engine
+engine = pylatro.GameEngine()
+
+# Game loop using the new unified API
+while not engine.is_over:
+    actions = engine.gen_actions()        # Actions from engine
+    if actions:
+        engine.handle_action(actions[0])  # Execute via engine
+        
+    # Access read-only state when needed
+    state = engine.state
+    print(f"Score: {state.score}, Money: {state.money}")
+
+print(f"Final score: {engine.state.score}")
+```
+
+### Migration from Legacy API
+
+If you're upgrading from the previous "dual framework" design where both `GameState` and `GameEngine` had action methods:
+
+- **Use `GameEngine`** for all actions: `gen_actions()`, `handle_action()`, `is_over`, etc.
+- **Use `GameState`** for read-only access: `score`, `money`, `available`, `joker_ids`, etc.
+- **Backwards compatibility**: Old API still works but shows deprecation warnings
+
+For detailed migration guidance, see [DUAL_FRAMEWORK_ELIMINATION_MIGRATION_GUIDE.md](DUAL_FRAMEWORK_ELIMINATION_MIGRATION_GUIDE.md).
+
+For more details on the python work and reinforcement learning applications, check the [/pylatro](https://github.com/spencerduncan/balatro-rs/tree/main/pylatro) directory.

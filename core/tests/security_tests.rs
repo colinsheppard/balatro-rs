@@ -5,12 +5,12 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::config::Config;
-    use crate::math_safe::{
+    use balatro_rs::config::Config;
+    use balatro_rs::math_safe::{
         safe_add, safe_divide, safe_multiply, safe_size_for_move_operations, safe_subtract,
         saturating_subtract, validate_array_size, MathError,
     };
-    use crate::space::ActionSpace;
+    use balatro_rs::space::ActionSpace;
 
     /// Test that ActionSpace creation handles zero available_max without underflow
     #[test]
@@ -192,8 +192,8 @@ mod tests {
     /// Fuzz-style test for ActionSpace creation with random values
     #[test]
     fn test_action_space_fuzz() {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
+        use balatro_rs::rng::GameRng;
+        let rng = GameRng::for_testing(42);
 
         // Test 1000 random valid configurations
         for _ in 0..1000 {
@@ -222,8 +222,8 @@ mod tests {
     /// Property-based test for arithmetic operations
     #[test]
     fn test_arithmetic_properties() {
-        use rand::Rng;
-        let mut rng = rand::thread_rng();
+        use balatro_rs::rng::GameRng;
+        let rng = GameRng::for_testing(43);
 
         for _ in 0..100 {
             let a = rng.gen_range(0..1000);
