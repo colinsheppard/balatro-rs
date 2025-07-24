@@ -662,35 +662,20 @@ impl JokerIdentity for PhotographJoker {
 
 impl JokerLifecycle for PhotographJoker {
     fn on_round_start(&mut self) {
-        // Reset internal state
+        // Reset internal state for the new round
         self.face_card_triggered = false;
-        // NOTE: In actual game flow, the Game engine should also reset the
-        // "face_card_triggered" state in JokerStateManager by calling:
-        // joker_state_manager.set_custom_data(JokerId::Photograph, "face_card_triggered", json!(false))
     }
 }
 
 impl JokerGameplay for PhotographJoker {
-    fn process(&self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
-        // Check if we've already triggered this round
-        let joker_id = self.id();
-        let already_triggered = context
-            .joker_state_manager
-            .get_custom_data::<bool>(joker_id, "face_card_triggered")
-            .ok()
-            .flatten()
-            .unwrap_or(false);
-
-        if !already_triggered {
+    fn process(&mut self, _stage: &Stage, context: &mut ProcessContext) -> ProcessResult {
+        // Use internal state directly - much cleaner!
+        if !self.face_card_triggered {
             // Check if any played cards are face cards
             for card in context.played_cards {
                 if matches!(card.value, Value::Jack | Value::Queen | Value::King) {
                     // Mark as triggered for this round
-                    let _ = context.joker_state_manager.set_custom_data(
-                        joker_id,
-                        "face_card_triggered",
-                        serde_json::json!(true),
-                    );
+                    self.face_card_triggered = true;
 
                     // First face card gives X2 Mult
                     // Since we can't multiply existing mult directly, we'll add the current mult value
@@ -708,16 +693,8 @@ impl JokerGameplay for PhotographJoker {
     }
 
     fn can_trigger(&self, _stage: &Stage, context: &ProcessContext) -> bool {
-        // Check if we haven't triggered yet this round
-        let joker_id = self.id();
-        let already_triggered = context
-            .joker_state_manager
-            .get_custom_data::<bool>(joker_id, "face_card_triggered")
-            .ok()
-            .flatten()
-            .unwrap_or(false);
-
-        !already_triggered
+        // Use internal state directly - much cleaner!
+        !self.face_card_triggered
             && context
                 .played_cards
                 .iter()
@@ -806,7 +783,7 @@ mod tests {
 
     #[test]
     fn test_photograph_triggers_on_first_face_card() {
-        let joker = PhotographJoker::new();
+        let mut joker = PhotographJoker::new();
         let state_manager = Arc::new(JokerStateManager::new());
 
         let mut hand_score = crate::joker::traits::HandScore {
@@ -833,26 +810,17 @@ mod tests {
         let result = joker.process(&blind_stage, &mut context);
         assert_eq!(result.mult_added, 5.0); // Should double the current mult
 
-        // Verify state was updated
-        let triggered: bool = state_manager
-            .get_custom_data(joker.id(), "face_card_triggered")
-            .ok()
-            .flatten()
-            .unwrap_or(false);
-        assert!(triggered);
+        // Verify state was updated internally
+        assert!(joker.face_card_triggered);
     }
 
     #[test]
     fn test_photograph_does_not_trigger_twice() {
-        let joker = PhotographJoker::new();
-        let state_manager = Arc::new(JokerStateManager::new());
+        let mut joker = PhotographJoker::new();
+        // Pre-set the triggered state using internal state
+        joker.face_card_triggered = true;
 
-        // Pre-set the triggered state
-        let _ = state_manager.set_custom_data(
-            joker.id(),
-            "face_card_triggered",
-            serde_json::json!(true),
-        );
+        let state_manager = Arc::new(JokerStateManager::new());
 
         let mut hand_score = crate::joker::traits::HandScore {
             chips: 100,
@@ -878,7 +846,7 @@ mod tests {
 
     #[test]
     fn test_photograph_can_trigger_checks_state() {
-        let joker = PhotographJoker::new();
+        let mut joker = PhotographJoker::new();
         let state_manager = Arc::new(JokerStateManager::new());
 
         let mut hand_score = crate::joker::traits::HandScore {
@@ -901,12 +869,8 @@ mod tests {
         let blind_stage = create_blind_stage();
         assert!(joker.can_trigger(&blind_stage, &context));
 
-        // Set triggered state
-        let _ = state_manager.set_custom_data(
-            joker.id(),
-            "face_card_triggered",
-            serde_json::json!(true),
-        );
+        // Set triggered state using internal state
+        joker.face_card_triggered = true;
 
         // Should not be able to trigger after state is set
         assert!(!joker.can_trigger(&blind_stage, &context));
@@ -914,7 +878,7 @@ mod tests {
 
     #[test]
     fn test_photograph_no_face_cards() {
-        let joker = PhotographJoker::new();
+        let mut joker = PhotographJoker::new();
         let state_manager = Arc::new(JokerStateManager::new());
 
         let mut hand_score = crate::joker::traits::HandScore {
@@ -942,12 +906,7 @@ mod tests {
         assert_eq!(result.mult_added, 0.0);
 
         // State should remain untriggered
-        let triggered: bool = state_manager
-            .get_custom_data(joker.id(), "face_card_triggered")
-            .ok()
-            .flatten()
-            .unwrap_or(false);
-        assert!(!triggered);
+        assert!(!joker.face_card_triggered);
     }
 
     #[test]

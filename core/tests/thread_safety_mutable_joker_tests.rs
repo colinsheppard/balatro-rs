@@ -38,9 +38,7 @@ fn test_send_sync_with_mutable_state() {
                 ProcessResult {
                     chips_added: 0,
                     mult_added: 2.0,
-                    mult_multiplier: 1.0,
                     retriggered: false,
-                    message: None,
                 }
             } else {
                 ProcessResult::default()

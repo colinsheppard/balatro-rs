@@ -741,8 +741,6 @@ impl JokerEffectProcessor {
                 // }
 
                 // Always use legacy path until optimization layer is refactored
-                // Fallback to legacy path until optimization layer is refactored
-                self.trait_metrics.legacy_path_count += 1;
                 self.process_legacy_joker(optimized_joker.joker, game_context, hand, card)
             }
             JokerTraitProfile::ModifierOptimized => {
