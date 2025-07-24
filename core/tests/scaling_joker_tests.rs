@@ -711,7 +711,7 @@ fn test_scaling_joker_triggers_in_game() {
 fn test_scaling_joker_reset_conditions() {
     // Test that reset conditions work properly for scaling jokers
     let mut harness = create_test_harness();
-    
+
     // Create a ceremonial dagger with round end reset condition
     let ceremonial_dagger = create_ceremonial_dagger();
     harness.add_joker(ceremonial_dagger);
@@ -719,7 +719,7 @@ fn test_scaling_joker_reset_conditions() {
     // Trigger the joker to accumulate value (blind completed)
     harness.process_scaling_event(ScalingEvent::BlindCompleted);
 
-    // Verify value has increased 
+    // Verify value has increased
     let current_value = harness.get_accumulated_value(JokerId::Ceremonial);
     assert_eq!(current_value, 2.0); // Should be base + increment (1.0 + 1.0)
 
@@ -775,7 +775,7 @@ fn test_multiple_reset_conditions() {
         ScalingEffectType::Chips,
     )
     .with_reset_condition(ResetCondition::Never);
-    
+
     harness2.add_joker(never_reset_joker);
 
     // Accumulate value
@@ -820,9 +820,11 @@ fn test_reset_before_trigger_order() {
 
     // Manually set accumulated value to test reset order
     let context = harness.create_context();
-    context.joker_state_manager.update_state(JokerId::Reserved2, |state| {
-        state.accumulated_value = 25.0; // Set to accumulated value
-    });
+    context
+        .joker_state_manager
+        .update_state(JokerId::Reserved2, |state| {
+            state.accumulated_value = 25.0; // Set to accumulated value
+        });
 
     // Now trigger an event that both resets AND triggers
     harness.process_scaling_event(ScalingEvent::HandPlayed(HandRank::OnePair));
