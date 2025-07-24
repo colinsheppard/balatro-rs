@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 #![allow(dead_code)]
 
 use balatro_rs::card::{Suit, Value};
 use balatro_rs::joker::{JokerId, ProcessResult};
 use balatro_rs::joker_state::JokerStateManager;
 // Stage import removed - unused
+=======
+use balatro_rs::card::{Suit, Value};
+use balatro_rs::joker::{JokerGameplay, JokerId, ProcessContext, ProcessResult};
+use balatro_rs::joker_state::JokerStateManager;
+use balatro_rs::stage::Stage;
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
 use std::sync::{
     atomic::{AtomicU32, Ordering},
     Arc, Mutex, RwLock,
@@ -38,9 +45,13 @@ fn test_send_sync_with_mutable_state() {
                 ProcessResult {
                     chips_added: 0,
                     mult_added: 2.0,
+<<<<<<< HEAD
                     mult_multiplier: 1.0,
                     retriggered: false,
                     message: None,
+=======
+                    retriggered: false,
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
                 }
             } else {
                 ProcessResult::default()
@@ -78,13 +89,28 @@ fn test_complex_state_thread_safety() {
         phase: Phase,
     }
 
+<<<<<<< HEAD
     #[derive(Debug, Clone, PartialEq, Default)]
     enum Phase {
         #[default]
+=======
+    #[derive(Debug, Clone, PartialEq)]
+    enum Phase {
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
         Charging,
         Ready,
         Cooldown(u32),
     }
+<<<<<<< HEAD
+=======
+
+    impl Default for Phase {
+        fn default() -> Self {
+            Phase::Charging
+        }
+    }
+
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
     impl ComplexThreadSafeJoker {
         fn new() -> Self {
             Self {
@@ -133,9 +159,13 @@ fn test_complex_state_thread_safety() {
             ProcessResult {
                 chips_added: 0,
                 mult_added: mult,
+<<<<<<< HEAD
                 mult_multiplier: 1.0,
                 retriggered: false,
                 message: None,
+=======
+                retriggered: false,
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
             }
         }
     }
@@ -227,9 +257,13 @@ fn test_trait_object_thread_safety() {
             ProcessResult {
                 chips_added: self.counter as u64,
                 mult_added: 1.0,
+<<<<<<< HEAD
                 mult_multiplier: 1.0,
                 retriggered: false,
                 message: None,
+=======
+                retriggered: false,
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
             }
         }
     }
@@ -246,9 +280,13 @@ fn test_trait_object_thread_safety() {
             ProcessResult {
                 chips_added: *state as u64,
                 mult_added: 2.0,
+<<<<<<< HEAD
                 mult_multiplier: 1.0,
                 retriggered: false,
                 message: None,
+=======
+                retriggered: false,
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
             }
         }
     }
@@ -262,7 +300,11 @@ fn test_trait_object_thread_safety() {
     ];
 
     // Can wrap in Arc<Mutex<_>> for thread sharing
+<<<<<<< HEAD
     let _shared_jokers = Arc::new(Mutex::new(jokers));
+=======
+    let shared_jokers = Arc::new(Mutex::new(jokers));
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
 
     // Verify Send + Sync
     fn assert_send_sync<T: Send + Sync>() {}
@@ -381,8 +423,13 @@ fn test_thread_safety_performance() {
     }
     let mutex_time = start.elapsed();
 
+<<<<<<< HEAD
     println!("Performance comparison ({ITERATIONS} iterations):");
     println!("Direct access: {direct_time:?}");
+=======
+    println!("Performance comparison ({} iterations):", ITERATIONS);
+    println!("Direct access: {:?}", direct_time);
+>>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
     println!(
         "Atomic access: {:?} ({}x slower)",
         atomic_time,
