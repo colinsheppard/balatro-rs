@@ -1272,8 +1272,13 @@ pub use traits::{
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
 
+// Include tests module with trait tests
 #[cfg(test)]
-mod tests {
+pub mod tests;
+
+// Module-level trait tests
+#[cfg(test)]
+mod trait_tests {
     use super::*;
 
     #[test]
