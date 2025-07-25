@@ -1262,6 +1262,8 @@ pub mod four_fingers;
 
 // Include multiplicative jokers (Baron, Steel, Ancient, etc.)
 pub mod multiplicative_jokers;
+// Include retrigger jokers
+pub mod retrigger_jokers;
 
 // Include basic economy jokers
 pub mod basic_economy_jokers;
