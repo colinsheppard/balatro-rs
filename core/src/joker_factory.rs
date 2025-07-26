@@ -1,12 +1,12 @@
 use crate::joker::four_fingers::FourFingersJoker;
 use crate::joker::scaling_additive_mult_jokers::*;
+use crate::joker::retrigger_jokers::*;
 use crate::joker::{Joker, JokerId, JokerRarity};
 use crate::joker_impl::*;
 use crate::scaling_joker_custom;
 use crate::scaling_joker_impl::{create_red_card, create_steel_joker_scaling};
 use crate::special_jokers::*;
 use crate::static_joker_factory::StaticJokerFactory;
-use crate::joker::retrigger_jokers::*;
 
 /// Factory for creating joker instances by ID
 pub struct JokerFactory;
@@ -86,6 +86,7 @@ impl JokerFactory {
             JokerId::Seltzer => Some(Box::new(SeltzerJoker::new())),
             JokerId::Hanging => Some(Box::new(HangingChadJoker::new())),
             JokerId::SockAndBuskin => Some(Box::new(SockAndBuskinJoker::new())),
+
             // TODO: Implement remaining jokers
             _ => None,
         }
@@ -137,7 +138,7 @@ impl JokerFactory {
                 Reserved5, // RideTheBus
                 Reserved6, // RedCard (pack skipping)
                 // Retrigger jokers
-                Hanging,  // HangingChadJoker
+                Hanging, // HangingChadJoker
             ],
             JokerRarity::Uncommon => vec![
                 // Money-based conditional jokers

@@ -8,8 +8,7 @@ use crate::{
     hand::SelectHand,
     joker::{
         traits::{JokerState, ProcessContext, ProcessResult, Rarity},
-        GameContext, Joker, JokerEffect, JokerGameplay, JokerId, JokerIdentity,
-        JokerRarity,
+        GameContext, Joker, JokerEffect, JokerGameplay, JokerId, JokerIdentity, JokerRarity,
     },
     stage::Stage,
 };
@@ -261,7 +260,7 @@ impl JokerGameplay for SeltzerJoker {
     fn process(&mut self, stage: &Stage, _context: &mut ProcessContext) -> ProcessResult {
         if matches!(stage, Stage::Blind(_)) && self.hands_remaining > 0 {
             self.hands_remaining = self.hands_remaining.saturating_sub(1);
-            
+
             ProcessResult {
                 retriggered: true,
                 ..Default::default()
@@ -371,7 +370,10 @@ impl Joker for HangingChadJoker {
 
             JokerEffect::new()
                 .with_retrigger(2) // Retrigger twice
-                .with_message(format!("Hanging Chad: First card ({:?}) retriggered!", card.value))
+                .with_message(format!(
+                    "Hanging Chad: First card ({:?}) retriggered!",
+                    card.value
+                ))
         } else {
             JokerEffect::new()
         }
@@ -509,10 +511,7 @@ impl JokerGameplay for SockAndBuskinJoker {
             return ProcessResult::default();
         }
 
-        let has_face_cards = _context
-            .played_cards
-            .iter()
-            .any(|card| Self::is_face_card(card));
+        let has_face_cards = _context.played_cards.iter().any(Self::is_face_card);
 
         if has_face_cards {
             ProcessResult {
@@ -525,11 +524,7 @@ impl JokerGameplay for SockAndBuskinJoker {
     }
 
     fn can_trigger(&self, stage: &Stage, context: &ProcessContext) -> bool {
-        matches!(stage, Stage::Blind(_))
-            && context
-                .played_cards
-                .iter()
-                .any(|card| Self::is_face_card(card))
+        matches!(stage, Stage::Blind(_)) && context.played_cards.iter().any(Self::is_face_card)
     }
 }
 
@@ -576,9 +571,9 @@ mod tests {
         assert_eq!(seltzer.base_cost(), 5);
 
         // Test state
-        let mut mutable_seltzer = SeltzerJoker::new();
+        let mutable_seltzer = SeltzerJoker::new();
         assert!(mutable_seltzer.has_state());
-        
+
         let state = JokerState::serialize_state(&mutable_seltzer).unwrap();
         assert_eq!(state["hands_remaining"], 10);
     }
@@ -594,7 +589,7 @@ mod tests {
         // Play a hand
         let hand = SelectHand::new(vec![]);
         let effect = seltzer.on_hand_played(&mut test_context, &hand);
-        
+
         // Should retrigger with 9 hands remaining
         assert_eq!(effect.retrigger, 1);
         assert!(effect.message.unwrap().contains("9 hands remaining"));
@@ -684,7 +679,7 @@ mod tests {
             Value::King,
             Suit::Spade
         )));
-        
+
         assert!(!SockAndBuskinJoker::is_face_card(&Card::new(
             Value::Ace,
             Suit::Club

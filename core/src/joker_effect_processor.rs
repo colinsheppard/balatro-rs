@@ -727,10 +727,7 @@ impl JokerEffectProcessor {
         let start_time = Instant::now();
 
         let effect = match optimized_joker.trait_profile {
-            JokerTraitProfile::GameplayOptimized
-            | JokerTraitProfile::HybridOptimized
-            | JokerTraitProfile::FullTraitOptimized => {
-                // Use optimized gameplay trait path
+            JokerTraitProfile::GameplayOptimized => {
                 // NOTE: Currently disabled due to JokerGameplay requiring &mut self
                 // gameplay_trait is always None in current implementation
                 // if let Some(gameplay_trait) = optimized_joker.gameplay_trait {
