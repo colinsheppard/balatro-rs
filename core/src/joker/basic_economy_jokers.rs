@@ -318,7 +318,7 @@ impl Joker for ToTheMoonJoker {
 
     fn on_round_end(&self, context: &mut GameContext) -> JokerEffect {
         // Calculate interest: $1 per $5 owned, max $5
-        let interest = (context.money / 5).clamp(0, 5);
+        let interest = (context.money / 5).min(5).max(0);
 
         if interest > 0 {
             JokerEffect::new()

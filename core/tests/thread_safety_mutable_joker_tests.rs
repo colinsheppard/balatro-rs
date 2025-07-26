@@ -7,10 +7,13 @@ use balatro_rs::joker_state::JokerStateManager;
 // Stage import removed - unused
 =======
 use balatro_rs::card::{Suit, Value};
-use balatro_rs::joker::{JokerGameplay, JokerId, ProcessContext, ProcessResult};
+use balatro_rs::joker::{JokerGameplay, JokerId, ProcessResult};
 use balatro_rs::joker_state::JokerStateManager;
+<<<<<<< HEAD
 use balatro_rs::stage::Stage;
 >>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
+=======
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
 use std::sync::{
     atomic::{AtomicU32, Ordering},
     Arc, Mutex, RwLock,
@@ -90,6 +93,7 @@ fn test_complex_state_thread_safety() {
     }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     #[derive(Debug, Clone, PartialEq, Default)]
     enum Phase {
         #[default]
@@ -97,6 +101,11 @@ fn test_complex_state_thread_safety() {
     #[derive(Debug, Clone, PartialEq)]
     enum Phase {
 >>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
+=======
+    #[derive(Debug, Clone, PartialEq, Default)]
+    enum Phase {
+        #[default]
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
         Charging,
         Ready,
         Cooldown(u32),
@@ -104,6 +113,7 @@ fn test_complex_state_thread_safety() {
 <<<<<<< HEAD
 =======
 
+<<<<<<< HEAD
     impl Default for Phase {
         fn default() -> Self {
             Phase::Charging
@@ -111,6 +121,8 @@ fn test_complex_state_thread_safety() {
     }
 
 >>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
+=======
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
     impl ComplexThreadSafeJoker {
         fn new() -> Self {
             Self {
@@ -424,12 +436,17 @@ fn test_thread_safety_performance() {
     let mutex_time = start.elapsed();
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     println!("Performance comparison ({ITERATIONS} iterations):");
     println!("Direct access: {direct_time:?}");
 =======
     println!("Performance comparison ({} iterations):", ITERATIONS);
     println!("Direct access: {:?}", direct_time);
 >>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
+=======
+    println!("Performance comparison ({ITERATIONS} iterations):");
+    println!("Direct access: {direct_time:?}");
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
     println!(
         "Atomic access: {:?} ({}x slower)",
         atomic_time,

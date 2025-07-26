@@ -200,7 +200,11 @@ fn bench_trait_detection_caching(c: &mut Criterion) {
 
     group.bench_function("cold_trait_detection", |b| {
         b.iter(|| {
+<<<<<<< HEAD
             let _processor = JokerEffectProcessor::new();
+=======
+            let processor = JokerEffectProcessor::new();
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
 
             // Cold cache - first detection of each joker
             for _joker in &jokers {
@@ -211,7 +215,11 @@ fn bench_trait_detection_caching(c: &mut Criterion) {
     });
 
     group.bench_function("warm_trait_detection", |b| {
+<<<<<<< HEAD
         let _processor = JokerEffectProcessor::new();
+=======
+        let processor = JokerEffectProcessor::new();
+>>>>>>> 36fb4b0 (fix: Address clippy warnings)
 
         // Pre-warm the cache
         // TODO: Fix - detect_joker_traits is now private
