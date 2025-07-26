@@ -154,7 +154,7 @@ mod ride_the_bus_tests {
         let jack = Card::new(Rank::Jack, Suit::Heart);
         joker.on_card_scored(&mut context, &jack);
         let hand = SelectHand::new(vec![Card::new(Rank::Two, Suit::Heart)]);
-        let effect = joker.on_hand_played(&mut context, &hand);
+        let _effect = joker.on_hand_played(&mut context, &hand);
         assert_eq!(effect.mult, 1);
 
         // Build up again and test Queen resets
@@ -201,7 +201,7 @@ mod ride_the_bus_tests {
 
         // Next hand should continue accumulating
         let hand = SelectHand::new(vec![Card::new(Rank::Two, Suit::Heart)]);
-        let effect = joker.on_hand_played(&mut context, &hand);
+        let _effect = joker.on_hand_played(&mut context, &hand);
         assert_eq!(effect.mult, 4); // Should be 4, not reset
     }
 
@@ -218,7 +218,7 @@ mod ride_the_bus_tests {
 
         // Empty hand has no face cards, so should increment
         let empty_hand = SelectHand::new(vec![]);
-        let effect = joker.on_hand_played(&mut context, &empty_hand);
+        let _effect = joker.on_hand_played(&mut context, &empty_hand);
         assert_eq!(effect.mult, 1);
 
         // Another empty hand
@@ -303,7 +303,7 @@ mod ride_the_bus_tests {
 
         // Should work the same as stateful version
         let hand = SelectHand::new(vec![Card::new(Rank::Two, Suit::Heart)]);
-        let effect = joker.on_hand_played(&mut context, &hand);
+        let _effect = joker.on_hand_played(&mut context, &hand);
         assert_eq!(effect.mult, 1);
 
         // Score a face card and verify reset
@@ -346,7 +346,7 @@ mod ride_the_bus_tests {
             .set_state(joker.id(), saved_state);
 
         // Should continue from saved state
-        let effect = joker.on_hand_played(&mut new_context, &hand);
+        let _effect = joker.on_hand_played(&mut new_context, &hand);
         assert_eq!(effect.mult, 4); // 3 + 1
     }
 
@@ -678,7 +678,7 @@ mod dna_first_hand_tests {
         let hand = SelectHand::new(single_card);
 
         // DNA should trigger
-        let effect = dna_joker.on_hand_played(&mut context, &hand);
+        let _effect = dna_joker.on_hand_played(&mut context, &hand);
 
         // Verify card was duplicated
         assert_eq!(effect.transform_cards.len(), 1);
@@ -713,7 +713,7 @@ mod dna_first_hand_tests {
         let hand = SelectHand::new(multiple_cards);
 
         // DNA should not trigger
-        let effect = dna_joker.on_hand_played(&mut context, &hand);
+        let _effect = dna_joker.on_hand_played(&mut context, &hand);
 
         // Verify no effect
         assert_eq!(effect.transform_cards.len(), 0);
@@ -737,7 +737,7 @@ mod dna_first_hand_tests {
         let hand = SelectHand::new(single_card);
 
         // DNA should NOT trigger (this is the fix)
-        let effect = dna_joker.on_hand_played(&mut context, &hand);
+        let _effect = dna_joker.on_hand_played(&mut context, &hand);
 
         // Verify no effect
         assert_eq!(effect.transform_cards.len(), 0);
@@ -761,7 +761,7 @@ mod dna_first_hand_tests {
             let hand = SelectHand::new(single_card);
 
             // DNA should NOT trigger
-            let effect = dna_joker.on_hand_played(&mut context, &hand);
+            let _effect = dna_joker.on_hand_played(&mut context, &hand);
 
             // Verify no effect
             assert_eq!(
@@ -789,7 +789,7 @@ mod dna_first_hand_tests {
         let empty_hand = SelectHand::new(vec![]);
 
         // DNA should not trigger
-        let effect = dna_joker.on_hand_played(&mut context, &empty_hand);
+        let _effect = dna_joker.on_hand_played(&mut context, &empty_hand);
 
         // Verify no effect
         assert_eq!(effect.transform_cards.len(), 0);

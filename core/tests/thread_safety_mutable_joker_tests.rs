@@ -313,10 +313,14 @@ fn test_trait_object_thread_safety() {
 
     // Can wrap in Arc<Mutex<_>> for thread sharing
 <<<<<<< HEAD
+<<<<<<< HEAD
     let _shared_jokers = Arc::new(Mutex::new(jokers));
 =======
     let shared_jokers = Arc::new(Mutex::new(jokers));
 >>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
+=======
+    let _shared_jokers = Arc::new(Mutex::new(jokers));
+>>>>>>> 54586ce (fix: Fix CI warnings and clippy issues)
 
     // Verify Send + Sync
     fn assert_send_sync<T: Send + Sync>() {}
