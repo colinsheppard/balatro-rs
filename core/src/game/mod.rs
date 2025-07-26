@@ -1315,15 +1315,15 @@ impl Game {
         use crate::shop::packs::{DefaultPackGenerator, PackGenerator};
 
         // Check if player has enough money
-        let cost = pack_type.base_cost();
+        let cost = pack_type.base_cost(&self.config);
         if self.money < cost as f64 {
             return Err(GameError::InvalidBalance);
         }
 
         // Generate the pack
         let generator = DefaultPackGenerator;
-        let mut pack = generator.generate_pack(pack_type, self)?;
-        pack.generate_contents(self)?;
+        let pack = generator.generate_pack(pack_type, self)?;
+        // Note: generate_contents is already called in generate_pack, no need to call again
 
         // Deduct money
         self.money -= cost as f64;

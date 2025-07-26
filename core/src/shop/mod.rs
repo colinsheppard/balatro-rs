@@ -171,7 +171,7 @@ impl ShopItem {
     ///
     /// This provides the default cost before any modifiers are applied.
     /// Actual shop prices may differ due to vouchers, sales, or other effects.
-    pub fn base_cost(&self) -> usize {
+    pub fn base_cost(&self, config: &crate::config::Config) -> usize {
         match self {
             ShopItem::Joker(joker_id) => {
                 // Would need to look up joker rarity, using placeholder for now
@@ -186,7 +186,7 @@ impl ShopItem {
                 ConsumableType::Spectral => 4,
             },
             ShopItem::Voucher(_) => 10, // Standard voucher cost
-            ShopItem::Pack(pack_type) => pack_type.base_cost(),
+            ShopItem::Pack(pack_type) => pack_type.base_cost(config),
             ShopItem::PlayingCard(_) => 2, // Standard playing card cost
         }
     }
