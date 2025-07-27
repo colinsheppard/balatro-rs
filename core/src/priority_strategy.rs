@@ -333,9 +333,6 @@ mod tests {
         let strategy = ContextAwarePriorityStrategy::new();
 
         // Test boosting behavior
-        let _lusty_priority = strategy.get_priority(JokerId::LustyJoker);
-        let _normal_priority = strategy.get_priority(JokerId::Joker);
-
         // LustyJoker should get boosted priority if it normally has Normal priority
         // (This depends on what the metadata strategy returns)
         assert_eq!(strategy.name(), "ContextAware");
@@ -363,7 +360,6 @@ mod tests {
             .with_multiplicative_boost(false);
 
         // With boost disabled, should use base strategy
-        let _priority = strategy.get_priority(JokerId::LustyJoker);
         // Should not be boosted when boost is disabled
         assert_eq!(strategy.name(), "ContextAware");
     }
