@@ -38,6 +38,7 @@ pub mod rng;
 pub mod scaling_joker;
 pub mod scaling_joker_custom;
 pub mod scaling_joker_impl;
+pub mod scaling_chips_jokers;
 pub mod shop;
 pub mod space;
 pub mod special_jokers;
