@@ -604,11 +604,13 @@ mod tests {
 
         let joker_state_manager = crate::joker_state::JokerStateManager::new();
 
+        let hand = SelectHand::new(vec![]);
         let mut context = ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &hand,
             joker_state_manager: &joker_state_manager,
         };
 
@@ -652,11 +654,13 @@ mod tests {
 
         let joker_state_manager = crate::joker_state::JokerStateManager::new();
 
+        let hand = SelectHand::new(vec![]);
         let context = ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &hand,
             joker_state_manager: &joker_state_manager,
         };
 
