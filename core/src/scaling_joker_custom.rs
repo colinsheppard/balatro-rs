@@ -407,12 +407,6 @@ pub fn get_custom_scaling_joker_by_id(id: JokerId) -> Option<Box<dyn Joker>> {
 mod tests {
     use super::*;
 
-    #[allow(dead_code)]
-    fn create_test_context() -> GameContext<'static> {
-        // Placeholder - in real tests we'd need proper context setup
-        panic!("Test context creation not implemented - requires full game setup")
-    }
-
     #[test]
     fn test_green_joker_creation() {
         let joker = GreenJoker::new();
