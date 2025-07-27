@@ -67,6 +67,8 @@ pub struct AccumulatedEffects {
     pub mult: i32,
     /// Total money to award to the player
     pub money: i32,
+    /// Total interest bonus to add to base interest
+    pub interest_bonus: i32,
     /// Combined mult multiplier (multiplicative)
     pub mult_multiplier: f64,
     /// Collection of all messages from jokers
@@ -80,6 +82,7 @@ impl AccumulatedEffects {
             chips: 0,
             mult: 0,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: 1.0,
             messages: Vec::new(),
         }
@@ -101,6 +104,9 @@ impl AccumulatedEffects {
         self.money = self
             .money
             .saturating_add(effect.money.saturating_mul(iterations));
+        self.interest_bonus = self
+            .interest_bonus
+            .saturating_add(effect.interest_bonus.saturating_mul(iterations));
 
         // Apply mult multiplier for each iteration (multiplicative)
         if effect.mult_multiplier != 0.0 {
@@ -1082,7 +1088,13 @@ impl Game {
     }
 
     fn calc_reward(&mut self, blind: Blind) -> Result<f64, GameError> {
-        let mut interest = (self.money * self.config.interest_rate).floor();
+        self.calc_reward_with_interest_bonus(blind, 0)
+    }
+
+    fn calc_reward_with_interest_bonus(&mut self, blind: Blind, interest_bonus: i32) -> Result<f64, GameError> {
+        let base_interest = (self.money * self.config.interest_rate).floor();
+        let total_interest_before_cap = base_interest + interest_bonus as f64;
+        let mut interest = total_interest_before_cap;
         if interest > self.config.interest_max as f64 {
             interest = self.config.interest_max as f64
         }
@@ -1090,6 +1102,66 @@ impl Game {
         let hand_bonus = self.plays * self.config.money_per_hand as f64;
         let reward = base + interest + hand_bonus;
         Ok(reward)
+    }
+
+    /// Process joker round end effects and return accumulated effects
+    fn process_joker_round_end_effects(&mut self) -> AccumulatedEffects {
+        let mut accumulated = AccumulatedEffects::new();
+        
+        // Convert ante to u8
+        let ante_u8 = match self.ante_current {
+            crate::ante::Ante::Zero => 0,
+            crate::ante::Ante::One => 1,
+            crate::ante::Ante::Two => 2,
+            crate::ante::Ante::Three => 3,
+            crate::ante::Ante::Four => 4,
+            crate::ante::Ante::Five => 5,
+            crate::ante::Ante::Six => 6,
+            crate::ante::Ante::Seven => 7,
+            crate::ante::Ante::Eight => 8,
+        };
+
+        // Create empty hand from available cards
+        let current_hand = crate::hand::Hand::new(self.available.cards());
+        
+        // Create game context for jokers - provide all required fields
+        let mut context = crate::joker::GameContext {
+            chips: self.chips as i32,
+            mult: self.mult as i32,
+            money: self.money as i32,
+            ante: ante_u8,
+            round: self.round as u32,
+            stage: &self.stage,
+            hands_played: (self.config.plays as f64 - self.plays) as u32,
+            discards_used: (self.config.discards as f64 - self.discards) as u32,
+            jokers: &self.jokers,
+            hand: &current_hand,
+            discarded: &self.discarded,
+            joker_state_manager: &self.joker_state_manager,
+            hand_type_counts: &self.hand_type_counts,
+            cards_in_deck: self.deck.len(),
+            stone_cards_in_deck: 0, // TODO: Add proper Stone card tracking
+            steel_cards_in_deck: 0, // TODO: Add proper Steel card tracking
+            rng: &self.rng,
+        };
+
+        // Process each joker's round end effect
+        for joker in &self.jokers {
+            let effect = joker.on_round_end(&mut context);
+            
+            // Accumulate the effect
+            if !accumulated.accumulate_effect(&effect) {
+                // Killscreen detected - break early
+                break;
+            }
+            
+            // Add any messages
+            if let Some(message) = effect.message {
+                accumulated.messages.push(message);
+            }
+        }
+
+        accumulated
     }
 
     fn cashout(&mut self) -> Result<(), GameError> {
@@ -1508,9 +1580,15 @@ impl Game {
 
         let blind = self.blind.ok_or(GameError::MissingBlindState)?;
         // score exceeds blind (blind passed).
-        // handle reward then progress to next stage.
-        let reward = self.calc_reward(blind)?;
+        // process joker round end effects first
+        let joker_effects = self.process_joker_round_end_effects();
+        
+        // handle reward calculation with joker interest bonus
+        let reward = self.calc_reward_with_interest_bonus(blind, joker_effects.interest_bonus)?;
         self.reward = reward;
+        
+        // apply joker money effects (separate from interest)
+        self.money += joker_effects.money as f64;
 
         // passed boss blind, either win or progress ante
         if blind == Blind::Boss {
@@ -2591,6 +2669,8 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
             retrigger: 0,
             destroy_self: false,
@@ -2621,6 +2701,7 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
             retrigger: 2, // Will trigger 3 times total (1 + 2 retriggers)
             destroy_self: false,
@@ -2652,6 +2733,7 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 0.0, // Zero means no multiplier
             retrigger: 1,
             destroy_self: false,
@@ -2680,6 +2762,7 @@ mod tests {
             chips: 0,
             mult: 0,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: f64::INFINITY,
             retrigger: 0,
             destroy_self: false,
@@ -2705,6 +2788,7 @@ mod tests {
             chips: 0,
             mult: 0,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: f64::NAN,
             retrigger: 0,
             destroy_self: false,
@@ -2732,6 +2816,7 @@ mod tests {
             chips: 0,
             mult: 0,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: f64::MAX / 2.0, // This multiplication should overflow to infinity
             retrigger: 0,
             destroy_self: false,
@@ -2759,6 +2844,7 @@ mod tests {
             chips: 10, // This would overflow without saturating arithmetic
             mult: 0,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: 0.0,
             retrigger: 0,
             destroy_self: false,
@@ -2781,7 +2867,9 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
+            interest_bonus: 0,
             messages: vec!["Message 1".to_string()],
         };
 
@@ -2789,7 +2877,9 @@ mod tests {
             chips: 20,
             mult: 10,
             money: 7,
+            interest_bonus: 0,
             mult_multiplier: 3.0,
+            interest_bonus: 0,
             messages: vec!["Message 2".to_string(), "Message 3".to_string()],
         };
 
@@ -2811,7 +2901,9 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
+            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2819,6 +2911,7 @@ mod tests {
             chips: 20,
             mult: 10,
             money: 7,
+            interest_bonus: 0,
             mult_multiplier: 0.0, // Zero multiplier should not affect the result
             messages: vec![],
         };
@@ -2838,6 +2931,7 @@ mod tests {
             mult: i32::MAX - 3,
             money: i32::MAX - 1,
             mult_multiplier: 1.0,
+            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2845,7 +2939,9 @@ mod tests {
             chips: 10,
             mult: 10,
             money: 10,
+            interest_bonus: 0,
             mult_multiplier: 1.0,
+            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2863,7 +2959,9 @@ mod tests {
             chips: 0,
             mult: 10,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: 2.5,
+            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2878,6 +2976,7 @@ mod tests {
             chips: 0,
             mult: 10,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: 0.0, // Zero multiplier should not change mult
             messages: vec![],
         };
@@ -2893,6 +2992,7 @@ mod tests {
             chips: 0,
             mult: 10,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: 1.0, // 1.0 multiplier should not change mult
             messages: vec![],
         };
@@ -2908,6 +3008,7 @@ mod tests {
             chips: 0,
             mult: 10,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: f64::MAX, // Very large multiplier
             messages: vec![],
         };
@@ -2924,6 +3025,7 @@ mod tests {
             chips: 0,
             mult: -10,
             money: 0,
+            interest_bonus: 0,
             mult_multiplier: f64::MAX, // Very large multiplier on negative value
             messages: vec![],
         };
@@ -2945,6 +3047,7 @@ mod tests {
             chips: 5,
             mult: 2,
             money: 1,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
             retrigger: 0,
             destroy_self: false,
@@ -2961,6 +3064,7 @@ mod tests {
             chips: 3,
             mult: 4,
             money: 2,
+            interest_bonus: 0,
             mult_multiplier: 1.5,
             retrigger: 1, // 2 total iterations
             destroy_self: false,
@@ -2994,7 +3098,9 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
+            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 
@@ -3002,7 +3108,9 @@ mod tests {
             chips: 10,
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
+            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 
@@ -3010,7 +3118,9 @@ mod tests {
             chips: 11, // Different value
             mult: 5,
             money: 3,
+            interest_bonus: 0,
             mult_multiplier: 2.0,
+            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 
