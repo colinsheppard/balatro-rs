@@ -175,10 +175,12 @@ mod tests {
     /// Test Config field access for validation
     #[test]
     fn test_config_available_max_validation() {
-        let mut config = Config::default();
+        let mut config = Config {
+            available_max: 0,
+            ..Default::default()
+        };
 
         // Valid values should work when set directly
-        config.available_max = 0;
         assert_eq!(config.available_max, 0);
 
         config.available_max = 100;
@@ -275,10 +277,12 @@ mod tests {
     /// Memory safety test - ensure no out-of-bounds access
     #[test]
     fn test_memory_safety() {
-        let mut config = Config::default();
+        let config = Config {
+            available_max: 0,
+            ..Default::default()
+        };
 
         // Test with zero-sized arrays
-        config.available_max = 0;
         let action_space = ActionSpace::from(config);
 
         // These should be empty vectors, safe to iterate over

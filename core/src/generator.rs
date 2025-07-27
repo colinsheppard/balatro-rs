@@ -336,7 +336,6 @@ impl Game {
 }
 
 #[cfg(test)]
-#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
     use crate::card::{Card, Suit, Value};
@@ -518,10 +517,12 @@ mod tests {
 
     #[test]
     fn test_gen_actions_select_card_edge_cases() {
-        let mut g = Game::default();
+        let mut g = Game {
+            stage: Stage::Shop(),
+            ..Default::default()
+        };
 
         // Test with no stage set to blind
-        g.stage = Stage::Shop();
         assert!(g.gen_actions_select_card().is_none());
 
         g.stage = Stage::PostBlind();
@@ -554,10 +555,12 @@ mod tests {
 
     #[test]
     fn test_gen_actions_play_edge_cases() {
-        let mut g = Game::default();
+        let mut g = Game {
+            stage: Stage::Shop(),
+            ..Default::default()
+        };
 
         // Test with no blind stage
-        g.stage = Stage::Shop();
         assert!(g.gen_actions_play().is_none());
 
         // Set to blind stage but no plays remaining
@@ -581,10 +584,12 @@ mod tests {
 
     #[test]
     fn test_gen_actions_discard_edge_cases() {
-        let mut g = Game::default();
+        let mut g = Game {
+            stage: Stage::Shop(),
+            ..Default::default()
+        };
 
         // Test with no blind stage
-        g.stage = Stage::Shop();
         assert!(g.gen_actions_discard().is_none());
 
         // Set to blind stage but no discards remaining
@@ -706,10 +711,12 @@ mod tests {
 
     #[test]
     fn test_gen_actions_select_blind_edge_cases() {
-        let mut g = Game::default();
+        let mut g = Game {
+            stage: Stage::Shop(),
+            ..Default::default()
+        };
 
         // Test with wrong stage
-        g.stage = Stage::Shop();
         assert!(g.gen_actions_select_blind().is_none());
 
         g.stage = Stage::Blind(Blind::Small);
@@ -739,10 +746,12 @@ mod tests {
 
     #[test]
     fn test_gen_actions_buy_joker_edge_cases() {
-        let mut g = Game::default();
+        let mut g = Game {
+            stage: Stage::Blind(Blind::Small),
+            ..Default::default()
+        };
 
         // Test with wrong stage
-        g.stage = Stage::Blind(Blind::Small);
         assert!(g.gen_actions_buy_joker().is_none());
 
         // Set to correct stage but max jokers
