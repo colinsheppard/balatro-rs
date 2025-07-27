@@ -12,8 +12,6 @@ use crate::joker::traits::{
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::stage::Stage;
 use serde::{Deserialize, Serialize};
-#[cfg(test)]
-use std::collections::HashMap;
 use std::collections::HashSet;
 
 /// ErosionJoker: +4 Mult for each card below 52 in deck
@@ -766,6 +764,7 @@ mod tests {
     use crate::joker::traits::JokerGameplay;
     use crate::joker_state::JokerStateManager;
     use crate::stage::{Blind, Stage};
+    use std::collections::HashMap;
     use std::sync::Arc;
 
     /// Helper function to create a test card
