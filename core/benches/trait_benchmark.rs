@@ -3,6 +3,8 @@
 //! This benchmark suite measures the performance impact of the new trait system
 //! and ensures that the refactoring doesn't introduce performance regressions.
 
+#![allow(clippy::field_reassign_with_default)]
+
 use balatro_rs::{
     action::Action,
     card::{Card, Suit, Value},

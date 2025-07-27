@@ -410,7 +410,7 @@ impl ShopGenerator for WeightedGenerator {
             };
 
             if let Some(shop_item) = item {
-                let base_cost = shop_item.base_cost();
+                let base_cost = shop_item.base_cost(&game.config);
                 // For now, use empty voucher list since voucher system is placeholder
                 let shop_vouchers: Vec<VoucherId> = vec![];
                 let final_cost = self.calculate_final_cost(base_cost, &shop_vouchers);
@@ -428,7 +428,7 @@ impl ShopGenerator for WeightedGenerator {
     }
 
     fn generate_pack(&self, pack_type: PackType, game: &Game) -> Pack {
-        let cost = pack_type.base_cost();
+        let cost = pack_type.base_cost(&game.config);
 
         let mut contents = Vec::new();
 
