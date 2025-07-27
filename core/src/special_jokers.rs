@@ -12,6 +12,8 @@ use crate::joker::traits::{
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::stage::Stage;
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 /// ErosionJoker: +4 Mult for each card below 52 in deck
@@ -993,7 +995,7 @@ mod tests {
         let joker = FigureJoker;
 
         assert_eq!(joker.joker_type(), "Figure");
-        assert_eq!(JokerIdentity::name(&joker), "Figur");
+        assert_eq!(JokerIdentity::name(&joker), "Figure");
         assert_eq!(
             JokerIdentity::description(&joker),
             "$3 when face card played, face cards give +0 Chips"

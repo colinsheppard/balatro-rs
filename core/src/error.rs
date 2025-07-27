@@ -241,7 +241,7 @@ pub enum DeveloperPackError {
     #[error("Pack opening failed: {reason}")]
     OpeningFailed { reason: String },
 
-    // Pack Selection Errors  
+    // Pack Selection Errors
     #[error("No pack is currently open")]
     NoPackOpen,
     #[error("Invalid option index {option_index}: pack has {total_options} options")]
@@ -282,7 +282,10 @@ pub enum DeveloperPackError {
     #[error("RNG selection failed during pack generation: {reason}")]
     RngSelectionFailed { reason: String },
     #[error("Empty selection pool for {item_type} in {pack_type}")]
-    EmptySelectionPool { item_type: String, pack_type: String },
+    EmptySelectionPool {
+        item_type: String,
+        pack_type: String,
+    },
     #[error("Weighted random selection failed: {reason}")]
     WeightedSelectionFailed { reason: String },
 
@@ -313,8 +316,8 @@ impl std::convert::From<DeveloperPackError> for DeveloperGameError {
     fn from(err: DeveloperPackError) -> DeveloperGameError {
         match err {
             DeveloperPackError::InsufficientFunds { .. } => DeveloperGameError::InvalidBalance,
-            DeveloperPackError::PackNotFound { .. } 
-            | DeveloperPackError::NoPackOpen 
+            DeveloperPackError::PackNotFound { .. }
+            | DeveloperPackError::NoPackOpen
             | DeveloperPackError::NoPackToSkip => DeveloperGameError::NoCardMatch,
             DeveloperPackError::InvalidPackId { .. }
             | DeveloperPackError::InvalidOptionIndex { .. }
@@ -323,8 +326,10 @@ impl std::convert::From<DeveloperPackError> for DeveloperGameError {
             | DeveloperPackError::InvalidOpenStage { .. }
             | DeveloperPackError::InvalidSelectionStage { .. } => DeveloperGameError::InvalidStage,
             DeveloperPackError::RngSelectionFailed { .. }
-            | DeveloperPackError::WeightedSelectionFailed { .. } => DeveloperGameError::RngFailed("Pack generation RNG failure".to_string()),
-            _ => DeveloperGameError::InvalidOperation(format!("Pack system error: {}", err)),
+            | DeveloperPackError::WeightedSelectionFailed { .. } => {
+                DeveloperGameError::RngFailed("Pack generation RNG failure".to_string())
+            }
+            _ => DeveloperGameError::InvalidOperation(format!("Pack system error: {err}")),
         }
     }
 }
