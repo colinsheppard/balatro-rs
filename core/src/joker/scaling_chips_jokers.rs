@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 
 /// Castle Joker implementation - specification compliant
 /// Per joker.json: "This Joker gains {C:chips}+#1#{} Chips per discarded {V:1}#2#{} card, suit changes every round"
-/// 
+///
 /// Implements suit cycling: Heart (round % 4 == 0) → Diamond (1) → Club (2) → Spade (3)
 /// Gains +3 chips per discarded card of the active suit
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -38,7 +38,7 @@ impl CastleJoker {
     fn get_suit_name(&self, suit: Suit) -> &'static str {
         match suit {
             Suit::Heart => "Heart",
-            Suit::Diamond => "Diamond", 
+            Suit::Diamond => "Diamond",
             Suit::Club => "Club",
             Suit::Spade => "Spade",
         }
@@ -70,23 +70,27 @@ impl Joker for CastleJoker {
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         let active_suit = self.get_active_suit(context.round);
         let suit_name = self.get_suit_name(active_suit);
-        
+
         // Get accumulated chips from state manager
-        let accumulated_chips = context.joker_state_manager
+        let accumulated_chips = context
+            .joker_state_manager
             .get_accumulated_value(self.id())
             .unwrap_or(0.0) as i32;
-        
+
         JokerEffect {
             chips: accumulated_chips,
             ..JokerEffect::new()
         }
-        .with_message(format!("Castle: Active suit {}, {} chips", suit_name, accumulated_chips))
+        .with_message(format!(
+            "Castle: Active suit {suit_name}, {accumulated_chips} chips"
+        ))
     }
 
     /// Called when cards are discarded - gains chips for cards of the active suit
     fn on_discard(&self, context: &mut GameContext, cards: &[Card]) -> JokerEffect {
         let active_suit = self.get_active_suit(context.round);
-        let matching_cards: Vec<&Card> = cards.iter()
+        let matching_cards: Vec<&Card> = cards
+            .iter()
             .filter(|card| card.suit == active_suit)
             .collect();
 
@@ -95,15 +99,21 @@ impl Joker for CastleJoker {
         }
 
         let chips_gained = (matching_cards.len() as i32) * 3;
-        
+
         // Update accumulated value through JokerStateManager
-        context.joker_state_manager.add_accumulated_value(self.id(), chips_gained as f64);
+        context
+            .joker_state_manager
+            .add_accumulated_value(self.id(), chips_gained as f64);
 
         JokerEffect {
             chips: chips_gained,
             ..JokerEffect::new()
         }
-        .with_message(format!("Castle: +{} Chips gained from {} {} cards", chips_gained, matching_cards.len(), self.get_suit_name(active_suit)))
+        .with_message(format!(
+            "Castle: +{chips_gained} Chips gained from {} {} cards",
+            matching_cards.len(),
+            self.get_suit_name(active_suit)
+        ))
     }
 }
 
@@ -193,7 +203,7 @@ impl Joker for StuntmanJoker {
     /// This implements the joker.json specification exactly: +300 chips
     fn on_hand_played(&self, _context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
         JokerEffect {
-            chips: 300,        // +300 chips per specification
+            chips: 300, // +300 chips per specification
             ..JokerEffect::new()
         }
         .with_message("Stuntman: +300 Chips".to_string())
@@ -258,7 +268,10 @@ impl OddToddJoker {
     }
 
     fn is_odd_rank(&self, value: Value) -> bool {
-        matches!(value, Value::Ace | Value::Three | Value::Five | Value::Seven | Value::Nine)
+        matches!(
+            value,
+            Value::Ace | Value::Three | Value::Five | Value::Seven | Value::Nine
+        )
     }
 }
 
