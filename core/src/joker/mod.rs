@@ -160,6 +160,8 @@ pub enum JokerId {
     Driver,
     Blueprint,
     Wee,
+    Castle,
+    Stuntman,
     Merry,
     Gros,
     Reserved,
@@ -1277,6 +1279,9 @@ mod identity_tests;
 
 // Include scaling additive mult jokers
 pub mod scaling_additive_mult_jokers;
+
+// Include scaling chips jokers (Castle, Wee, Stuntman, etc.)
+pub mod scaling_chips_jokers;
 
 // Include testing utilities for the Joker trait system
 #[cfg(test)]
