@@ -12,6 +12,8 @@ use crate::joker::traits::{
 use crate::joker::{GameContext, Joker, JokerEffect, JokerId, JokerRarity};
 use crate::stage::Stage;
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
+use std::collections::HashMap;
 use std::collections::HashSet;
 
 /// ErosionJoker: +4 Mult for each card below 52 in deck
@@ -99,7 +101,7 @@ impl Joker for ErosionJoker {
     }
 }
 
-/// FigureJoker: $3 when face card played, face cards give +0 Chips  
+/// FigureJoker: $3 when face card played, face cards give +0 Chips
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct FigureJoker;
 
@@ -761,14 +763,9 @@ mod tests {
     use super::*;
     use crate::card::{Card, Suit as CardSuit, Value};
     use crate::hand::SelectHand;
-    use crate::joker::traits::{
-        JokerGameplay, JokerIdentity, JokerLifecycle, JokerModifiers,
-        JokerState as JokerStateTrait, Rarity,
-    };
-    use crate::joker::GameContext;
+    use crate::joker::traits::JokerGameplay;
     use crate::joker_state::JokerStateManager;
     use crate::stage::{Blind, Stage};
-    use std::collections::HashMap;
     use std::sync::Arc;
 
     /// Helper function to create a test card
