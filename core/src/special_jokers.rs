@@ -761,7 +761,11 @@ mod tests {
     use super::*;
     use crate::card::{Card, Suit as CardSuit, Value};
     use crate::hand::SelectHand;
-    use crate::joker::traits::JokerGameplay;
+    use crate::joker::traits::{
+        JokerGameplay, JokerIdentity, JokerLifecycle, JokerModifiers,
+        JokerState as JokerStateTrait, Rarity,
+    };
+    use crate::joker::GameContext;
     use crate::joker_state::JokerStateManager;
     use crate::stage::{Blind, Stage};
     use std::collections::HashMap;

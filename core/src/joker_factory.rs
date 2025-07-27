@@ -1,10 +1,9 @@
 use crate::joker::four_fingers::FourFingersJoker;
+use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::{Joker, JokerId, JokerRarity};
 use crate::joker_impl::*;
 use crate::scaling_joker_custom;
-use crate::scaling_joker_impl::{
-    create_fortune_teller, create_red_card, create_steel_joker_scaling,
-};
+use crate::scaling_joker_impl::{create_red_card, create_steel_joker_scaling};
 use crate::special_jokers::*;
 use crate::static_joker_factory::StaticJokerFactory;
 
@@ -63,7 +62,7 @@ impl JokerFactory {
             JokerId::LuckyCharm => Some(Box::new(LuckyCardJoker)),
             JokerId::Reserved8 => Some(Box::new(GrimJoker)),
             JokerId::AcrobatJoker => Some(Box::new(AcrobatJokerImpl)),
-            JokerId::Fortune => Some(Box::new(create_fortune_teller())),
+            JokerId::Fortune => Some(create_fortune_teller()),
             JokerId::VagabondJoker => Some(Box::new(VagabondJokerImpl)),
             JokerId::Reserved9 => Some(Box::new(ChaoticJoker)),
 
@@ -74,6 +73,12 @@ impl JokerFactory {
             JokerId::TheOrder => Some(Box::new(TheOrderJoker)),
             JokerId::FourFingers => Some(Box::new(FourFingersJoker::new())),
             JokerId::Triboulet => Some(Box::new(TribouletJoker)),
+
+            // Scaling additive mult jokers
+            JokerId::Trousers => Some(Box::new(SpareTrousersJoker::new())),
+            JokerId::GreenJoker => Some(Box::new(GreenJoker::new())),
+            JokerId::Reserved5 => Some(Box::new(RideTheBusJoker::new())), // RideTheBus
+            JokerId::Reserved6 => Some(Box::new(RedCardJoker::new())),    // RedCard (pack skipping)
             // TODO: Implement remaining jokers
             _ => None,
         }
@@ -120,6 +125,10 @@ impl JokerFactory {
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
+                // Scaling additive mult jokers
+                GreenJoker,
+                Reserved5, // RideTheBus
+                Reserved6, // RedCard (pack skipping)
             ],
             JokerRarity::Uncommon => vec![
                 // Money-based conditional jokers
@@ -135,6 +144,8 @@ impl JokerFactory {
                 // Special mechanic jokers
                 TheOrder,
                 FourFingers,
+                // Scaling additive mult jokers
+                Trousers, // Spare Trousers
             ],
             JokerRarity::Rare => vec![
                 // RNG-based jokers (Issue #442)
@@ -204,6 +215,11 @@ impl JokerFactory {
             SteelJoker, // Now properly implemented as scaling joker
             FourFingers,
             Triboulet, // Legendary joker - Kings and Queens give X2 mult
+            // Scaling additive mult jokers
+            Trousers, // Spare Trousers
+            GreenJoker,
+            Reserved5, // RideTheBus
+            Reserved6, // RedCard (pack skipping)
                        // Note: HalfJoker and Banner are still placeholders
         ]
     }
