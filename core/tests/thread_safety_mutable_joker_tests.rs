@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use balatro_rs::card::{Suit, Value};
 use balatro_rs::joker::{JokerId, ProcessResult};
 use balatro_rs::joker_state::JokerStateManager;
@@ -260,7 +262,7 @@ fn test_trait_object_thread_safety() {
     ];
 
     // Can wrap in Arc<Mutex<_>> for thread sharing
-    let shared_jokers = Arc::new(Mutex::new(jokers));
+    let _shared_jokers = Arc::new(Mutex::new(jokers));
 
     // Verify Send + Sync
     fn assert_send_sync<T: Send + Sync>() {}

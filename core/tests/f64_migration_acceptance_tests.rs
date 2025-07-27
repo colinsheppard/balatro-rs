@@ -123,8 +123,9 @@ mod f64_migration_acceptance_tests {
     /// Acceptance Test 5: Shop system uses f64 for prices and costs
     #[test]
     fn test_shop_system_uses_f64() {
+        let config = Config::default();
         let pack_type = PackType::Arcana;
-        let base_cost = pack_type.base_cost();
+        let base_cost = pack_type.base_cost(&config);
 
         // Should return usize and support cost calculations
         // Base cost validation (removed >= 0 check as it's always true for unsigned)

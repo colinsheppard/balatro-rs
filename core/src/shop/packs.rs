@@ -197,7 +197,12 @@ impl Pack {
     }
 
     /// Generate standard pack options (playing cards)
-    fn generate_standard_options(&mut self, count: usize, game: &Game, config: &Config) -> Result<(), GameError> {
+    fn generate_standard_options(
+        &mut self,
+        count: usize,
+        game: &Game,
+        config: &Config,
+    ) -> Result<(), GameError> {
         use crate::card::{Enhancement, Suit, Value};
 
         let suits = [Suit::Heart, Suit::Diamond, Suit::Club, Suit::Spade];
@@ -251,7 +256,12 @@ impl Pack {
     }
 
     /// Generate buffoon pack options (jokers)
-    fn generate_buffoon_options(&mut self, count: usize, game: &Game, config: &Config) -> Result<(), GameError> {
+    fn generate_buffoon_options(
+        &mut self,
+        count: usize,
+        game: &Game,
+        config: &Config,
+    ) -> Result<(), GameError> {
         use crate::joker::JokerRarity;
 
         // Define rarity weights using configuration values
@@ -319,7 +329,12 @@ impl Pack {
     }
 
     /// Generate arcana pack options (tarot cards)
-    fn generate_arcana_options(&mut self, count: usize, game: &Game, _config: &Config) -> Result<(), GameError> {
+    fn generate_arcana_options(
+        &mut self,
+        count: usize,
+        game: &Game,
+        _config: &Config,
+    ) -> Result<(), GameError> {
         let tarot_cards = ConsumableId::tarot_cards();
 
         for _ in 0..count {
@@ -340,7 +355,12 @@ impl Pack {
     }
 
     /// Generate celestial pack options (planet cards)
-    fn generate_celestial_options(&mut self, count: usize, game: &Game, _config: &Config) -> Result<(), GameError> {
+    fn generate_celestial_options(
+        &mut self,
+        count: usize,
+        game: &Game,
+        _config: &Config,
+    ) -> Result<(), GameError> {
         let planet_cards = ConsumableId::planet_cards();
 
         for _ in 0..count {
@@ -361,7 +381,12 @@ impl Pack {
     }
 
     /// Generate spectral pack options (spectral cards)
-    fn generate_spectral_options(&mut self, count: usize, game: &Game, _config: &Config) -> Result<(), GameError> {
+    fn generate_spectral_options(
+        &mut self,
+        count: usize,
+        game: &Game,
+        _config: &Config,
+    ) -> Result<(), GameError> {
         let spectral_cards = ConsumableId::spectral_cards();
 
         for _ in 0..count {

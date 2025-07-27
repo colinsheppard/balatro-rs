@@ -1,3 +1,5 @@
+#![allow(clippy::field_reassign_with_default)]
+
 use balatro_rs::{
     action::Action,
     card::{Card, Suit, Value},

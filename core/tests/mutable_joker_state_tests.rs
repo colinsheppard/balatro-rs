@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use balatro_rs::card::{Suit, Value};
 use balatro_rs::joker::JokerId;
 use balatro_rs::joker_state::JokerStateManager;
