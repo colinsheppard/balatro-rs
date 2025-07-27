@@ -466,7 +466,6 @@ mod validation_tests {
         assert!(result3.is_err());
         assert!(result3.unwrap_err().contains("Deserialization failed"));
     }
-
 }
 
 #[cfg(test)]
