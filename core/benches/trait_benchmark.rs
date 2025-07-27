@@ -318,11 +318,7 @@ pub fn retrigger_benchmark(c: &mut Criterion) {
             BenchmarkId::new("retrigger_effects", retrigger_count),
             &retrigger_count,
             |b, &retrigger_count| {
-<<<<<<< HEAD
-                let _processor = JokerEffectProcessor::new();
-=======
                 let processor = JokerEffectProcessor::new();
->>>>>>> 36fb4b0 (fix: Address clippy warnings)
                 let joker_effects = vec![JokerEffect {
                     chips: 10,
                     mult: 2,

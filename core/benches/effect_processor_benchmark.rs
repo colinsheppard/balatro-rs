@@ -6,12 +6,7 @@ use balatro_rs::{
         ConflictResolutionStrategy, EffectPriority, JokerEffectProcessor, ProcessingContext,
     },
 };
-<<<<<<< HEAD
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use std::hint::black_box;
-=======
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
->>>>>>> 36fb4b0 (fix: Address clippy warnings)
 
 /// Benchmark suite for JokerEffectProcessor performance testing
 pub fn effect_processor_benchmarks(c: &mut Criterion) {

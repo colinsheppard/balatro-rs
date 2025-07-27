@@ -1262,9 +1262,6 @@ pub mod four_fingers;
 // Include multiplicative jokers (Baron, Steel, Ancient, etc.)
 pub mod multiplicative_jokers;
 
-// Include basic economy jokers
-pub mod basic_economy_jokers;
-
 // Include tests for hand composition jokers (Ride the Bus, Blackboard, DNA)
 #[cfg(test)]
 mod hand_composition_tests;
@@ -1278,6 +1275,9 @@ mod identity_tests;
 
 // Include scaling additive mult jokers
 pub mod scaling_additive_mult_jokers;
+
+// Include scaling chips jokers (Castle, Wee, Stuntman, Hiker, Odd Todd, Arrowhead, Scholar)
+pub mod scaling_chips_jokers;
 
 // Include testing utilities for the Joker trait system
 #[cfg(test)]
@@ -1298,6 +1298,12 @@ pub use traits::{
 
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
+
+// Re-export scaling chips joker factory functions
+pub use scaling_chips_jokers::{
+    create_arrowhead_joker, create_castle_joker, create_hiker_joker, create_odd_todd_joker,
+    create_scholar_joker, create_stuntman_joker, create_wee_joker,
+};
 
 // Module-level trait tests
 #[cfg(test)]

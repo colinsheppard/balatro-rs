@@ -83,9 +83,6 @@ const RARITY_COSTS: &[(Rarity, u64)] = &[
 ];
 
 // Test macro for parameterized tests - eliminates code duplication
-<<<<<<< HEAD
-// NOTE: Removed unused macro
-=======
 #[allow(unused_macros)]
 macro_rules! test_joker_property {
     ($name:ident, $joker:expr, $check:expr) => {
@@ -96,7 +93,6 @@ macro_rules! test_joker_property {
         }
     };
 }
->>>>>>> 54586ce (fix: Fix CI warnings and clippy issues)
 
 macro_rules! test_batch {
     ($($name:ident => $joker_idx:expr, $prop:expr, $expected:expr);* $(;)?) => {
@@ -268,10 +264,7 @@ mod integration_tests {
 }
 
 // Performance comparison benchmark (not run by default)
-<<<<<<< HEAD
 // NOTE: Commented out benchmark code as "bench" feature is not defined
-=======
->>>>>>> 54586ce (fix: Fix CI warnings and clippy issues)
 // #[cfg(all(test, feature = "bench"))]
 // mod bench {
 //     use super::*;

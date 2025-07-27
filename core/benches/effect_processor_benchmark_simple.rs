@@ -4,13 +4,7 @@
 //! improvements from the JokerEffectProcessor optimizations.
 
 use balatro_rs::joker_effect_processor::JokerEffectProcessor;
-<<<<<<< HEAD
-#[allow(deprecated)]
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
-use std::hint::black_box;
-=======
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
->>>>>>> 36fb4b0 (fix: Address clippy warnings)
 
 /// Basic processing benchmarks with different numbers of jokers
 fn basic_processing_benchmarks(c: &mut Criterion) {
