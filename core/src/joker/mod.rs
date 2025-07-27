@@ -1263,6 +1263,9 @@ pub mod multiplicative_jokers;
 #[cfg(test)]
 mod hand_composition_tests;
 
+// Include scaling xmult jokers (Throwback, Steel Joker Scaling, Ceremonial Dagger)
+pub mod scaling_xmult_jokers;
+
 // Include tests for JokerIdentity trait
 #[cfg(test)]
 mod identity_tests;
