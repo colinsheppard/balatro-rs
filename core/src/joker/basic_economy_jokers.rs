@@ -323,9 +323,7 @@ impl Joker for ToTheMoonJoker {
         if interest_bonus > 0 {
             JokerEffect::new()
                 .with_interest_bonus(interest_bonus)
-                .with_message(format!(
-                    "To The Moon: +${interest_bonus} extra interest"
-                ))
+                .with_message(format!("To The Moon: +${interest_bonus} extra interest"))
         } else {
             JokerEffect::new()
         }
@@ -537,7 +535,7 @@ mod tests {
 
         let effect_rich = moon.on_round_end(&mut rich_context);
         assert_eq!(effect_rich.interest_bonus, 20); // Joker provides full bonus
-        // Note: Cap is applied to total interest (base + bonus) in calc_reward_with_interest_bonus
+                                                    // Note: Cap is applied to total interest (base + bonus) in calc_reward_with_interest_bonus
 
         // Test with no money
         let mut poor_context = crate::joker::test_utils::TestContextBuilder::new()

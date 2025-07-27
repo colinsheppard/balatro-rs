@@ -1091,7 +1091,11 @@ impl Game {
         self.calc_reward_with_interest_bonus(blind, 0)
     }
 
-    fn calc_reward_with_interest_bonus(&mut self, blind: Blind, interest_bonus: i32) -> Result<f64, GameError> {
+    fn calc_reward_with_interest_bonus(
+        &mut self,
+        blind: Blind,
+        interest_bonus: i32,
+    ) -> Result<f64, GameError> {
         let base_interest = (self.money * self.config.interest_rate).floor();
         let total_interest_before_cap = base_interest + interest_bonus as f64;
         let mut interest = total_interest_before_cap;
@@ -1107,7 +1111,7 @@ impl Game {
     /// Process joker round end effects and return accumulated effects
     fn process_joker_round_end_effects(&mut self) -> AccumulatedEffects {
         let mut accumulated = AccumulatedEffects::new();
-        
+
         // Convert ante to u8
         let ante_u8 = match self.ante_current {
             crate::ante::Ante::Zero => 0,
@@ -1123,7 +1127,7 @@ impl Game {
 
         // Create empty hand from available cards
         let current_hand = crate::hand::Hand::new(self.available.cards());
-        
+
         // Create game context for jokers - provide all required fields
         let mut context = crate::joker::GameContext {
             chips: self.chips as i32,
@@ -1148,13 +1152,13 @@ impl Game {
         // Process each joker's round end effect
         for joker in &self.jokers {
             let effect = joker.on_round_end(&mut context);
-            
+
             // Accumulate the effect
             if !accumulated.accumulate_effect(&effect) {
                 // Killscreen detected - break early
                 break;
             }
-            
+
             // Add any messages
             if let Some(message) = effect.message {
                 accumulated.messages.push(message);
@@ -1582,11 +1586,11 @@ impl Game {
         // score exceeds blind (blind passed).
         // process joker round end effects first
         let joker_effects = self.process_joker_round_end_effects();
-        
+
         // handle reward calculation with joker interest bonus
         let reward = self.calc_reward_with_interest_bonus(blind, joker_effects.interest_bonus)?;
         self.reward = reward;
-        
+
         // apply joker money effects (separate from interest)
         self.money += joker_effects.money as f64;
 
