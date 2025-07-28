@@ -33,6 +33,7 @@ use std::fmt;
 use std::sync::Arc;
 
 /// Maximum debug messages to keep in memory (for practical memory management)
+#[allow(dead_code)]
 const MAX_DEBUG_MESSAGES: usize = 10000;
 
 /// Score breakdown for debugging and analysis
@@ -2058,6 +2059,7 @@ impl Game {
 }
 
 #[cfg(test)]
+#[allow(clippy::field_reassign_with_default)]
 mod tests {
     use super::*;
     use crate::card::{Suit, Value};
