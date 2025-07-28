@@ -175,22 +175,21 @@ mod tests {
     /// Test Config field access for validation
     #[test]
     fn test_config_available_max_validation() {
-        // Valid values should work when set directly
         let config = Config {
             available_max: 0,
-            ..Default::default()
+            ..Config::default()
         };
         assert_eq!(config.available_max, 0);
 
         let config = Config {
             available_max: 100,
-            ..Default::default()
+            ..Config::default()
         };
         assert_eq!(config.available_max, 100);
 
         let config = Config {
             available_max: 1_000_000,
-            ..Default::default()
+            ..Config::default()
         };
         assert_eq!(config.available_max, 1_000_000);
 
@@ -282,10 +281,9 @@ mod tests {
     /// Memory safety test - ensure no out-of-bounds access
     #[test]
     fn test_memory_safety() {
-        // Test with zero-sized arrays
         let config = Config {
             available_max: 0,
-            ..Default::default()
+            ..Config::default()
         };
         let action_space = ActionSpace::from(config);
 
