@@ -683,6 +683,7 @@ impl JokerGameplay for PhotographJoker {
                     return ProcessResult {
                         chips_added: 0,
                         mult_added: context.hand_score.mult, // Double by adding current mult
+                        mult_multiplier: 1.0,
                         retriggered: false,
                         message: None,
                     };
@@ -796,12 +797,14 @@ mod tests {
         ];
         let held_cards = vec![];
         let mut events = vec![];
+        let test_hand = SelectHand::new(played_cards.clone());
 
         let mut context = crate::joker::traits::ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &test_hand,
             joker_state_manager: &state_manager,
         };
 
@@ -829,12 +832,14 @@ mod tests {
         let played_cards = vec![create_card(CardSuit::Heart, Value::King)];
         let held_cards = vec![];
         let mut events = vec![];
+        let test_hand = SelectHand::new(played_cards.clone());
 
         let mut context = crate::joker::traits::ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &test_hand,
             joker_state_manager: &state_manager,
         };
 
@@ -856,12 +861,14 @@ mod tests {
         let played_cards = vec![create_card(CardSuit::Heart, Value::Queen)];
         let held_cards = vec![];
         let mut events = vec![];
+        let test_hand = SelectHand::new(played_cards.clone());
 
         let context = crate::joker::traits::ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &test_hand,
             joker_state_manager: &state_manager,
         };
 
@@ -891,12 +898,14 @@ mod tests {
         ];
         let held_cards = vec![];
         let mut events = vec![];
+        let test_hand = SelectHand::new(played_cards.clone());
 
         let mut context = crate::joker::traits::ProcessContext {
             hand_score: &mut hand_score,
             played_cards: &played_cards,
             held_cards: &held_cards,
             events: &mut events,
+            hand: &test_hand,
             joker_state_manager: &state_manager,
         };
 
@@ -923,7 +932,6 @@ mod tests {
         // NOTE: In actual game flow, the Game engine should also reset
         // the state in JokerStateManager by calling reset methods
     }
-
 
     /// Helper function to create basic test context
     fn create_basic_test_context() -> (

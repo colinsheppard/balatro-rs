@@ -1,6 +1,6 @@
 use crate::joker::four_fingers::FourFingersJoker;
-use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::retrigger_jokers::*;
+use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::{Joker, JokerId, JokerRarity};
 use crate::joker_impl::*;
 use crate::scaling_joker_custom;
@@ -80,7 +80,7 @@ impl JokerFactory {
             JokerId::GreenJoker => Some(Box::new(GreenJoker::new())),
             JokerId::Reserved5 => Some(Box::new(RideTheBusJoker::new())), // RideTheBus
             JokerId::Reserved6 => Some(Box::new(RedCardJoker::new())),    // RedCard (pack skipping)
-            
+
             // Retrigger jokers
             JokerId::Dusk => Some(Box::new(DuskJoker::new())),
             JokerId::Seltzer => Some(Box::new(SeltzerJoker::new())),
