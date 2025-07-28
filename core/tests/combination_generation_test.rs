@@ -1,11 +1,6 @@
-<<<<<<< HEAD
-#![cfg(any())]
-// EMERGENCY DISABLE: CardTarget API mismatch and Vec indexing errors - tracked for post-emergency fix
-=======
 // This test is currently disabled
 #![cfg(all())] // Always false, effectively disabling the file
                // EMERGENCY DISABLE: CardTarget API mismatch and Vec indexing errors - tracked for post-emergency fix
->>>>>>> 54586ce (fix: Fix CI warnings and clippy issues)
 
 use balatro_rs::config::Config;
 use balatro_rs::consumables::{Target, TargetType};

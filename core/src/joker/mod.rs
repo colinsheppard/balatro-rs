@@ -101,7 +101,6 @@ pub enum JokerId {
     Luchador,
     Photograph,
     GiftCard,
-    CouponJoker,
     CloudNine,
     StockBroker,
     EggHead,
@@ -160,6 +159,8 @@ pub enum JokerId {
     Driver,
     Blueprint,
     Wee,
+    Castle,
+    Stuntman,
     Merry,
     Gros,
     Reserved,
@@ -1249,17 +1250,22 @@ pub mod conditional;
 
 // Include hand composition jokers (Ride the Bus, Blackboard, DNA)
 pub mod hand_composition_jokers;
+
 // Include basic economy jokers
 pub mod basic_economy_jokers;
-
 // Include resource-based chips jokers (Banner, Bull, Stone, Scary Face, Blue)
 pub mod resource_chips_jokers;
+
+// Include basic xmult jokers (Photograph, Ancient, Steel, Baron, The Idol)
+pub mod basic_xmult_jokers;
 
 // Include FourFingers joker
 pub mod four_fingers;
 
 // Include multiplicative jokers (Baron, Steel, Ancient, etc.)
 pub mod multiplicative_jokers;
+// Include retrigger jokers
+pub mod retrigger_jokers;
 
 // Include tests for hand composition jokers (Ride the Bus, Blackboard, DNA)
 #[cfg(test)]
@@ -1275,7 +1281,7 @@ mod identity_tests;
 // Include scaling additive mult jokers
 pub mod scaling_additive_mult_jokers;
 
-// Include scaling chips jokers (Castle, Wee, Stuntman, Hiker, Odd Todd, Arrowhead, Scholar)
+// Include scaling chips jokers (Castle, Wee, Stuntman, etc.)
 pub mod scaling_chips_jokers;
 
 // Include testing utilities for the Joker trait system
@@ -1298,10 +1304,9 @@ pub use traits::{
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
 
-// Re-export scaling chips joker factory functions
+// Re-export scaling chips joker structs (factory functions not available in current implementation)
 pub use scaling_chips_jokers::{
-    create_arrowhead_joker, create_castle_joker, create_hiker_joker, create_odd_todd_joker,
-    create_scholar_joker, create_stuntman_joker, create_wee_joker,
+    ArrowheadJoker, CastleJoker, HikerJoker, OddToddJoker, ScholarJoker, StuntmanJoker, WeeJoker,
 };
 
 // Module-level trait tests

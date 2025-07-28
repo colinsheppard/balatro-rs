@@ -542,4 +542,26 @@ mod tests {
         assert_eq!(round_effect.money, 3); // Should earn current payout ($3)
         assert!(round_effect.message.unwrap().contains("+$3"));
     }
+
+    #[test]
+    fn test_all_economy_jokers_creation() {
+        // Test that all economy jokers can be created successfully
+        let delayed_gratification = DelayedGratificationJoker::new();
+        assert_eq!(delayed_gratification.id, JokerId::DelayedGratification);
+        assert_eq!(delayed_gratification.name, "Delayed Gratification");
+        assert_eq!(delayed_gratification.cost, 4);
+
+        let rocket = RocketJoker::new();
+        assert_eq!(rocket.id, JokerId::RocketShip);
+        assert_eq!(rocket.name, "Rocket");
+        assert_eq!(rocket.payout, 1);
+
+        let to_the_moon = ToTheMoonJoker::new();
+        assert_eq!(to_the_moon.id, JokerId::ToTheMoon);
+        assert_eq!(to_the_moon.name, "To The Moon");
+
+        let gift_card = GiftCardJoker::new();
+        assert_eq!(gift_card.id, JokerId::GiftCard);
+        assert_eq!(gift_card.name, "Gift Card");
+    }
 }
