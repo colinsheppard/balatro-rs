@@ -294,6 +294,12 @@ pub struct JokerEffect {
     /// Applied immediately after hand scoring. Positive values give money.
     pub money: i32,
 
+    /// Additional interest to add to the base interest calculation.
+    ///
+    /// This bonus is added to the base interest before the interest cap is applied.
+    /// Used by jokers like "To the Moon" that provide extra interest.
+    pub interest_bonus: i32,
+
     /// Multiplier to apply to the total mult.
     ///
     /// Applied after all mult bonuses are summed. For example:
@@ -365,6 +371,12 @@ impl JokerEffect {
     /// Add money
     pub fn with_money(mut self, money: i32) -> Self {
         self.money = money;
+        self
+    }
+
+    /// Add interest bonus
+    pub fn with_interest_bonus(mut self, interest_bonus: i32) -> Self {
+        self.interest_bonus = interest_bonus;
         self
     }
 

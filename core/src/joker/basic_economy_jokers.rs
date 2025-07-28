@@ -223,7 +223,7 @@ impl ToTheMoonJoker {
         Self {
             id: JokerId::ToTheMoon,
             name: "To The Moon".to_string(),
-            description: "Earn $1 of interest for every $5 you have at end of round (max $5)"
+            description: "Earn an extra $1 of interest for every $5 you have at end of round"
                 .to_string(),
             rarity: JokerRarity::Uncommon,
             cost: 5,
@@ -280,13 +280,13 @@ impl Joker for ToTheMoonJoker {
     }
 
     fn on_round_end(&self, context: &mut GameContext) -> JokerEffect {
-        // Calculate interest: $1 per $5 owned, max $5
-        let interest = (context.money / 5).clamp(0, 5);
+        // Calculate extra interest: $1 per $5 owned
+        let interest_bonus = context.money / 5;
 
-        if interest > 0 {
+        if interest_bonus > 0 {
             JokerEffect::new()
-                .with_money(interest)
-                .with_message(format!("To The Moon: +${interest} interest"))
+                .with_interest_bonus(interest_bonus)
+                .with_message(format!("To The Moon: +${interest_bonus} extra interest"))
         } else {
             JokerEffect::new()
         }
@@ -476,21 +476,39 @@ mod tests {
         assert_eq!(JokerIdentity::name(&moon), "To The Moon");
         assert_eq!(moon.base_cost(), 5);
 
-        // Test interest calculation
+        // Test interest bonus calculation
         let mut test_context = crate::joker::test_utils::TestContextBuilder::new()
-            .with_money(23) // Should give $4 interest ($23 / $5 = 4.6, rounded down to 4)
+            .with_money(23) // Should give $4 interest bonus ($23 / $5 = 4.6, rounded down to 4)
             .build();
 
         let effect = moon.on_round_end(&mut test_context);
-        assert_eq!(effect.money, 4);
+        assert_eq!(effect.interest_bonus, 4);
+        assert_eq!(effect.money, 0); // Should not give direct money, only interest bonus
 
-        // Test max interest cap
-        let mut rich_context = crate::joker::test_utils::TestContextBuilder::new()
-            .with_money(100) // Should cap at $5 interest
+        // Test with $25 (should give $5 interest bonus)
+        let mut test_context_25 = crate::joker::test_utils::TestContextBuilder::new()
+            .with_money(25) // Should give $5 interest bonus ($25 / $5 = 5)
             .build();
 
-        let effect_max = moon.on_round_end(&mut rich_context);
-        assert_eq!(effect_max.money, 5);
+        let effect_25 = moon.on_round_end(&mut test_context_25);
+        assert_eq!(effect_25.interest_bonus, 5);
+
+        // Test with $100 (should give $20 interest bonus, but cap applies to total interest)
+        let mut rich_context = crate::joker::test_utils::TestContextBuilder::new()
+            .with_money(100) // Should give $20 interest bonus ($100 / $5 = 20)
+            .build();
+
+        let effect_rich = moon.on_round_end(&mut rich_context);
+        assert_eq!(effect_rich.interest_bonus, 20); // Joker provides full bonus
+                                                    // Note: Cap is applied to total interest (base + bonus) in calc_reward_with_interest_bonus
+
+        // Test with no money
+        let mut poor_context = crate::joker::test_utils::TestContextBuilder::new()
+            .with_money(4) // Should give $0 interest bonus ($4 / $5 = 0.8, rounded down to 0)
+            .build();
+
+        let effect_poor = moon.on_round_end(&mut poor_context);
+        assert_eq!(effect_poor.interest_bonus, 0);
     }
 
     #[test]
