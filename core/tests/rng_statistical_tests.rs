@@ -9,6 +9,8 @@
 ///
 /// To run these tests locally, use: cargo test --test rng_statistical_tests --features statistical_tests
 use balatro_rs::rng::GameRng;
+#[cfg(feature = "statistical_tests")]
+use std::collections::HashMap;
 
 /// Test that uniform distribution is actually uniform within statistical bounds
 #[test]
@@ -398,7 +400,7 @@ fn test_lucky_card_joker_probability() {
     use balatro_rs::joker_impl::LuckyCardJoker;
     use balatro_rs::joker_state::JokerStateManager;
     use balatro_rs::stage::Stage;
-        use std::sync::Arc;
+    use std::sync::Arc;
 
     let rng = GameRng::for_testing(12345); // Deterministic for reproducible testing
     let lucky_card = LuckyCardJoker;
@@ -465,7 +467,7 @@ fn test_rng_jokers_deterministic_behavior() {
     use balatro_rs::joker_impl::{ChaoticJoker, LuckyCardJoker, MysteryJoker};
     use balatro_rs::joker_state::JokerStateManager;
     use balatro_rs::stage::Stage;
-        use std::sync::Arc;
+    use std::sync::Arc;
 
     let seed = 42;
     let test_iterations = 100;
