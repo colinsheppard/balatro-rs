@@ -106,7 +106,6 @@ pub enum JokerId {
     EggHead,
     Bootstraps,
     BullMarket,
-    SeedMoney,
 
     // Retrigger jokers (Uncommon/Rare)
     Dusk,
@@ -1251,6 +1250,9 @@ pub mod conditional;
 
 // Include hand composition jokers (Ride the Bus, Blackboard, DNA)
 pub mod hand_composition_jokers;
+
+// Include basic economy jokers
+pub mod basic_economy_jokers;
 // Include resource-based chips jokers (Banner, Bull, Stone, Scary Face, Blue)
 pub mod resource_chips_jokers;
 
@@ -1264,9 +1266,6 @@ pub mod four_fingers;
 pub mod multiplicative_jokers;
 // Include retrigger jokers
 pub mod retrigger_jokers;
-
-// Include basic economy jokers
-pub mod basic_economy_jokers;
 
 // Include tests for hand composition jokers (Ride the Bus, Blackboard, DNA)
 #[cfg(test)]
@@ -1304,6 +1303,11 @@ pub use traits::{
 
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
+
+// Re-export scaling chips joker structs (factory functions not available in current implementation)
+pub use scaling_chips_jokers::{
+    ArrowheadJoker, CastleJoker, HikerJoker, OddToddJoker, ScholarJoker, StuntmanJoker, WeeJoker,
+};
 
 // Module-level trait tests
 #[cfg(test)]
