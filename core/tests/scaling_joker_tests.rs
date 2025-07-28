@@ -137,18 +137,6 @@ impl ScalingJokerTestHarness {
         effects
     }
 
-    /// Simulate shop opening
-    fn simulate_shop_open(&self) -> Vec<JokerEffect> {
-        let mut context = self.create_mutable_context();
-        let mut effects = vec![];
-
-        for joker in &self.jokers {
-            let effect = joker.on_shop_open(&mut context);
-            effects.push(effect);
-        }
-
-        effects
-    }
 
     /// Process a scaling event directly
     fn process_scaling_event(&self, event: ScalingEvent) {
