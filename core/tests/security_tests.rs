@@ -174,6 +174,7 @@ mod tests {
 
     /// Test Config field access for validation
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_config_available_max_validation() {
         let mut config = Config::default();
 
@@ -274,6 +275,7 @@ mod tests {
 
     /// Memory safety test - ensure no out-of-bounds access
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_memory_safety() {
         let mut config = Config::default();
 
@@ -282,13 +284,13 @@ mod tests {
         let action_space = ActionSpace::from(config);
 
         // These should be empty vectors, safe to iterate over
-        if let Some(_) = action_space.move_card_left.iter().next() {
+        if !action_space.move_card_left.is_empty() {
             panic!("Should not iterate over empty vector");
         }
-        if let Some(_) = action_space.move_card_right.iter().next() {
+        if !action_space.move_card_right.is_empty() {
             panic!("Should not iterate over empty vector");
         }
-        if let Some(_) = action_space.select_card.iter().next() {
+        if !action_space.select_card.is_empty() {
             panic!("Should not iterate over empty vector");
         }
     }

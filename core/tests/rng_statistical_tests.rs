@@ -33,11 +33,7 @@ fn test_uniform_distribution_fairness() {
 
     // Check that all buckets are within tolerance
     for (i, &count) in counts.iter().enumerate() {
-        let deviation = if count > expected_count {
-            count - expected_count
-        } else {
-            expected_count - count
-        };
+        let deviation = (count as usize).abs_diff(expected_count);
 
         assert!(
             deviation <= tolerance,

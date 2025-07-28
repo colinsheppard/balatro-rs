@@ -137,7 +137,6 @@ impl ScalingJokerTestHarness {
         effects
     }
 
-
     /// Process a scaling event directly
     fn process_scaling_event(&self, event: ScalingEvent) {
         let mut context = self.create_mutable_context();
