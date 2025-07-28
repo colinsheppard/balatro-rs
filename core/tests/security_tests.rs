@@ -175,16 +175,22 @@ mod tests {
     /// Test Config field access for validation
     #[test]
     fn test_config_available_max_validation() {
-        let mut config = Config {
+        let config = Config {
             available_max: 0,
             ..Config::default()
         };
         assert_eq!(config.available_max, 0);
 
-        config.available_max = 100;
+        let config = Config {
+            available_max: 100,
+            ..Config::default()
+        };
         assert_eq!(config.available_max, 100);
 
-        config.available_max = 1_000_000;
+        let config = Config {
+            available_max: 1_000_000,
+            ..Config::default()
+        };
         assert_eq!(config.available_max, 1_000_000);
 
         // Verify validation function works
