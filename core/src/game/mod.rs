@@ -33,7 +33,7 @@ use std::fmt;
 use std::sync::Arc;
 
 /// Maximum debug messages to keep in memory (for practical memory management)
-#[allow(dead_code)]
+#[cfg(any(debug_assertions, test))]
 const MAX_DEBUG_MESSAGES: usize = 10000;
 
 /// Score breakdown for debugging and analysis

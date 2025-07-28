@@ -238,12 +238,10 @@ mod tests {
         let mut shop = Shop::new();
         let rng = crate::rng::GameRng::for_testing(42);
         shop.refresh(&rng);
-        let _original_jokers = shop.jokers.clone();
 
         // Create a joker that's guaranteed not to match any joker instance in the shop
         // The key is that joker comparison is done by equality, not just type
         // So we can create a joker of the same type but different instance
-        let mut _attempts = 0;
         let mut non_existent_joker = None;
 
         // Try different joker types until we find one not in the shop

@@ -139,6 +139,7 @@ impl ScalingJokerTestHarness {
 
     #[allow(dead_code)]
     /// Simulate shop opening
+    #[allow(dead_code)]
     fn simulate_shop_open(&self) -> Vec<JokerEffect> {
         let mut context = self.create_mutable_context();
         let mut effects = vec![];

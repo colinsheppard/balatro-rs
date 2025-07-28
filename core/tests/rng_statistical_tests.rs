@@ -9,6 +9,7 @@
 ///
 /// To run these tests locally, use: cargo test --test rng_statistical_tests --features statistical_tests
 use balatro_rs::rng::GameRng;
+#[allow(unused_imports)] // Used in statistical tests feature
 use std::collections::HashMap;
 
 /// Test that uniform distribution is actually uniform within statistical bounds
