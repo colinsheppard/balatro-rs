@@ -174,6 +174,7 @@ mod tests {
 
     /// Test Config field access for validation
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_config_available_max_validation() {
         let config = Config {
             available_max: 0,
@@ -280,6 +281,7 @@ mod tests {
 
     /// Memory safety test - ensure no out-of-bounds access
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_memory_safety() {
         let config = Config {
             available_max: 0,
