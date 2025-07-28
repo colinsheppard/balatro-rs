@@ -1,4 +1,8 @@
+use crate::joker::basic_economy_jokers::{
+    DelayedGratificationJoker, GiftCardJoker, RocketJoker, ToTheMoonJoker,
+};
 use crate::joker::four_fingers::FourFingersJoker;
+use crate::joker::retrigger_jokers::*;
 use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::scaling_chips_jokers::*;
 use crate::joker::scaling_xmult_jokers::*;
@@ -76,6 +80,12 @@ impl JokerFactory {
             JokerId::FourFingers => Some(Box::new(FourFingersJoker::new())),
             JokerId::Triboulet => Some(Box::new(TribouletJoker)),
 
+            // Economy jokers
+            JokerId::DelayedGratification => Some(Box::new(DelayedGratificationJoker::new())),
+            JokerId::RocketShip => Some(Box::new(RocketJoker::new())),
+            JokerId::ToTheMoon => Some(Box::new(ToTheMoonJoker::new())),
+            JokerId::GiftCard => Some(Box::new(GiftCardJoker::new())),
+
             // Scaling additive mult jokers
             JokerId::Trousers => Some(Box::new(SpareTrousersJoker::new())),
             JokerId::GreenJoker => Some(Box::new(GreenJoker::new())),
@@ -113,6 +123,12 @@ impl JokerFactory {
             JokerId::Loyalty => {
                 get_scaling_joker_by_id(JokerId::Loyalty).map(|j| Box::new(j) as Box<dyn Joker>)
             }
+
+            // Retrigger jokers
+            JokerId::Dusk => Some(Box::new(DuskJoker::new())),
+            JokerId::Seltzer => Some(Box::new(SeltzerJoker::new())),
+            JokerId::Hanging => Some(Box::new(HangingChadJoker::new())),
+            JokerId::SockAndBuskin => Some(Box::new(SockAndBuskinJoker::new())),
 
             // TODO: Implement remaining jokers
             _ => None,
@@ -169,6 +185,8 @@ impl JokerFactory {
                 Arrowhead,
                 Scholar,
                 // Scaling xmult jokers (none in common)
+                // Retrigger jokers
+                Hanging, // HangingChadJoker
             ],
             JokerRarity::Uncommon => vec![
                 // Money-based conditional jokers
@@ -190,6 +208,10 @@ impl JokerFactory {
                 // Scaling xmult jokers
                 Reserved,   // Throwback
                 Ceremonial, // Ceremonial Dagger
+                // Retrigger jokers
+                Dusk,
+                Seltzer,
+                SockAndBuskin,
             ],
             JokerRarity::Rare => vec![
                 // RNG-based jokers (Issue #442)
@@ -287,6 +309,11 @@ impl JokerFactory {
             // Basic scaling jokers
             MarbleJoker,
             Loyalty,
+            // Retrigger jokers
+            Dusk,
+            Seltzer,
+            Hanging,
+            SockAndBuskin,
             // Note: HalfJoker and Banner are still placeholders
         ]
     }

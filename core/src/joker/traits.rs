@@ -5,7 +5,7 @@
 //! joker behavior, making the system more modular and maintainable.
 
 use crate::card::Card;
-use crate::hand::{HandEvalConfig, SelectHand};
+use crate::hand::SelectHand;
 use crate::joker_state::JokerStateManager;
 use crate::stage::Stage;
 use serde::{Deserialize, Serialize};
@@ -173,7 +173,7 @@ pub trait JokerModifiers: Send + Sync {
 
     /// Returns the hand evaluation configuration this joker provides.
     /// If None, this joker doesn't affect hand evaluation rules.
-    fn get_hand_eval_config(&self) -> Option<HandEvalConfig> {
+    fn get_hand_eval_config(&self) -> Option<crate::hand::HandEvalConfig> {
         None
     }
 }

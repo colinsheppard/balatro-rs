@@ -174,17 +174,24 @@ mod tests {
 
     /// Test Config field access for validation
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_config_available_max_validation() {
-        let mut config = Config {
+        let config = Config {
             available_max: 0,
-            ..Config::default()
+            ..Default::default()
         };
         assert_eq!(config.available_max, 0);
 
-        config.available_max = 100;
+        let config = Config {
+            available_max: 100,
+            ..Default::default()
+        };
         assert_eq!(config.available_max, 100);
 
-        config.available_max = 1_000_000;
+        let config = Config {
+            available_max: 1_000_000,
+            ..Default::default()
+        };
         assert_eq!(config.available_max, 1_000_000);
 
         // Verify validation function works
@@ -274,10 +281,11 @@ mod tests {
 
     /// Memory safety test - ensure no out-of-bounds access
     #[test]
+    #[allow(clippy::field_reassign_with_default)]
     fn test_memory_safety() {
         let config = Config {
             available_max: 0,
-            ..Config::default()
+            ..Default::default()
         };
         let action_space = ActionSpace::from(config);
 
