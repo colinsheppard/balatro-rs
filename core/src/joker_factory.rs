@@ -1,3 +1,6 @@
+use crate::joker::basic_economy_jokers::{
+    DelayedGratificationJoker, GiftCardJoker, RocketJoker, ToTheMoonJoker,
+};
 use crate::joker::four_fingers::FourFingersJoker;
 use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::{Joker, JokerId, JokerRarity};
@@ -73,6 +76,12 @@ impl JokerFactory {
             JokerId::TheOrder => Some(Box::new(TheOrderJoker)),
             JokerId::FourFingers => Some(Box::new(FourFingersJoker::new())),
             JokerId::Triboulet => Some(Box::new(TribouletJoker)),
+
+            // Economy jokers
+            JokerId::DelayedGratification => Some(Box::new(DelayedGratificationJoker::new())),
+            JokerId::RocketShip => Some(Box::new(RocketJoker::new())),
+            JokerId::ToTheMoon => Some(Box::new(ToTheMoonJoker::new())),
+            JokerId::GiftCard => Some(Box::new(GiftCardJoker::new())),
 
             // Scaling additive mult jokers
             JokerId::Trousers => Some(Box::new(SpareTrousersJoker::new())),

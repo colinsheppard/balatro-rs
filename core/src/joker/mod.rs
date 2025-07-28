@@ -107,7 +107,6 @@ pub enum JokerId {
     EggHead,
     Bootstraps,
     BullMarket,
-    SeedMoney,
 
     // Retrigger jokers (Uncommon/Rare)
     Dusk,

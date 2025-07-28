@@ -113,11 +113,7 @@ mod f64_migration_acceptance_tests {
         let chips = card.chips();
 
         // Should be able to handle chip values
-<<<<<<< HEAD
-        // Basic validation - chips value should be reasonable (removed >= 0 check as it's always true for unsigned)
-=======
-        // chips value is valid by construction // Basic validation - exact value depends on implementation
->>>>>>> 54586ce (fix: Fix CI warnings and clippy issues)
+        // chips value is valid by construction - basic validation - exact value depends on implementation
 
         // Verify we can add values to card chips
         let total_chips = chips + 1;
