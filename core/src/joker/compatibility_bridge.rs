@@ -38,6 +38,9 @@ pub struct LegacyJokerAdapter {
 
     /// Internal state for the adapter
     adapter_state: InternalJokerState,
+
+    /// Cached identity adapter to avoid lifetime issues
+    identity_adapter: LegacyIdentityAdapter,
 }
 
 impl LegacyJokerAdapter {
@@ -47,11 +50,13 @@ impl LegacyJokerAdapter {
     /// advanced conditions based on its behavior patterns.
     pub fn new(legacy_joker: Box<dyn Joker>) -> Self {
         let advanced_condition = Self::infer_condition(legacy_joker.as_ref());
+        let identity_adapter = LegacyIdentityAdapter::new_from_ref(legacy_joker.as_ref());
 
         Self {
             legacy_joker,
             advanced_condition,
             adapter_state: InternalJokerState::new(),
+            identity_adapter,
         }
     }
 
@@ -60,10 +65,13 @@ impl LegacyJokerAdapter {
     /// Use this when you want to upgrade a legacy joker with sophisticated
     /// conditions while keeping the existing implementation logic.
     pub fn with_condition(legacy_joker: Box<dyn Joker>, condition: AdvancedCondition) -> Self {
+        let identity_adapter = LegacyIdentityAdapter::new_from_ref(legacy_joker.as_ref());
+
         Self {
             legacy_joker,
             advanced_condition: condition,
             adapter_state: InternalJokerState::new(),
+            identity_adapter,
         }
     }
 
@@ -82,33 +90,94 @@ impl LegacyJokerAdapter {
 /// Legacy identity adapter for backward compatibility
 #[derive(Debug)]
 pub struct LegacyIdentityAdapter {
-    joker: Box<dyn Joker>,
+    joker_id: JokerId,
+    name: String,
+    description: String,
+    rarity: JokerRarity,
+    cost: usize,
 }
 
 impl LegacyIdentityAdapter {
     pub fn new(joker: Box<dyn Joker>) -> Self {
-        Self { joker }
+        Self::new_from_ref(joker.as_ref())
+    }
+
+    pub fn new_from_ref(joker: &dyn Joker) -> Self {
+        Self {
+            joker_id: joker.id(),
+            name: joker.name().to_string(),
+            description: joker.description().to_string(),
+            rarity: joker.rarity(),
+            cost: joker.cost(),
+        }
     }
 }
 
 impl AdvancedJokerIdentity for LegacyIdentityAdapter {
     fn joker_type(&self) -> &'static str {
-        // Convert JokerId to string representation
-        // This is a simplified implementation - in practice you'd want
-        // a proper mapping from JokerId to &'static str
-        "legacy_joker"
+        // Map JokerId to string representation for legacy jokers
+        // This provides proper identification for debugging and logging
+        match self.joker_id {
+            JokerId::Joker => "base_joker",
+            JokerId::Banner => "banner",
+            JokerId::GreedyJoker => "greedy_joker",
+            JokerId::LustyJoker => "lusty_joker",
+            JokerId::WrathfulJoker => "wrathful_joker",
+            JokerId::GluttonousJoker => "gluttonous_joker",
+            JokerId::JollyJoker => "jolly_joker",
+            JokerId::ZanyJoker => "zany_joker",
+            JokerId::MadJoker => "mad_joker",
+            JokerId::CrazyJoker => "crazy_joker",
+            JokerId::DrollJoker => "droll_joker",
+            JokerId::SlyJoker => "sly_joker",
+            JokerId::WilyJoker => "wily_joker",
+            JokerId::CleverJoker => "clever_joker",
+            JokerId::DeviousJoker => "devious_joker", // Fixed from DeviantJoker
+            JokerId::CraftyJoker => "crafty_joker",   // Fixed from CraftJoker
+            JokerId::HalfJoker => "half_joker",
+            JokerId::AbstractJoker => "abstract_joker",
+            JokerId::AcrobatJoker => "acrobat_joker",
+            JokerId::MysticalJoker => "mystical_joker",
+            JokerId::Misprint => "misprint",
+            JokerId::RaisedFist => "raised_fist",
+            JokerId::SteelJoker => "steel_joker",
+            JokerId::FibonacciJoker => "fibonacci_joker", // Fixed from Fibonacci
+            JokerId::ScaryFace => "scary_face",
+            JokerId::RoughGem => "rough_gem",
+            JokerId::PolishedJoker => "polished_joker",
+            JokerId::EvenSteven => "even_steven",
+            JokerId::OddTodd => "odd_todd",
+            JokerId::Scholar => "scholar",
+            JokerId::Walkie => "walkie",
+            JokerId::Runner => "runner",
+            JokerId::IceCream => "ice_cream",
+            JokerId::DNA => "dna",
+            JokerId::SplashJoker => "splash_joker",
+            JokerId::Hack => "hack", // Fixed from HackerJoker
+            JokerId::Pareidolia => "pareidolia",
+            JokerId::Supernova => "supernova",
+            JokerId::Ride => "ride",
+            JokerId::SpaceJoker => "space_joker",
+            JokerId::EggJoker => "egg_joker",
+            JokerId::Burglar => "burglar",
+            JokerId::Blackboard => "blackboard",
+            JokerId::Constellation => "constellation",
+            // Add any other JokerId variants that exist in the enum
+            // This ensures we handle all possible joker types
+            _ => "unknown_joker", // Fallback for any new variants
+        }
     }
 
     fn name(&self) -> &str {
-        self.joker.name()
+        &self.name
     }
 
     fn description(&self) -> &str {
-        self.joker.description()
+        &self.description
     }
 
     fn rarity(&self) -> Rarity {
-        match self.joker.rarity() {
+        match self.rarity {
             JokerRarity::Common => Rarity::Common,
             JokerRarity::Uncommon => Rarity::Uncommon,
             JokerRarity::Rare => Rarity::Rare,
@@ -117,37 +186,31 @@ impl AdvancedJokerIdentity for LegacyIdentityAdapter {
     }
 
     fn base_cost(&self) -> u64 {
-        self.joker.cost() as u64
+        self.cost as u64 // usize is always non-negative
     }
 
     fn evaluation_cost_estimate(&self) -> EvaluationCost {
         // Legacy jokers are generally simple, so mark as cheap
-        // More sophisticated analysis could be added here
+        // More sophisticated analysis could be added here based on joker type
         EvaluationCost::Cheap
     }
 }
 
-/// Legacy processor adapter
-#[derive(Debug)]
-pub struct LegacyProcessorAdapter {
-    joker: Box<dyn Joker>,
-}
+// LegacyProcessorAdapter removed - processing is now handled directly in LegacyJokerAdapter
+// This eliminates the dummy joker issue and ownership problems
 
-impl LegacyProcessorAdapter {
-    pub fn new(joker: Box<dyn Joker>) -> Self {
-        Self { joker }
+impl AdvancedJokerGameplay for LegacyJokerAdapter {
+    fn identity(&self) -> &dyn AdvancedJokerIdentity {
+        // Return reference to our stored identity adapter - no more panic!
+        &self.identity_adapter
     }
-}
 
-impl JokerProcessor for LegacyProcessorAdapter {
-    fn process(
-        &self,
-        context: &mut AdvancedEvaluationContext,
-        _state: &mut InternalJokerState,
-    ) -> ProcessResult {
+    fn get_trigger_condition(&self) -> &AdvancedCondition {
+        &self.advanced_condition
+    }
+
+    fn process_advanced(&mut self, context: &mut AdvancedEvaluationContext) -> ProcessResult {
         // Convert advanced context to legacy GameContext
-        // This is a simplified conversion - full implementation would
-        // need to properly construct all GameContext fields
         let mut legacy_context = GameContext {
             chips: context.game_context.chips,
             mult: context.game_context.mult,
@@ -170,46 +233,28 @@ impl JokerProcessor for LegacyProcessorAdapter {
 
         // Call the appropriate legacy method based on context
         let legacy_effect = if let Some(hand) = context.hand {
-            self.joker.on_hand_played(&mut legacy_context, hand)
+            self.legacy_joker.on_hand_played(&mut legacy_context, hand)
         } else if let Some(card) = context.card {
-            self.joker.on_card_scored(&mut legacy_context, card)
+            self.legacy_joker.on_card_scored(&mut legacy_context, card)
         } else {
             // For other contexts, try the most appropriate method
             match context.stage {
-                Stage::Shop() => self.joker.on_shop_open(&mut legacy_context),
-                _ => self.joker.on_blind_start(&mut legacy_context),
+                Stage::Shop() => self.legacy_joker.on_shop_open(&mut legacy_context),
+                _ => self.legacy_joker.on_blind_start(&mut legacy_context),
             }
         };
 
+        // Update adapter state
+        self.adapter_state.increment_counter("activations");
+
         // Convert legacy JokerEffect to ProcessResult
         ProcessResult {
-            chips_added: legacy_effect.chips as u64,
+            chips_added: legacy_effect.chips.max(0) as u64, // Ensure non-negative
             mult_added: legacy_effect.mult as f64,
             mult_multiplier: legacy_effect.mult_multiplier,
             retriggered: legacy_effect.retrigger > 0,
             message: legacy_effect.message,
         }
-    }
-}
-
-impl AdvancedJokerGameplay for LegacyJokerAdapter {
-    fn identity(&self) -> &dyn AdvancedJokerIdentity {
-        // This would need proper lifetime management in a real implementation
-        // For now, we'll use a simplified approach
-        panic!("Legacy adapter identity access needs proper implementation")
-    }
-
-    fn get_trigger_condition(&self) -> &AdvancedCondition {
-        &self.advanced_condition
-    }
-
-    fn process_advanced(&mut self, context: &mut AdvancedEvaluationContext) -> ProcessResult {
-        let processor = LegacyProcessorAdapter::new(
-            // This clone is not ideal but necessary for the adapter pattern
-            // In a real implementation, we'd use Rc/Arc or redesign the trait
-            Box::new(DummyJoker), // Placeholder - needs proper cloning solution
-        );
-        processor.process(context, &mut self.adapter_state)
     }
 
     fn update_internal_state(&mut self, event: &GameEvent) {
@@ -240,24 +285,7 @@ impl AdvancedJokerGameplay for LegacyJokerAdapter {
     }
 }
 
-// Dummy joker for placeholder purposes - remove in real implementation
-#[derive(Debug)]
-struct DummyJoker;
-
-impl Joker for DummyJoker {
-    fn id(&self) -> JokerId {
-        JokerId::Joker
-    }
-    fn name(&self) -> &str {
-        "Dummy"
-    }
-    fn description(&self) -> &str {
-        "Placeholder"
-    }
-    fn rarity(&self) -> JokerRarity {
-        JokerRarity::Common
-    }
-}
+// DummyJoker removed - no longer needed since we fixed the ownership issue
 
 /// Compatibility utilities for framework integration
 pub struct CompatibilityBridge;
