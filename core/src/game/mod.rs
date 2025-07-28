@@ -1087,6 +1087,7 @@ impl Game {
         }
     }
 
+    #[allow(dead_code)]
     fn calc_reward(&mut self, blind: Blind) -> Result<f64, GameError> {
         self.calc_reward_with_interest_bonus(blind, 0)
     }
@@ -2674,7 +2675,6 @@ mod tests {
             mult: 5,
             money: 3,
             interest_bonus: 0,
-            interest_bonus: 0,
             mult_multiplier: 2.0,
             retrigger: 0,
             destroy_self: false,
@@ -2873,7 +2873,6 @@ mod tests {
             money: 3,
             interest_bonus: 0,
             mult_multiplier: 2.0,
-            interest_bonus: 0,
             messages: vec!["Message 1".to_string()],
         };
 
@@ -2883,7 +2882,6 @@ mod tests {
             money: 7,
             interest_bonus: 0,
             mult_multiplier: 3.0,
-            interest_bonus: 0,
             messages: vec!["Message 2".to_string(), "Message 3".to_string()],
         };
 
@@ -2907,7 +2905,6 @@ mod tests {
             money: 3,
             interest_bonus: 0,
             mult_multiplier: 2.0,
-            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2945,7 +2942,6 @@ mod tests {
             money: 10,
             interest_bonus: 0,
             mult_multiplier: 1.0,
-            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -2965,7 +2961,6 @@ mod tests {
             money: 0,
             interest_bonus: 0,
             mult_multiplier: 2.5,
-            interest_bonus: 0,
             messages: vec![],
         };
 
@@ -3104,7 +3099,6 @@ mod tests {
             money: 3,
             interest_bonus: 0,
             mult_multiplier: 2.0,
-            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 
@@ -3114,7 +3108,6 @@ mod tests {
             money: 3,
             interest_bonus: 0,
             mult_multiplier: 2.0,
-            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 
@@ -3124,7 +3117,6 @@ mod tests {
             money: 3,
             interest_bonus: 0,
             mult_multiplier: 2.0,
-            interest_bonus: 0,
             messages: vec!["Test".to_string()],
         };
 

@@ -178,19 +178,19 @@ mod tests {
     fn test_config_available_max_validation() {
         let config = Config {
             available_max: 0,
-            ..Config::default()
+            ..Default::default()
         };
         assert_eq!(config.available_max, 0);
 
         let config = Config {
             available_max: 100,
-            ..Config::default()
+            ..Default::default()
         };
         assert_eq!(config.available_max, 100);
 
         let config = Config {
             available_max: 1_000_000,
-            ..Config::default()
+            ..Default::default()
         };
         assert_eq!(config.available_max, 1_000_000);
 
@@ -285,7 +285,7 @@ mod tests {
     fn test_memory_safety() {
         let config = Config {
             available_max: 0,
-            ..Config::default()
+            ..Default::default()
         };
         let action_space = ActionSpace::from(config);
 

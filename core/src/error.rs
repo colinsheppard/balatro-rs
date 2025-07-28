@@ -329,7 +329,7 @@ impl std::convert::From<DeveloperPackError> for DeveloperGameError {
             | DeveloperPackError::WeightedSelectionFailed { .. } => {
                 DeveloperGameError::RngFailed("Pack generation RNG failure".to_string())
             }
-            _ => DeveloperGameError::InvalidOperation(format!("Pack system error: {}", err)),
+            _ => DeveloperGameError::InvalidOperation(format!("Pack system error: {err}")),
         }
     }
 }
