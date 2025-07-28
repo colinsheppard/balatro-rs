@@ -15,7 +15,6 @@ use crate::{
     joker_state::JokerState,
     stage::Stage,
 };
-use std::sync::Arc;
 
 /// Castle joker - Gains chips per discarded card of a specific suit (changes every round)
 /// 
@@ -116,7 +115,7 @@ impl Joker for CastleJoker {
         
         JokerEffect::new()
             .with_chips(accumulated_chips)
-            .with_message(format!("Castle: +{} Chips (Target: {:?})", accumulated_chips, target_suit))
+            .with_message(format!("Castle: +{accumulated_chips} Chips (Target: {target_suit:?})"))
     }
 
     fn on_discard(&self, context: &mut GameContext, cards: &[Card]) -> JokerEffect {
@@ -137,8 +136,7 @@ impl Joker for CastleJoker {
             }
             
             JokerEffect::new().with_message(format!(
-                "Castle: +{} Chips gained ({} {:?} cards discarded)",
-                chips_gained, matching_cards, target_suit
+                "Castle: +{chips_gained} Chips gained ({matching_cards} {target_suit:?} cards discarded)"
             ))
         } else {
             JokerEffect::new()
@@ -162,7 +160,7 @@ impl JokerGameplay for CastleJoker {
             mult_added: 0.0,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Castle: +{} Chips", accumulated_chips)),
+            message: Some(format!("Castle: +{accumulated_chips} Chips")),
         }
     }
 
@@ -256,7 +254,7 @@ impl Joker for WeeJoker {
         
         JokerEffect::new()
             .with_chips(accumulated_chips)
-            .with_message(format!("Wee Joker: +{} Chips", accumulated_chips))
+            .with_message(format!("Wee Joker: +{accumulated_chips} Chips"))
     }
 
     fn on_card_scored(&self, context: &mut GameContext, card: &Card) -> JokerEffect {
@@ -273,7 +271,7 @@ impl Joker for WeeJoker {
                 context.joker_state_manager.set_state(self.id(), state);
             }
             
-            JokerEffect::new().with_message(format!("Wee Joker: +{} Chips gained (2 scored)", chips_gained))
+            JokerEffect::new().with_message(format!("Wee Joker: +{chips_gained} Chips gained (2 scored)"))
         } else {
             JokerEffect::new()
         }
@@ -311,7 +309,7 @@ impl JokerGameplay for WeeJoker {
             mult_added: 0.0,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Wee Joker: +{} Chips", accumulated_chips)),
+            message: Some(format!("Wee Joker: +{accumulated_chips} Chips")),
         }
     }
 
@@ -341,7 +339,7 @@ impl Default for StuntmanJoker {
 impl StuntmanJoker {
     pub fn new() -> Self {
         Self {
-            id: JokerId::Acrobat, // Using appropriate ID mapping
+            id: JokerId::AcrobatJoker, // Using appropriate ID mapping
             name: "Stuntman".to_string(),
             description: "+300 Chips, -2 hand size".to_string(),
             rarity: JokerRarity::Rare,
@@ -520,7 +518,7 @@ impl JokerGameplay for HikerJoker {
             mult_added: 0.0,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Hiker: +{} Chips ({} cards enhanced)", chips_added, cards_played)),
+            message: Some(format!("Hiker: +{chips_added} Chips ({cards_played} cards enhanced)")),
         }
     }
 
@@ -635,7 +633,7 @@ impl JokerGameplay for OddToddJoker {
             mult_added: 0.0,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Odd Todd: +{} Chips ({} odd cards)", chips_added, odd_cards)),
+            message: Some(format!("Odd Todd: +{chips_added} Chips ({odd_cards} odd cards)")),
         }
     }
 
@@ -746,7 +744,7 @@ impl JokerGameplay for ArrowheadJoker {
             mult_added: 0.0,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Arrowhead: +{} Chips ({} Spades)", chips_added, spade_cards)),
+            message: Some(format!("Arrowhead: +{chips_added} Chips ({spade_cards} Spades)")),
         }
     }
 
@@ -859,7 +857,7 @@ impl JokerGameplay for ScholarJoker {
             mult_added,
             mult_multiplier: 1.0,
             retriggered: false,
-            message: Some(format!("Scholar: +{} Chips, +{} Mult ({} Aces)", chips_added, mult_added, ace_cards)),
+            message: Some(format!("Scholar: +{chips_added} Chips, +{mult_added} Mult ({ace_cards} Aces)")),
         }
     }
 
@@ -928,7 +926,7 @@ mod tests {
 
     #[test]
     fn test_odd_todd_rank_detection() {
-        let odd_todd = OddToddJoker::new();
+        let _odd_todd = OddToddJoker::new();
         
         let ace = Card::new(Value::Ace, Suit::Heart);
         let three = Card::new(Value::Three, Suit::Spade);

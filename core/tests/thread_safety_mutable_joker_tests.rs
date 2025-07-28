@@ -1,19 +1,6 @@
-<<<<<<< HEAD
-#![allow(dead_code)]
-
-use balatro_rs::card::{Suit, Value};
-use balatro_rs::joker::{JokerId, ProcessResult};
-use balatro_rs::joker_state::JokerStateManager;
-// Stage import removed - unused
-=======
 use balatro_rs::card::{Suit, Value};
 use balatro_rs::joker::{JokerGameplay, JokerId, ProcessResult};
 use balatro_rs::joker_state::JokerStateManager;
-<<<<<<< HEAD
-use balatro_rs::stage::Stage;
->>>>>>> 8628454 (refactor: Complete JokerGameplay trait mutable state migration)
-=======
->>>>>>> 36fb4b0 (fix: Address clippy warnings)
 use std::sync::{
     atomic::{AtomicU32, Ordering},
     Arc, Mutex, RwLock,
