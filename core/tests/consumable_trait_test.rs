@@ -453,43 +453,7 @@ fn test_consumable_slots_debug_trait() {
     assert!(debug_output.contains("slots"));
 }
 
-#[test]
-#[cfg(false)] // DISABLED: ConsumableSlots doesn't implement Clone due to trait objects
-fn test_consumable_slots_clone() {
-    let original = ConsumableSlots::with_capacity(3);
-    let cloned = original.clone();
 
-    // Verify clone has same properties
-    assert_eq!(original.capacity(), cloned.capacity());
-    assert_eq!(original.len(), cloned.len());
-    assert_eq!(original.is_empty(), cloned.is_empty());
-    assert_eq!(original.is_full(), cloned.is_full());
-    assert_eq!(original.available_slots(), cloned.available_slots());
-}
-
-#[test]
-#[cfg(false)] // DISABLED: ConsumableSlots doesn't implement Serialize/Deserialize due to trait objects
-fn test_consumable_slots_serde_compatibility() {
-    use serde_json;
-
-    let original = ConsumableSlots::with_capacity(3);
-
-    // Test serialization
-    let serialized = serde_json::to_string(&original);
-    assert!(serialized.is_ok());
-
-    // Test deserialization
-    let json = serialized.unwrap();
-    let deserialized: Result<ConsumableSlots, _> = serde_json::from_str(&json);
-    assert!(deserialized.is_ok());
-
-    let restored = deserialized.unwrap();
-    assert_eq!(original.capacity(), restored.capacity());
-    assert_eq!(original.len(), restored.len());
-    assert_eq!(original.is_empty(), restored.is_empty());
-    assert_eq!(original.is_full(), restored.is_full());
-    assert_eq!(original.available_slots(), restored.available_slots());
-}
 
 #[test]
 fn test_consumable_slots_thread_safety() {
@@ -578,34 +542,6 @@ fn test_add_consumable_when_full() {
     }
 }
 
-#[test]
-#[cfg(false)] // DISABLED: get_mock_id() method not available through trait object
-fn test_remove_consumable_valid_index() {
-    let mut slots = ConsumableSlots::new();
-
-    // Add consumables
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 1 }))
-        .unwrap();
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 2 }))
-        .unwrap();
-
-    // Remove first consumable
-    let result = slots.remove_consumable(0);
-    assert!(result.is_ok());
-    let removed = result.unwrap();
-    assert_eq!(removed.get_mock_id(), 1);
-    assert_eq!(slots.len(), 1);
-
-    // Remove second consumable
-    let result2 = slots.remove_consumable(1);
-    assert!(result2.is_ok());
-    let removed2 = result2.unwrap();
-    assert_eq!(removed2.get_mock_id(), 2);
-    assert_eq!(slots.len(), 0);
-    assert!(slots.is_empty());
-}
 
 #[test]
 fn test_remove_consumable_invalid_index() {
@@ -644,24 +580,6 @@ fn test_remove_consumable_from_empty_slot() {
     }
 }
 
-#[test]
-#[cfg(false)] // DISABLED: get_mock_id() method not available through trait object
-fn test_get_consumable_valid_access() {
-    let mut slots = ConsumableSlots::new();
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 42 }))
-        .unwrap();
-
-    // Test immutable access
-    let consumable_ref = slots.get_consumable(0);
-    assert!(consumable_ref.is_some());
-    assert_eq!(consumable_ref.unwrap().get_mock_id(), 42);
-
-    // Test mutable access
-    let consumable_mut = slots.get_consumable_mut(0);
-    assert!(consumable_mut.is_some());
-    assert_eq!(consumable_mut.unwrap().get_mock_id(), 42);
-}
 
 #[test]
 fn test_get_consumable_invalid_access() {
@@ -741,30 +659,6 @@ fn test_clear_slot_out_of_bounds() {
     }
 }
 
-#[test]
-#[cfg(false)] // DISABLED: get_mock_id() method not available through trait object
-fn test_consumable_slots_iterator() {
-    let mut slots = ConsumableSlots::with_capacity(4);
-
-    // Add some consumables with gaps
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 10 }))
-        .unwrap();
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 20 }))
-        .unwrap();
-    slots
-        .add_consumable(Box::new(MockConsumableForSlots { id: 30 }))
-        .unwrap();
-
-    // Remove middle one to create gap
-    slots.remove_consumable(1).unwrap();
-
-    // Iterator should skip empty slots
-    let ids: Vec<u32> = slots.iter().map(|c| c.get_mock_id()).collect();
-    assert_eq!(ids, vec![10, 30]);
-    assert_eq!(ids.len(), 2);
-}
 
 #[test]
 fn test_consumable_slots_iterator_empty() {
@@ -903,54 +797,6 @@ fn test_integration_consumable_slots_with_real_consumables() {
     assert_eq!(types, vec![ConsumableType::Tarot, ConsumableType::Planet]);
 }
 
-#[test]
-#[cfg(false)] // DISABLED: get_real_id() method not available through trait object
-fn test_integration_slot_operations_with_spectral_cards() {
-    let mut slots = ConsumableSlots::with_capacity(3);
-
-    // Add spectral cards
-    let familiar = Box::new(RealConsumableWrapper {
-        id: ConsumableId::Familiar,
-        consumable_type: ConsumableType::Spectral,
-    });
-
-    let grim = Box::new(RealConsumableWrapper {
-        id: ConsumableId::Grim,
-        consumable_type: ConsumableType::Spectral,
-    });
-
-    let incantation = Box::new(RealConsumableWrapper {
-        id: ConsumableId::Incantation,
-        consumable_type: ConsumableType::Spectral,
-    });
-
-    // Fill slots
-    slots.add_consumable(familiar).unwrap();
-    slots.add_consumable(grim).unwrap();
-    slots.add_consumable(incantation).unwrap();
-
-    assert_eq!(slots.len(), 3);
-    assert!(slots.is_full());
-
-    // Remove middle card
-    let removed = slots.remove_consumable(1).unwrap();
-    assert_eq!(removed.get_real_id(), ConsumableId::Grim);
-
-    // Verify gap created
-    assert_eq!(slots.len(), 2);
-    assert!(slots.get_consumable(1).is_none());
-    assert!(slots.get_consumable(0).is_some());
-    assert!(slots.get_consumable(2).is_some());
-
-    // Add new card to fill gap
-    let new_spectral = Box::new(RealConsumableWrapper {
-        id: ConsumableId::SpectralPlaceholder,
-        consumable_type: ConsumableType::Spectral,
-    });
-
-    let new_index = slots.add_consumable(new_spectral).unwrap();
-    assert_eq!(new_index, 1); // Should fill the gap
-}
 
 #[test]
 fn test_integration_mixed_consumable_types() {

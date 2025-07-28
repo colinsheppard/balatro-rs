@@ -50,7 +50,6 @@ fn create_test_context() -> GameContext<'static> {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_red_card_joker() {
     let joker = StaticJokerFactory::create_red_card();
     assert_eq!(joker.id(), JokerId::RedCard);
@@ -64,7 +63,6 @@ fn test_red_card_joker() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_blue_joker() {
     let joker = StaticJokerFactory::create_blue_joker();
     assert_eq!(joker.id(), JokerId::BlueJoker);
@@ -78,7 +76,6 @@ fn test_blue_joker() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_faceless_joker() {
     let joker = StaticJokerFactory::create_faceless_joker();
     assert_eq!(joker.id(), JokerId::FacelessJoker);
@@ -94,7 +91,6 @@ fn test_faceless_joker() {
 // Square Joker removed - now implemented as scaling joker in scaling_joker_impl.rs
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_walkie_joker() {
     let joker = StaticJokerFactory::create_walkie();
     assert_eq!(joker.id(), JokerId::Walkie);
@@ -111,7 +107,6 @@ fn test_walkie_joker() {
 
 // Tests for jokers that need framework extensions
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker() {
     let joker = StaticJokerFactory::create_half_joker();
     assert_eq!(joker.id(), JokerId::HalfJoker);
@@ -125,7 +120,6 @@ fn test_half_joker() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_4_cards() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -151,7 +145,6 @@ fn test_half_joker_behavior_with_4_cards() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_3_cards() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -171,7 +164,6 @@ fn test_half_joker_behavior_with_3_cards() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_2_cards() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -190,7 +182,6 @@ fn test_half_joker_behavior_with_2_cards() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_1_card() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -206,7 +197,6 @@ fn test_half_joker_behavior_with_1_card() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_5_cards() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -236,7 +226,6 @@ fn test_half_joker_behavior_with_5_cards() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_with_6_cards() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -259,7 +248,6 @@ fn test_half_joker_behavior_with_6_cards() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_per_hand_not_per_card() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -288,7 +276,6 @@ fn test_half_joker_behavior_per_hand_not_per_card() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_half_joker_behavior_edge_case_empty_hand() {
     let joker = StaticJokerFactory::create_half_joker();
     let mut context = create_test_context();
@@ -438,7 +425,6 @@ fn test_banner_implementation_uniqueness() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_abstract_joker() {
     use balatro_rs::card::{Card, Suit, Value};
     use balatro_rs::hand::{Hand, SelectHand};
@@ -569,7 +555,6 @@ fn test_abstract_joker() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: GameContext default issues - tracked for post-emergency fix"]
 fn test_steel_joker() {
     let joker = StaticJokerFactory::create_steel_joker();
     assert_eq!(joker.id(), JokerId::SteelJoker);
