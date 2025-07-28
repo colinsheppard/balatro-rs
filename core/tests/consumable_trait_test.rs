@@ -453,8 +453,6 @@ fn test_consumable_slots_debug_trait() {
     assert!(debug_output.contains("slots"));
 }
 
-
-
 #[test]
 fn test_consumable_slots_thread_safety() {
     use std::sync::Arc;
@@ -542,7 +540,6 @@ fn test_add_consumable_when_full() {
     }
 }
 
-
 #[test]
 fn test_remove_consumable_invalid_index() {
     let mut slots = ConsumableSlots::new();
@@ -579,7 +576,6 @@ fn test_remove_consumable_from_empty_slot() {
         _ => panic!("Expected SlotEmpty error"),
     }
 }
-
 
 #[test]
 fn test_get_consumable_invalid_access() {
@@ -658,7 +654,6 @@ fn test_clear_slot_out_of_bounds() {
         _ => panic!("Expected IndexOutOfBounds error"),
     }
 }
-
 
 #[test]
 fn test_consumable_slots_iterator_empty() {
@@ -796,7 +791,6 @@ fn test_integration_consumable_slots_with_real_consumables() {
     let types: Vec<ConsumableType> = slots.iter().map(|c| c.consumable_type()).collect();
     assert_eq!(types, vec![ConsumableType::Tarot, ConsumableType::Planet]);
 }
-
 
 #[test]
 fn test_integration_mixed_consumable_types() {
