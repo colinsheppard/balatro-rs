@@ -106,7 +106,6 @@ pub enum JokerId {
     EggHead,
     Bootstraps,
     BullMarket,
-    SeedMoney,
 
     // Retrigger jokers (Uncommon/Rare)
     Dusk,
@@ -295,6 +294,12 @@ pub struct JokerEffect {
     /// Applied immediately after hand scoring. Positive values give money.
     pub money: i32,
 
+    /// Additional interest to add to the base interest calculation.
+    ///
+    /// This bonus is added to the base interest before the interest cap is applied.
+    /// Used by jokers like "To the Moon" that provide extra interest.
+    pub interest_bonus: i32,
+
     /// Multiplier to apply to the total mult.
     ///
     /// Applied after all mult bonuses are summed. For example:
@@ -366,6 +371,12 @@ impl JokerEffect {
     /// Add money
     pub fn with_money(mut self, money: i32) -> Self {
         self.money = money;
+        self
+    }
+
+    /// Add interest bonus
+    pub fn with_interest_bonus(mut self, interest_bonus: i32) -> Self {
+        self.interest_bonus = interest_bonus;
         self
     }
 
@@ -1251,6 +1262,9 @@ pub mod conditional;
 
 // Include hand composition jokers (Ride the Bus, Blackboard, DNA)
 pub mod hand_composition_jokers;
+
+// Include basic economy jokers
+pub mod basic_economy_jokers;
 // Include resource-based chips jokers (Banner, Bull, Stone, Scary Face, Blue)
 pub mod resource_chips_jokers;
 
@@ -1264,9 +1278,6 @@ pub mod four_fingers;
 pub mod multiplicative_jokers;
 // Include retrigger jokers
 pub mod retrigger_jokers;
-
-// Include basic economy jokers
-pub mod basic_economy_jokers;
 
 // Include tests for hand composition jokers (Ride the Bus, Blackboard, DNA)
 #[cfg(test)]
@@ -1323,6 +1334,10 @@ pub use advanced_traits::{
 
 pub use compatibility_bridge::{CompatibilityBridge, LegacyJokerAdapter, MixedJokerCollection};
 
+// Re-export scaling chips joker structs (factory functions not available in current implementation)
+pub use scaling_chips_jokers::{
+    ArrowheadJoker, CastleJoker, HikerJoker, OddToddJoker, ScholarJoker, StuntmanJoker, WeeJoker,
+};
 // Module-level trait tests
 #[cfg(test)]
 mod joker_trait_tests {

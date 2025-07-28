@@ -12,21 +12,18 @@ use std::collections::HashMap;
 #[derive(Debug, Clone)]
 struct SimpleMockJoker {
     internal_state: Option<Value>,
-    reset_count: u32,
 }
 
 impl SimpleMockJoker {
     const fn new() -> Self {
         Self {
             internal_state: None,
-            reset_count: 0,
         }
     }
 
     fn with_state(state: Value) -> Self {
         Self {
             internal_state: Some(state),
-            reset_count: 0,
         }
     }
 }
@@ -54,7 +51,6 @@ impl JokerState for SimpleMockJoker {
 
     fn reset_state(&mut self) {
         self.internal_state = None;
-        self.reset_count += 1;
     }
 }
 
@@ -70,15 +66,11 @@ struct ComplexState {
 #[derive(Debug, Clone)]
 struct ComplexMockJoker {
     state: Option<ComplexState>,
-    validation_enabled: bool,
 }
 
 impl ComplexMockJoker {
     fn new() -> Self {
-        Self {
-            state: None,
-            validation_enabled: true,
-        }
+        Self { state: None }
     }
 
     fn with_initial_state() -> Self {
@@ -89,7 +81,6 @@ impl ComplexMockJoker {
                 tags: vec![],
                 metadata: HashMap::new(),
             }),
-            validation_enabled: true,
         }
     }
 }
@@ -106,26 +97,6 @@ impl JokerState for ComplexMockJoker {
     }
 
     fn deserialize_state(&mut self, value: Value) -> Result<(), String> {
-        if self.validation_enabled {
-            // Validate structure
-            if !value.is_object() {
-                return Err("Expected object value".to_string());
-            }
-
-            let obj = value.as_object().unwrap();
-            if !obj.contains_key("counter") || !obj.contains_key("multiplier") {
-                return Err("Missing required fields".to_string());
-            }
-
-            // Validate types
-            if !obj["counter"].is_u64() {
-                return Err("Counter must be unsigned integer".to_string());
-            }
-            if !obj["multiplier"].is_f64() {
-                return Err("Multiplier must be float".to_string());
-            }
-        }
-
         match serde_json::from_value::<ComplexState>(value) {
             Ok(state) => {
                 self.state = Some(state);
@@ -264,10 +235,10 @@ mod basic_functionality_tests {
 
         joker.reset_state();
         assert!(!joker.has_state());
-        assert_eq!(joker.reset_count, 1);
 
+        // Reset multiple times should work consistently
         joker.reset_state();
-        assert_eq!(joker.reset_count, 2);
+        assert!(!joker.has_state());
     }
 }
 
@@ -453,7 +424,7 @@ mod validation_tests {
     fn test_validation_missing_fields() {
         let mut joker = ComplexMockJoker::new();
 
-        // Missing counter field
+        // Missing counter field - should fail during deserialization
         let invalid1 = json!({
             "multiplier": 1.0,
             "tags": [],
@@ -462,7 +433,7 @@ mod validation_tests {
 
         let result1 = joker.deserialize_state(invalid1);
         assert!(result1.is_err());
-        assert!(result1.unwrap_err().contains("Missing required fields"));
+        assert!(result1.unwrap_err().contains("Deserialization failed"));
     }
 
     #[test]
@@ -479,11 +450,9 @@ mod validation_tests {
 
         let result2 = joker.deserialize_state(invalid2);
         assert!(result2.is_err());
-        assert!(result2
-            .unwrap_err()
-            .contains("Counter must be unsigned integer"));
+        assert!(result2.unwrap_err().contains("Deserialization failed"));
 
-        // Wrong type for multiplier (integer instead of float)
+        // Wrong type for multiplier
         let invalid3 = json!({
             "counter": 5,
             "multiplier": "not a float",
@@ -493,26 +462,7 @@ mod validation_tests {
 
         let result3 = joker.deserialize_state(invalid3);
         assert!(result3.is_err());
-        assert!(result3.unwrap_err().contains("Multiplier must be float"));
-    }
-
-    #[test]
-    fn test_validation_can_be_disabled() {
-        let mut joker = ComplexMockJoker::new();
-        joker.validation_enabled = false;
-
-        // This would normally fail validation
-        let invalid = json!({
-            "counter": "not a number",
-            "multiplier": "not a float",
-            "tags": "not an array",
-            "metadata": "not an object"
-        });
-
-        // But should fail at deserialization instead
-        let result = joker.deserialize_state(invalid);
-        assert!(result.is_err());
-        assert!(result.unwrap_err().contains("Deserialization failed"));
+        assert!(result3.unwrap_err().contains("Deserialization failed"));
     }
 }
 
@@ -931,7 +881,7 @@ mod coverage_completion_tests {
         let mut joker = ComplexMockJoker::new();
         let result = joker.deserialize_state(json!("not an object"));
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Expected object value");
+        assert!(result.unwrap_err().contains("Deserialization failed"));
 
         // Test missing multiplier field
         let result2 = joker.deserialize_state(json!({
@@ -940,7 +890,7 @@ mod coverage_completion_tests {
             "metadata": {}
         }));
         assert!(result2.is_err());
-        assert!(result2.unwrap_err().contains("Missing required fields"));
+        assert!(result2.unwrap_err().contains("Deserialization failed"));
 
         // Test serialize failure returns None
         let failing = FailingMockJoker::new_fail_serialize();

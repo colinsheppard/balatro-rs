@@ -1,6 +1,6 @@
-#![cfg(any())]
-// EMERGENCY DISABLE: This entire test file is temporarily disabled due to missing trait implementations
-// These tests will be re-enabled once ConsumableSlots implements Clone, Serialize, and Deserialize
+// Tests for consumable trait functionality
+// Fixed: ConsumableSlots now implements Clone, Serialize, and Deserialize
+// Fixed: Added get_mock_id() and get_real_id() methods to Consumable trait
 
 use balatro_rs::consumables::{
     Consumable, ConsumableEffect, ConsumableError, ConsumableId, ConsumableSlots, ConsumableType,
@@ -40,6 +40,10 @@ fn test_consumable_trait_object_compatibility() {
 
         fn get_effect_category(&self) -> ConsumableEffect {
             ConsumableEffect::Enhancement
+        }
+
+        fn get_mock_id(&self) -> u32 {
+            42 // Fixed mock ID for basic testing
         }
     }
 
@@ -199,6 +203,10 @@ fn test_enhanced_consumable_trait_methods() {
 
         fn get_effect_category(&self) -> ConsumableEffect {
             ConsumableEffect::Modification
+        }
+
+        fn get_mock_id(&self) -> u32 {
+            42 // Fixed mock ID for enhanced testing
         }
     }
 
@@ -820,7 +828,8 @@ struct MockConsumableForSlots {
 }
 
 impl MockConsumableForSlots {
-    fn get_mock_id(&self) -> u32 {
+    // Keep this helper method for convenience
+    fn _get_mock_id(&self) -> u32 {
         self.id
     }
 }
@@ -848,6 +857,10 @@ impl Consumable for MockConsumableForSlots {
 
     fn get_effect_category(&self) -> ConsumableEffect {
         ConsumableEffect::Utility
+    }
+
+    fn get_mock_id(&self) -> u32 {
+        self.id
     }
 }
 
@@ -1033,7 +1046,7 @@ fn test_integration_consumable_target_types() {
         (ConsumableId::Mercury, TargetType::HandType),
     ];
 
-    for (id, expected_target) in consumables {
+    for (id, _expected_target) in consumables {
         let consumable = Box::new(RealConsumableWrapper {
             id,
             consumable_type: id.consumable_type(),
@@ -1065,7 +1078,8 @@ struct RealConsumableWrapper {
 }
 
 impl RealConsumableWrapper {
-    fn get_real_id(&self) -> ConsumableId {
+    // Keep this helper method for convenience
+    fn _get_real_id(&self) -> ConsumableId {
         self.id
     }
 }
@@ -1112,5 +1126,9 @@ impl Consumable for RealConsumableWrapper {
             ConsumableType::Planet => ConsumableEffect::Modification,
             ConsumableType::Spectral => ConsumableEffect::Generation,
         }
+    }
+
+    fn get_real_id(&self) -> ConsumableId {
+        self.id
     }
 }
