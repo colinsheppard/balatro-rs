@@ -1513,7 +1513,9 @@ impl Game {
                             .unwrap_or(ConsumableId::Mercury)
                     }
                     crate::shop::ConsumableType::Spectral => {
-                        let spectral_cards = ConsumableId::spectral_cards();
+                        // Use All pool for regular shop purchases (includes Soul and Black Hole)
+                        // Note: Ghost Deck restrictions would be implemented at the shop level
+                        let spectral_cards = crate::consumables::SpectralPool::All.get_cards();
                         self.rng
                             .choose(&spectral_cards)
                             .copied()
