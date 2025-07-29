@@ -357,7 +357,7 @@ impl Default for JokerEffect {
             mult: 0,
             money: 0,
             interest_bonus: 0,
-            mult_multiplier: 1.0, // Default to no multiplier effect (1.0, not 0.0)
+            mult_multiplier: 1.0, // Default to "no change" rather than 0.0
             retrigger: 0,
             destroy_self: false,
             destroy_others: Vec::new(),

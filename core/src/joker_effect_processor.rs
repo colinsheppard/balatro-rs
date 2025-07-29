@@ -869,7 +869,7 @@ impl JokerEffectProcessor {
             effect.mult_multiplier = chip_mult;
         }
         if score_mult != 1.0 {
-            effect.mult_multiplier = if effect.mult_multiplier == 0.0 {
+            effect.mult_multiplier = if effect.mult_multiplier == 1.0 {
                 score_mult
             } else {
                 effect.mult_multiplier * score_mult
@@ -1348,8 +1348,8 @@ impl JokerEffectProcessor {
             }
         }
 
-        // mult_multiplier of 1.0 is now the correct default (no effect)
-        // No need to reset it anymore
+        // If no multiplicative effects were applied, keep at default (1.0)
+        // No need to change anything - 1.0 is the correct default
 
         result
     }
@@ -1393,7 +1393,7 @@ impl JokerEffectProcessor {
         effect.chips == 0
             && effect.mult == 0
             && effect.money == 0
-            && effect.mult_multiplier == 1.0  // Default is now 1.0 (no multiplier effect)
+            && effect.mult_multiplier == 1.0  // Default is 1.0 (no change), not 0.0
             && effect.retrigger == 0
             && !effect.destroy_self
             && effect.destroy_others.is_empty()

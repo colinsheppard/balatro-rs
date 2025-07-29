@@ -646,6 +646,7 @@ pub enum VoucherId {
     TarotMerchant,
     /// Tarot Tycoon voucher - Tarot cards appear 4X more
     TarotTycoon,
+
     /// Placeholder for future voucher implementations
     VoucherPlaceholder,
 }
@@ -731,6 +732,7 @@ impl VoucherId {
             // Upgraded versions require base versions
             VoucherId::MoneyTree => vec![VoucherId::SeedMoney],
             VoucherId::TarotTycoon => vec![VoucherId::TarotMerchant],
+
             VoucherId::VoucherPlaceholder => vec![],
         }
     }
