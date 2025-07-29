@@ -2,16 +2,14 @@
 //!
 //! Implementation of the 4 utility category skip tags:
 //! - Double: Duplicates the next selected tag
-//! - Boss: Re-rolls the next Boss Blind  
+//! - Boss: Re-rolls the next Boss Blind
 //! - Orbital: Upgrades a random poker hand by 3 levels
 //! - Juggle: Adds +3 hand size for next round only
 
-use super::{
-    SkipTag, SkipTagContext, SkipTagId, SkipTagResult, TagEffectType, TagRarity
-};
 use super::tag_effects::{
-    duplication_effect, boss_reroll_effect, hand_upgrade_effect, temporary_hand_size_effect
+    boss_reroll_effect, duplication_effect, hand_upgrade_effect, temporary_hand_size_effect,
 };
+use super::{SkipTag, SkipTagContext, SkipTagId, SkipTagResult, TagEffectType, TagRarity};
 
 /// Double Tag - Gives a copy of the next Tag selected (excluding Double Tags)
 /// Can be stacked, with each addition creating one additional copy of a tag
@@ -52,13 +50,14 @@ impl SkipTag for DoubleTag {
         // For Double tag, we need to know which tag to duplicate
         // In a real implementation, this would require UI interaction
         // For now, we'll duplicate the first available tag that isn't Double
-        
-        let available_non_double: Vec<_> = context.available_tags
+
+        let available_non_double: Vec<_> = context
+            .available_tags
             .iter()
             .filter(|&&tag| tag != SkipTagId::Double)
             .copied()
             .collect();
-        
+
         if let Some(&first_tag) = available_non_double.first() {
             duplication_effect(context, first_tag)
         } else {
@@ -73,7 +72,8 @@ impl SkipTag for DoubleTag {
 
     fn can_activate(&self, context: &SkipTagContext) -> bool {
         // Can only activate if there are non-Double tags available
-        context.available_tags
+        context
+            .available_tags
             .iter()
             .any(|&tag| tag != SkipTagId::Double)
     }
@@ -230,9 +230,9 @@ mod tests {
     fn test_double_tag_activation() {
         let tag = DoubleTag;
         let context = create_test_context();
-        
+
         let result = tag.activate(context);
-        
+
         assert!(result.success);
         assert_eq!(result.additional_tags.len(), 1);
         // Should duplicate the first available non-Double tag
@@ -243,9 +243,9 @@ mod tests {
     fn test_double_tag_can_activate() {
         let tag = DoubleTag;
         let context = create_test_context();
-        
+
         assert!(tag.can_activate(&context));
-        
+
         // Test with only Double tags available
         let context_only_double = SkipTagContext {
             available_tags: vec![SkipTagId::Double],
@@ -268,9 +268,9 @@ mod tests {
     fn test_boss_tag_activation() {
         let tag = BossTag;
         let context = create_test_context();
-        
+
         let result = tag.activate(context);
-        
+
         assert!(result.success);
         assert!(result.message.unwrap().contains("Boss Blind"));
     }
@@ -289,9 +289,9 @@ mod tests {
     fn test_orbital_tag_activation() {
         let tag = OrbitalTag;
         let context = create_test_context();
-        
+
         let result = tag.activate(context);
-        
+
         assert!(result.success);
         let message = result.message.unwrap();
         assert!(message.contains("Upgraded"));
@@ -312,9 +312,9 @@ mod tests {
     fn test_juggle_tag_activation() {
         let tag = JuggleTag;
         let context = create_test_context();
-        
+
         let result = tag.activate(context);
-        
+
         assert!(result.success);
         assert!(result.message.unwrap().contains("+3 hand size"));
     }
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn test_all_tags_can_activate() {
         let context = create_test_context();
-        
+
         assert!(DoubleTag.can_activate(&context));
         assert!(BossTag.can_activate(&context));
         assert!(OrbitalTag.can_activate(&context));

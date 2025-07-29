@@ -24,14 +24,16 @@ impl SkipTagRegistry {
     pub fn register<T: SkipTag + 'static>(&self, tag: T) -> Result<(), String> {
         let id = tag.id();
         let tag_arc = Arc::new(tag);
-        
-        let mut tags = self.tags.write()
+
+        let mut tags = self
+            .tags
+            .write()
             .map_err(|_| "Failed to acquire write lock on skip tag registry")?;
-        
+
         if tags.contains_key(&id) {
-            return Err(format!("Skip tag {} is already registered", id));
+            return Err(format!("Skip tag {id} is already registered"));
         }
-        
+
         tags.insert(id, tag_arc);
         Ok(())
     }
@@ -91,21 +93,21 @@ static GLOBAL_REGISTRY: std::sync::OnceLock<SkipTagRegistry> = std::sync::OnceLo
 pub fn global_registry() -> &'static SkipTagRegistry {
     GLOBAL_REGISTRY.get_or_init(|| {
         let registry = SkipTagRegistry::new();
-        
+
         // Register all utility tags
         if let Err(e) = registry.register(crate::skip_tags::utility_tags::DoubleTag) {
-            eprintln!("Failed to register Double tag: {}", e);
+            eprintln!("Failed to register Double tag: {e}");
         }
         if let Err(e) = registry.register(crate::skip_tags::utility_tags::BossTag) {
-            eprintln!("Failed to register Boss tag: {}", e);
+            eprintln!("Failed to register Boss tag: {e}");
         }
         if let Err(e) = registry.register(crate::skip_tags::utility_tags::OrbitalTag) {
-            eprintln!("Failed to register Orbital tag: {}", e);
+            eprintln!("Failed to register Orbital tag: {e}");
         }
         if let Err(e) = registry.register(crate::skip_tags::utility_tags::JuggleTag) {
-            eprintln!("Failed to register Juggle tag: {}", e);
+            eprintln!("Failed to register Juggle tag: {e}");
         }
-        
+
         registry
     })
 }
@@ -205,16 +207,20 @@ mod tests {
     #[test]
     fn test_rarity_filtering() {
         let registry = SkipTagRegistry::new();
-        
-        registry.register(MockTag {
-            id: SkipTagId::Double,
-            rarity: TagRarity::Common,
-        }).unwrap();
-        
-        registry.register(MockTag {
-            id: SkipTagId::Boss,
-            rarity: TagRarity::Rare,
-        }).unwrap();
+
+        registry
+            .register(MockTag {
+                id: SkipTagId::Double,
+                rarity: TagRarity::Common,
+            })
+            .unwrap();
+
+        registry
+            .register(MockTag {
+                id: SkipTagId::Boss,
+                rarity: TagRarity::Rare,
+            })
+            .unwrap();
 
         let common_tags = registry.get_tags_by_rarity(TagRarity::Common);
         assert_eq!(common_tags.len(), 1);
@@ -231,30 +237,36 @@ mod tests {
     #[test]
     fn test_weighted_tags() {
         let registry = SkipTagRegistry::new();
-        
-        registry.register(MockTag {
-            id: SkipTagId::Double,
-            rarity: TagRarity::Common,
-        }).unwrap();
-        
-        registry.register(MockTag {
-            id: SkipTagId::Boss,
-            rarity: TagRarity::Legendary,
-        }).unwrap();
+
+        registry
+            .register(MockTag {
+                id: SkipTagId::Double,
+                rarity: TagRarity::Common,
+            })
+            .unwrap();
+
+        registry
+            .register(MockTag {
+                id: SkipTagId::Boss,
+                rarity: TagRarity::Legendary,
+            })
+            .unwrap();
 
         let weighted = registry.get_weighted_tags();
         assert_eq!(weighted.len(), 2);
-        
+
         // Common should have higher weight than legendary
-        let double_weight = weighted.iter()
+        let double_weight = weighted
+            .iter()
             .find(|(id, _)| *id == SkipTagId::Double)
             .map(|(_, weight)| *weight)
             .unwrap();
-        let boss_weight = weighted.iter()
+        let boss_weight = weighted
+            .iter()
             .find(|(id, _)| *id == SkipTagId::Boss)
             .map(|(_, weight)| *weight)
             .unwrap();
-        
+
         assert!(double_weight > boss_weight);
     }
 }

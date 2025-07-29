@@ -68,11 +68,11 @@ pub enum Action {
     BuyPacks(Vec<PackType>),          // Buy multiple packs
 
     // Multi-select control
-    ActivateMultiSelect(), // Enter multi-select mode
+    ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
     // Skip tags system
-    SkipBlind(Blind),                         // Skip a blind and potentially get tags
+    SkipBlind(Blind), // Skip a blind and potentially get tags
     SelectSkipTag(crate::skip_tags::SkipTagId), // Select a skip tag for activation
 }
 

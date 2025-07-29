@@ -81,30 +81,30 @@ pub struct SkipTagResult {
 pub trait SkipTag: fmt::Debug + Send + Sync {
     /// Get the tag ID
     fn id(&self) -> SkipTagId;
-    
+
     /// Get the display name
     fn name(&self) -> &'static str;
-    
+
     /// Get the description
     fn description(&self) -> &'static str;
-    
+
     /// Get the effect type
     fn effect_type(&self) -> TagEffectType;
-    
+
     /// Get the rarity (affects skip chance)
     fn rarity(&self) -> TagRarity;
-    
+
     /// Can this tag be stacked?
     fn stackable(&self) -> bool;
-    
+
     /// Can this tag be selected (some are automatic)
     fn selectable(&self) -> bool {
         true
     }
-    
+
     /// Activate the skip tag effect
     fn activate(&self, context: SkipTagContext) -> SkipTagResult;
-    
+
     /// Check if this tag can be activated in the given context
     fn can_activate(&self, _context: &SkipTagContext) -> bool {
         true
@@ -143,19 +143,16 @@ pub struct SkipTagInstance {
 
 impl SkipTagInstance {
     pub fn new(id: SkipTagId) -> Self {
-        Self {
-            id,
-            stack_count: 1,
-        }
+        Self { id, stack_count: 1 }
     }
-    
+
     pub fn with_stack(id: SkipTagId, count: usize) -> Self {
         Self {
             id,
             stack_count: count,
         }
     }
-    
+
     /// Add to stack if stackable
     pub fn add_stack(&mut self, registry: &tag_registry::SkipTagRegistry) -> bool {
         if let Some(tag) = registry.get_tag(self.id) {
@@ -192,7 +189,7 @@ mod tests {
         let instance = SkipTagInstance::new(SkipTagId::Double);
         assert_eq!(instance.id, SkipTagId::Double);
         assert_eq!(instance.stack_count, 1);
-        
+
         let stacked = SkipTagInstance::with_stack(SkipTagId::Juggle, 3);
         assert_eq!(stacked.stack_count, 3);
     }
