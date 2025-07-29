@@ -1,6 +1,6 @@
 //! Skip Tag System for Balatro
-//! 
-//! Implements the skip blind reward system where players can skip blinds 
+//!
+//! Implements the skip blind reward system where players can skip blinds
 //! to receive various reward tags with immediate or next-shop effects.
 
 use crate::error::GameError;
@@ -15,18 +15,18 @@ use std::fmt;
 #[cfg_attr(feature = "python", pyo3::pyclass(eq))]
 pub enum TagId {
     // Immediate pack opening tags
-    Charm,     // Free Mega Arcana Pack (choose 2 of 5)
-    Ethereal,  // Free Spectral Pack (choose 1 of 2)
-    Buffoon,   // Free Mega Buffoon Pack (choose 2 of 5)
-    Standard,  // Free Mega Standard Pack (choose 2 of 5)
-    Meteor,    // Free Mega Celestial Pack (choose 2 of 5)
-    
+    Charm,    // Free Mega Arcana Pack (choose 2 of 5)
+    Ethereal, // Free Spectral Pack (choose 1 of 2)
+    Buffoon,  // Free Mega Buffoon Pack (choose 2 of 5)
+    Standard, // Free Mega Standard Pack (choose 2 of 5)
+    Meteor,   // Free Mega Celestial Pack (choose 2 of 5)
+
     // Next shop modifier tags
-    Rare,      // Next shop will have a free Rare Joker
-    Uncommon,  // Next shop will have a free Uncommon Joker
-    
+    Rare,     // Next shop will have a free Rare Joker
+    Uncommon, // Next shop will have a free Uncommon Joker
+
     // Immediate creation tags
-    TopUp,     // Create up to 2 Common Jokers immediately
+    TopUp, // Create up to 2 Common Jokers immediately
 }
 
 impl fmt::Display for TagId {
@@ -70,7 +70,7 @@ impl RewardPackConfig {
             total_options: 5,
         }
     }
-    
+
     /// Create config for spectral pack (1 of 2)
     pub fn spectral_pack() -> Self {
         Self {
@@ -96,20 +96,20 @@ pub enum TagEffect {
 pub trait SkipTag {
     /// Get the tag's unique identifier
     fn tag_id(&self) -> TagId;
-    
+
     /// Get the tag's effect type for optimization
     fn effect_type(&self) -> TagEffectType;
-    
+
     /// Get the tag's effect data
     fn effect(&self) -> TagEffect;
-    
+
     /// Apply the tag effect to the game state
     /// Returns true if effect was applied successfully
     fn apply_effect(&self, game: &mut Game) -> Result<bool, GameError>;
-    
+
     /// Get human-readable description of the tag
     fn description(&self) -> &'static str;
-    
+
     /// Check if the tag can be applied in current game state
     fn can_apply(&self, game: &Game) -> bool;
 }
@@ -133,7 +133,7 @@ impl SkipTagRegistry {
         let mut registry = Self {
             tags: std::collections::HashMap::new(),
         };
-        
+
         // Register all reward tags
         registry.register_tag(Box::new(CharmTag));
         registry.register_tag(Box::new(EtherealTag));
@@ -143,25 +143,25 @@ impl SkipTagRegistry {
         registry.register_tag(Box::new(RareTag));
         registry.register_tag(Box::new(UncommonTag));
         registry.register_tag(Box::new(TopUpTag));
-        
+
         registry
     }
-    
+
     /// Register a tag in the registry
     pub fn register_tag(&mut self, tag: Box<dyn SkipTag + Send + Sync>) {
         self.tags.insert(tag.tag_id(), tag);
     }
-    
+
     /// Get a tag by ID
     pub fn get_tag(&self, tag_id: TagId) -> Option<&(dyn SkipTag + Send + Sync)> {
         self.tags.get(&tag_id).map(|tag| tag.as_ref())
     }
-    
+
     /// Get all available tag IDs
     pub fn available_tags(&self) -> Vec<TagId> {
         self.tags.keys().copied().collect()
     }
-    
+
     /// Apply a tag effect by ID
     pub fn apply_tag_effect(&self, tag_id: TagId, game: &mut Game) -> Result<bool, GameError> {
         if let Some(tag) = self.get_tag(tag_id) {
@@ -184,15 +184,21 @@ impl Default for SkipTagRegistry {
 pub struct CharmTag;
 
 impl SkipTag for CharmTag {
-    fn tag_id(&self) -> TagId { TagId::Charm }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::Charm
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::RewardPack(RewardPackConfig::mega_pack(PackType::MegaArcana))
     }
     fn description(&self) -> &'static str {
         "Immediately open a free Mega Arcana Pack (choose 2 of 5 Tarot cards)"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with pack system
         Ok(true)
@@ -203,15 +209,21 @@ impl SkipTag for CharmTag {
 pub struct EtherealTag;
 
 impl SkipTag for EtherealTag {
-    fn tag_id(&self) -> TagId { TagId::Ethereal }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::Ethereal
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::RewardPack(RewardPackConfig::spectral_pack())
     }
     fn description(&self) -> &'static str {
         "Immediately open a free Spectral Pack (choose 1 of 2 Spectral cards)"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with pack system
         Ok(true)
@@ -222,15 +234,21 @@ impl SkipTag for EtherealTag {
 pub struct BuffoonTag;
 
 impl SkipTag for BuffoonTag {
-    fn tag_id(&self) -> TagId { TagId::Buffoon }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::Buffoon
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::RewardPack(RewardPackConfig::mega_pack(PackType::MegaBuffoon))
     }
     fn description(&self) -> &'static str {
         "Immediately open a free Mega Buffoon Pack (choose 2 of 5 Jokers)"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with pack system
         Ok(true)
@@ -241,15 +259,21 @@ impl SkipTag for BuffoonTag {
 pub struct StandardTag;
 
 impl SkipTag for StandardTag {
-    fn tag_id(&self) -> TagId { TagId::Standard }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::Standard
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::RewardPack(RewardPackConfig::mega_pack(PackType::Mega))
     }
     fn description(&self) -> &'static str {
         "Immediately open a free Mega Standard Pack (choose 2 of 5 playing cards)"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with pack system
         Ok(true)
@@ -260,15 +284,21 @@ impl SkipTag for StandardTag {
 pub struct MeteorTag;
 
 impl SkipTag for MeteorTag {
-    fn tag_id(&self) -> TagId { TagId::Meteor }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::Meteor
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::RewardPack(RewardPackConfig::mega_pack(PackType::MegaCelestial))
     }
     fn description(&self) -> &'static str {
         "Immediately open a free Mega Celestial Pack (choose 2 of 5 Planet cards)"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with pack system
         Ok(true)
@@ -279,15 +309,21 @@ impl SkipTag for MeteorTag {
 pub struct RareTag;
 
 impl SkipTag for RareTag {
-    fn tag_id(&self) -> TagId { TagId::Rare }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::NextShopModifier }
+    fn tag_id(&self) -> TagId {
+        TagId::Rare
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::NextShopModifier
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::NextShopFreeJoker(JokerRarity::Rare)
     }
     fn description(&self) -> &'static str {
         "Next shop will have a free Rare Joker"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with shop system
         Ok(true)
@@ -298,15 +334,21 @@ impl SkipTag for RareTag {
 pub struct UncommonTag;
 
 impl SkipTag for UncommonTag {
-    fn tag_id(&self) -> TagId { TagId::Uncommon }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::NextShopModifier }
+    fn tag_id(&self) -> TagId {
+        TagId::Uncommon
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::NextShopModifier
+    }
     fn effect(&self) -> TagEffect {
         TagEffect::NextShopFreeJoker(JokerRarity::Uncommon)
     }
     fn description(&self) -> &'static str {
         "Next shop will have a free Uncommon Joker"
     }
-    fn can_apply(&self, _game: &Game) -> bool { true }
+    fn can_apply(&self, _game: &Game) -> bool {
+        true
+    }
     fn apply_effect(&self, _game: &mut Game) -> Result<bool, GameError> {
         // Implementation will be added when integrating with shop system
         Ok(true)
@@ -317,10 +359,17 @@ impl SkipTag for UncommonTag {
 pub struct TopUpTag;
 
 impl SkipTag for TopUpTag {
-    fn tag_id(&self) -> TagId { TagId::TopUp }
-    fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
+    fn tag_id(&self) -> TagId {
+        TagId::TopUp
+    }
+    fn effect_type(&self) -> TagEffectType {
+        TagEffectType::ImmediateReward
+    }
     fn effect(&self) -> TagEffect {
-        TagEffect::CreateJokers { count: 2, rarity: JokerRarity::Common }
+        TagEffect::CreateJokers {
+            count: 2,
+            rarity: JokerRarity::Common,
+        }
     }
     fn description(&self) -> &'static str {
         "Create up to 2 Common Jokers immediately (requires open Joker slots)"
@@ -342,10 +391,10 @@ mod tests {
     #[test]
     fn test_skip_tag_registry() {
         let registry = SkipTagRegistry::new();
-        
+
         // Test all 8 reward tags are registered
         assert_eq!(registry.available_tags().len(), 8);
-        
+
         // Test specific tags exist
         assert!(registry.get_tag(TagId::Charm).is_some());
         assert!(registry.get_tag(TagId::Ethereal).is_some());
@@ -356,19 +405,25 @@ mod tests {
         assert!(registry.get_tag(TagId::Uncommon).is_some());
         assert!(registry.get_tag(TagId::TopUp).is_some());
     }
-    
+
     #[test]
     fn test_tag_effect_types() {
         let registry = SkipTagRegistry::new();
-        
+
         // Test immediate reward tags
-        let immediate_tags = [TagId::Charm, TagId::Ethereal, TagId::Buffoon, 
-                             TagId::Standard, TagId::Meteor, TagId::TopUp];
+        let immediate_tags = [
+            TagId::Charm,
+            TagId::Ethereal,
+            TagId::Buffoon,
+            TagId::Standard,
+            TagId::Meteor,
+            TagId::TopUp,
+        ];
         for tag_id in immediate_tags {
             let tag = registry.get_tag(tag_id).unwrap();
             assert_eq!(tag.effect_type(), TagEffectType::ImmediateReward);
         }
-        
+
         // Test next shop modifier tags
         let shop_modifier_tags = [TagId::Rare, TagId::Uncommon];
         for tag_id in shop_modifier_tags {
@@ -376,14 +431,14 @@ mod tests {
             assert_eq!(tag.effect_type(), TagEffectType::NextShopModifier);
         }
     }
-    
+
     #[test]
     fn test_reward_pack_configs() {
         // Test mega pack config (2 of 5)
         let mega_config = RewardPackConfig::mega_pack(PackType::MegaArcana);
         assert_eq!(mega_config.choose_count, 2);
         assert_eq!(mega_config.total_options, 5);
-        
+
         // Test spectral pack config (1 of 2)
         let spectral_config = RewardPackConfig::spectral_pack();
         assert_eq!(spectral_config.choose_count, 1);

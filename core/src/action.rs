@@ -69,7 +69,7 @@ pub enum Action {
     BuyPacks(Vec<PackType>),          // Buy multiple packs
 
     // Multi-select control
-    ActivateMultiSelect(), // Enter multi-select mode
+    ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
     // Skip blind and tag selection

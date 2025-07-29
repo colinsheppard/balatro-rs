@@ -230,7 +230,7 @@ pub struct Game {
     /// Skip tag system
     #[cfg_attr(feature = "serde", serde(skip, default = "SkipTagRegistry::new"))]
     pub skip_tag_registry: SkipTagRegistry,
-    
+
     /// Currently selected tags awaiting application
     pub selected_tags: Vec<TagId>,
 
@@ -1578,7 +1578,7 @@ impl Game {
         if self.stage != Stage::PreBlind() {
             return Err(GameError::InvalidStage);
         }
-        
+
         // Provided blind must be the expected next blind
         if let Some(current) = self.blind {
             if blind != current.next() {
@@ -1590,7 +1590,7 @@ impl Game {
                 return Err(GameError::InvalidBlind);
             }
         }
-        
+
         // Generate reward tags for skipping
         let available_tags = self.skip_tag_registry.available_tags();
         if !available_tags.is_empty() {
@@ -1598,16 +1598,16 @@ impl Game {
             let selected_tag = *self.rng.choose(&available_tags).unwrap();
             self.selected_tags.push(selected_tag);
         }
-        
+
         // Update blind state to show we've processed this blind
         self.blind = Some(blind);
-        
+
         // If this was the Boss blind, advance to next round
         if blind == Blind::Boss {
             self.next_round()?;
         }
         // Otherwise stay in PreBlind stage for next blind
-        
+
         Ok(())
     }
 
@@ -1616,7 +1616,7 @@ impl Game {
         if let Some(pos) = self.selected_tags.iter().position(|&t| t == tag_id) {
             // Remove the tag from selected tags
             self.selected_tags.remove(pos);
-            
+
             // For now, just return Ok since tag effects are not fully implemented
             // TODO: Implement actual tag effects
             Ok(())
@@ -1797,9 +1797,7 @@ impl Game {
                 Stage::PreBlind() => self.skip_blind(blind),
                 _ => Err(GameError::InvalidStage),
             },
-            Action::SelectTag(tag_id) => {
-                self.select_tag(tag_id)
-            }
+            Action::SelectTag(tag_id) => self.select_tag(tag_id),
         }
     }
 
