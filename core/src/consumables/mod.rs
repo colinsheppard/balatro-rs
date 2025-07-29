@@ -835,6 +835,24 @@ pub enum ConsumableId {
     Grim,
     /// Incantation - Destroys 1 random card, add 4 random Enhanced numbered cards to deck
     Incantation,
+    /// Immolate - Destroys 5 random cards in hand, gain $20
+    Immolate,
+    /// Ankh - Create copy of random Joker, destroy all other Jokers  
+    Ankh,
+    /// Deja Vu - Add Red Seal to 1 selected card
+    DejaVu,
+    /// Hex - Add Polychrome to random Joker, destroy all other Jokers
+    Hex,
+    /// Trance - Add Blue Seal to 1 selected card
+    Trance,
+    /// Medium - Add Purple Seal to 1 selected card
+    Medium,
+    /// Cryptid - Create 2 copies of 1 selected card
+    Cryptid,
+    /// The Soul - Creates a Legendary Joker (must be room)
+    TheSoul,
+    /// Black Hole - Upgrade every hand type by 1 level
+    BlackHole,
 
     // Placeholder variants - will be expanded in future implementations
     /// Placeholder for future Tarot card implementations
@@ -866,6 +884,15 @@ impl fmt::Display for ConsumableId {
             ConsumableId::Familiar => write!(f, "Familiar"),
             ConsumableId::Grim => write!(f, "Grim"),
             ConsumableId::Incantation => write!(f, "Incantation"),
+            ConsumableId::Immolate => write!(f, "Immolate"),
+            ConsumableId::Ankh => write!(f, "Ankh"),
+            ConsumableId::DejaVu => write!(f, "Deja Vu"),
+            ConsumableId::Hex => write!(f, "Hex"),
+            ConsumableId::Trance => write!(f, "Trance"),
+            ConsumableId::Medium => write!(f, "Medium"),
+            ConsumableId::Cryptid => write!(f, "Cryptid"),
+            ConsumableId::TheSoul => write!(f, "The Soul"),
+            ConsumableId::BlackHole => write!(f, "Black Hole"),
 
             // Placeholders
             ConsumableId::TarotPlaceholder => write!(f, "Tarot Placeholder"),
@@ -904,6 +931,15 @@ impl ConsumableId {
             ConsumableId::Familiar
             | ConsumableId::Grim
             | ConsumableId::Incantation
+            | ConsumableId::Immolate
+            | ConsumableId::Ankh
+            | ConsumableId::DejaVu
+            | ConsumableId::Hex
+            | ConsumableId::Trance
+            | ConsumableId::Medium
+            | ConsumableId::Cryptid
+            | ConsumableId::TheSoul
+            | ConsumableId::BlackHole
             | ConsumableId::SpectralPlaceholder => ConsumableType::Spectral,
         }
     }
@@ -936,6 +972,15 @@ impl ConsumableId {
             ConsumableId::Familiar,
             ConsumableId::Grim,
             ConsumableId::Incantation,
+            ConsumableId::Immolate,
+            ConsumableId::Ankh,
+            ConsumableId::DejaVu,
+            ConsumableId::Hex,
+            ConsumableId::Trance,
+            ConsumableId::Medium,
+            ConsumableId::Cryptid,
+            ConsumableId::TheSoul,
+            ConsumableId::BlackHole,
         ]
     }
 }
@@ -1505,7 +1550,7 @@ impl<'de> Deserialize<'de> for ConsumableSlots {
 // Re-export submodules when they are implemented
 // pub mod tarot;
 // pub mod planet;
-// pub mod spectral;
+pub mod spectral;
 
 // Test module
 #[cfg(test)]
