@@ -206,9 +206,9 @@ impl ShopItem {
     /// Check if this item type is affected by specific voucher effects.
     pub fn is_affected_by_voucher(&self, voucher: VoucherId) -> bool {
         match voucher {
-            VoucherId::Overstock => true, // Affects all shop items
-            VoucherId::ClearanceSale => matches!(self, ShopItem::Pack(_)),
-            VoucherId::Liquidation => matches!(self, ShopItem::Joker(_)),
+            VoucherId::Overstock => true,     // Affects all shop items
+            VoucherId::ClearanceSale => true, // 50% off all items in shop
+            VoucherId::Liquidation => true,   // 25% off all items in shop
             _ => false,
         }
     }
@@ -223,7 +223,6 @@ pub enum ConsumableType {
     Planet,
     Spectral,
 }
-
 
 /// Individual slot in the enhanced shop
 #[derive(Debug, Clone)]
@@ -563,15 +562,15 @@ mod tests {
         assert!(pack_item.is_affected_by_voucher(VoucherId::Overstock));
         assert!(card_item.is_affected_by_voucher(VoucherId::Overstock));
 
-        // ClearancePackage only affects packs
-        assert!(!joker_item.is_affected_by_voucher(VoucherId::ClearanceSale));
-        assert!(pack_item.is_affected_by_voucher(VoucherId::ClearanceSale));
-        assert!(!card_item.is_affected_by_voucher(VoucherId::ClearanceSale));
-
-        // Coupon only affects jokers
+        // ClearanceSale affects all items (50% off all items in shop)
         assert!(joker_item.is_affected_by_voucher(VoucherId::ClearanceSale));
-        assert!(!pack_item.is_affected_by_voucher(VoucherId::ClearanceSale));
-        assert!(!card_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(pack_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(card_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+
+        // Liquidation affects all items (25% off all items in shop)
+        assert!(joker_item.is_affected_by_voucher(VoucherId::Liquidation));
+        assert!(pack_item.is_affected_by_voucher(VoucherId::Liquidation));
+        assert!(card_item.is_affected_by_voucher(VoucherId::Liquidation));
     }
 
     #[test]

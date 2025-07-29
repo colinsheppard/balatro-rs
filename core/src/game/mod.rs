@@ -1306,7 +1306,6 @@ impl Game {
     /// * `InvalidBalance` - Insufficient funds
     /// * `InvalidOperation` - Voucher already owned or prerequisites not met
     pub(crate) fn buy_voucher(&mut self, voucher_id: VoucherId) -> Result<(), GameError> {
-
         // Validate stage
         if self.stage != Stage::Shop() {
             return Err(GameError::InvalidStage);
@@ -1314,16 +1313,16 @@ impl Game {
 
         // Check if voucher is already owned
         if self.vouchers.owns(voucher_id) {
-            return Err(GameError::InvalidOperation(
-                format!("Voucher {voucher_id:?} already owned")
-            ));
+            return Err(GameError::InvalidOperation(format!(
+                "Voucher {voucher_id:?} already owned"
+            )));
         }
 
         // Check prerequisites
         if !self.vouchers.can_purchase(voucher_id) {
-            return Err(GameError::InvalidOperation(
-                format!("Prerequisites not met for voucher {voucher_id:?}")
-            ));
+            return Err(GameError::InvalidOperation(format!(
+                "Prerequisites not met for voucher {voucher_id:?}"
+            )));
         }
 
         // Get voucher cost
