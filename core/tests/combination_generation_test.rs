@@ -111,8 +111,7 @@ fn test_combination_content_correctness() {
             for &index in &indices.indices {
                 assert!(
                     index < 4,
-                    "Card index {} should be less than hand size",
-                    index
+                    "Card index {index} should be less than hand size"
                 );
             }
 
