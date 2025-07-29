@@ -1,4 +1,5 @@
 // This test is currently disabled
+#![allow(clippy::non_minimal_cfg)]
 #![cfg(all())] // Always false, effectively disabling the file
                // EMERGENCY DISABLE: GameContext constructor and Stage constructor issues - tracked for post-emergency fix
 
@@ -291,11 +292,10 @@ fn test_half_joker_behavior_edge_case_empty_hand() {
 
 #[test]
 fn test_banner_joker() {
-    
     use balatro_rs::hand::{Hand, SelectHand};
     use balatro_rs::joker::GameContext;
     use balatro_rs::joker_state::JokerStateManager;
-    
+
     use balatro_rs::stage::Stage;
     use std::collections::HashMap;
     use std::sync::Arc;
@@ -458,7 +458,7 @@ fn test_abstract_joker() {
 
     // Create a test game context manually
     let joker_state_manager = Arc::new(JokerStateManager::new());
-    let stage = Stage::Blind(Blind::Small);
+    let _stage = Stage::Blind(Blind::Small);
     let stage_ref: &'static Stage = Box::leak(Box::new(Stage::Blind(Blind::Small)));
     let hand = Hand::new(vec![]);
     let hand_ref: &'static Hand = Box::leak(Box::new(hand));
