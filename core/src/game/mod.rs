@@ -21,7 +21,7 @@ use crate::shop::Shop;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::target_context::TargetContext;
-use crate::vouchers::VoucherCollection;
+use crate::vouchers::{VoucherCollection, VoucherId};
 
 // Re-export GameState for external use with qualified name to avoid Python bindings conflict
 pub use crate::vouchers::GameState as VoucherGameState;
@@ -1292,6 +1292,56 @@ impl Game {
         Ok(())
     }
 
+    /// Purchase a voucher by ID
+    ///
+    /// Validates game state, checks prerequisites, verifies cost, and adds voucher to collection.
+    /// Vouchers provide permanent upgrades that persist for the entire run.
+    ///
+    /// # Arguments
+    /// * `voucher_id` - The voucher to purchase
+    ///
+    /// # Returns
+    /// * `Ok(())` - Voucher purchased successfully
+    /// * `InvalidStage` - Not in shop stage
+    /// * `InvalidBalance` - Insufficient funds
+    /// * `InvalidOperation` - Voucher already owned or prerequisites not met
+    pub(crate) fn buy_voucher(&mut self, voucher_id: VoucherId) -> Result<(), GameError> {
+        // Validate stage
+        if self.stage != Stage::Shop() {
+            return Err(GameError::InvalidStage);
+        }
+
+        // Check if voucher is already owned
+        if self.vouchers.owns(voucher_id) {
+            return Err(GameError::InvalidOperation(format!(
+                "Voucher {voucher_id:?} already owned"
+            )));
+        }
+
+        // Check prerequisites
+        if !self.vouchers.can_purchase(voucher_id) {
+            return Err(GameError::InvalidOperation(format!(
+                "Prerequisites not met for voucher {voucher_id:?}"
+            )));
+        }
+
+        // Get voucher cost
+        let cost = voucher_id.base_cost();
+
+        // Check if player has enough money
+        if (self.money as usize) < cost {
+            return Err(GameError::InvalidBalance);
+        }
+
+        // Deduct money
+        self.money -= cost as f64;
+
+        // Add voucher to collection
+        self.vouchers.add(voucher_id);
+
+        Ok(())
+    }
+
     /// Validates whether a consumable can be purchased based on game state, player resources, and slot availability.
     ///
     /// This method checks that:
@@ -1635,6 +1685,10 @@ impl Game {
             },
             Action::BuyJoker { joker_id, slot } => match self.stage {
                 Stage::Shop() => self.buy_joker_with_slot(joker_id, slot),
+                _ => Err(GameError::InvalidStage),
+            },
+            Action::BuyVoucher { voucher_id } => match self.stage {
+                Stage::Shop() => self.buy_voucher(voucher_id),
                 _ => Err(GameError::InvalidStage),
             },
             Action::NextRound() => match self.stage {
