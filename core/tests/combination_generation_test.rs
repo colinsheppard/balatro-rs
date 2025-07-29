@@ -47,12 +47,14 @@ fn test_multi_card_combination_logic() {
     // But demonstrates the test structure for when cards are properly implemented
 
     // Expected combinations for 4 cards, choose 2:
-    let _expected_combinations = [vec![0, 1],
+    let _expected_combinations = [
+        vec![0, 1],
         vec![0, 2],
         vec![0, 3],
         vec![1, 2],
         vec![1, 3],
-        vec![2, 3]];
+        vec![2, 3],
+    ];
 
     // In a complete implementation, we would verify:
     // assert_eq!(targets.len(), 6);
