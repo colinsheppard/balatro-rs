@@ -7,7 +7,7 @@
 //!
 //! The skip tag system consists of:
 //! - **SkipTag trait**: Core interface defining tag behavior
-//! - **TagId enum**: All 26 skip tags across 5 categories  
+//! - **TagId enum**: All 26 skip tags across 5 categories
 //! - **TagEffectType**: Classification system for tag effects
 //! - **TagRegistry**: Thread-safe registry and factory system
 //! - **TagError**: Comprehensive error handling framework

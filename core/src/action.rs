@@ -69,12 +69,12 @@ pub enum Action {
     BuyPacks(Vec<PackType>),          // Buy multiple packs
 
     // Multi-select control
-    ActivateMultiSelect(), // Enter multi-select mode
+    ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
     // Skip Tag System Actions
-    SkipBlind(Blind),           // Skip the current blind
-    SelectSkipTag(TagId),       // Select a tag from available options
+    SkipBlind(Blind),     // Skip the current blind
+    SelectSkipTag(TagId), // Select a tag from available options
 }
 
 impl fmt::Display for Action {

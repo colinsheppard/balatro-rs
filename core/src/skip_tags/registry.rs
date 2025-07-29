@@ -40,7 +40,7 @@
 //!
 //! // Create tag instance
 //! let tag = registry.create_tag(TagId::Charm)?;
-//! 
+//!
 //! // Check if tag is registered
 //! if registry.is_registered(TagId::Economy) {
 //!     println!("Economy tag is available");
@@ -192,7 +192,7 @@ impl TagDefinition {
     }
 
     /// Get the category (Python binding)
-    #[getter] 
+    #[getter]
     fn category(&self) -> TagCategory {
         self.category
     }
@@ -274,7 +274,7 @@ impl TagRegistry {
     /// ```
     pub fn global() -> &'static Arc<RwLock<TagRegistry>> {
         static GLOBAL_REGISTRY: OnceLock<Arc<RwLock<TagRegistry>>> = OnceLock::new();
-        
+
         GLOBAL_REGISTRY.get_or_init(|| {
             let mut registry = TagRegistry::new();
             registry.register_all_tags();
@@ -305,13 +305,17 @@ impl TagRegistry {
     ///     TagEffectType::ImmediateReward,
     ///     1.0
     /// );
-    /// 
+    ///
     /// registry.register_tag(definition, || Box::new(CharmTag))?;
     /// ```
-    pub fn register_tag(&mut self, definition: TagDefinition, factory: TagFactory) -> TagResult<()> {
+    pub fn register_tag(
+        &mut self,
+        definition: TagDefinition,
+        factory: TagFactory,
+    ) -> TagResult<()> {
         // Validate factory by testing creation
         let _test_instance = factory();
-        
+
         // Validate definition consistency
         if definition.name.is_empty() {
             return Err(TagError::new(
@@ -319,7 +323,7 @@ impl TagRegistry {
                 "Tag name cannot be empty",
             ));
         }
-        
+
         if definition.description.is_empty() {
             return Err(TagError::new(
                 TagErrorKind::InvalidConfiguration,
@@ -356,7 +360,7 @@ impl TagRegistry {
     ///
     /// # Performance Target: <10μs
     ///
-    /// # Arguments  
+    /// # Arguments
     /// - `tag_id`: The tag to create
     ///
     /// # Returns
@@ -417,7 +421,10 @@ impl TagRegistry {
     ///
     /// # Returns
     /// Vector of tag definitions with the specified effect type
-    pub fn get_definitions_by_effect_type(&self, effect_type: TagEffectType) -> Vec<&TagDefinition> {
+    pub fn get_definitions_by_effect_type(
+        &self,
+        effect_type: TagEffectType,
+    ) -> Vec<&TagDefinition> {
         self.definitions
             .values()
             .filter(|def| def.effect_type == effect_type)
@@ -444,14 +451,20 @@ impl TagRegistry {
     pub fn stats(&self) -> RegistryStats {
         let total_tags = self.definitions.len();
         let enabled_tags = self.definitions.values().filter(|d| d.enabled).count();
-        let available_tags = self.definitions.values().filter(|d| d.is_available()).count();
-        
+        let available_tags = self
+            .definitions
+            .values()
+            .filter(|d| d.is_available())
+            .count();
+
         let mut category_counts = HashMap::new();
         let mut effect_type_counts = HashMap::new();
-        
+
         for definition in self.definitions.values() {
             *category_counts.entry(definition.category).or_insert(0) += 1;
-            *effect_type_counts.entry(definition.effect_type).or_insert(0) += 1;
+            *effect_type_counts
+                .entry(definition.effect_type)
+                .or_insert(0) += 1;
         }
 
         RegistryStats {
@@ -471,9 +484,9 @@ impl TagRegistry {
     fn register_all_tags(&mut self) {
         // This is a placeholder implementation that registers definitions without factories
         // In the actual implementation, each tag would have its own factory function
-        
+
         let definitions = get_all_tag_definitions();
-        
+
         for definition in definitions {
             // For now, register with a placeholder factory
             // TODO: Replace with actual tag implementations in subsequent tasks
@@ -481,7 +494,7 @@ impl TagRegistry {
             let tag_name = definition.name;
             let tag_description = definition.description;
             let tag_effect_type = definition.effect_type;
-            
+
             let placeholder_factory: TagFactory = Box::new(move || {
                 Box::new(PlaceholderTag {
                     id: tag_id,
@@ -490,10 +503,10 @@ impl TagRegistry {
                     effect_type: tag_effect_type,
                 })
             });
-            
+
             // Registry registration should not fail for built-in tags
             if let Err(e) = self.register_tag(definition, placeholder_factory) {
-                panic!("Failed to register built-in tag {:?}: {}", tag_id, e);
+                panic!("Failed to register built-in tag {tag_id:?}: {e}");
             }
         }
     }
@@ -613,7 +626,7 @@ fn get_all_tag_definitions() -> Vec<TagDefinition> {
         ),
         TagDefinition::new(
             TagId::Uncommon,
-            "Uncommon", 
+            "Uncommon",
             "Creates an uncommon Joker",
             TagEffectType::ImmediateReward,
             0.9,
@@ -625,7 +638,6 @@ fn get_all_tag_definitions() -> Vec<TagDefinition> {
             TagEffectType::ImmediateReward,
             0.7,
         ),
-
         // Economic Tags (5) - Money and resource management
         TagDefinition::new(
             TagId::Economy,
@@ -662,7 +674,6 @@ fn get_all_tag_definitions() -> Vec<TagDefinition> {
             TagEffectType::ImmediateReward,
             1.1,
         ),
-
         // Shop Enhancement Tags (7) - Modify next shop experience
         TagDefinition::new(
             TagId::Voucher,
@@ -713,7 +724,6 @@ fn get_all_tag_definitions() -> Vec<TagDefinition> {
             TagEffectType::ImmediateReward,
             0.4,
         ),
-
         // Utility Tags (4) - Game state and mechanic modifiers
         TagDefinition::new(
             TagId::Double,
@@ -759,7 +769,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         assert_eq!(def.id, TagId::Charm);
         assert_eq!(def.name, "Charm");
         assert_eq!(def.description, "Test description");
@@ -778,7 +788,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         assert!(!def.enabled);
         assert!(!def.is_available());
         assert_eq!(def.effective_weight(), 0.0);
@@ -795,7 +805,7 @@ mod tests {
         );
         assert!(available.is_available());
         assert_eq!(available.effective_weight(), 1.0);
-        
+
         let disabled = TagDefinition::disabled(
             TagId::Charm,
             "Charm",
@@ -805,7 +815,7 @@ mod tests {
         );
         assert!(!disabled.is_available());
         assert_eq!(disabled.effective_weight(), 0.0);
-        
+
         let zero_weight = TagDefinition::new(
             TagId::Charm,
             "Charm",
@@ -825,7 +835,7 @@ mod tests {
     #[test]
     fn test_registry_registration() {
         let mut registry = TagRegistry::new();
-        
+
         let definition = TagDefinition::new(
             TagId::Charm,
             "Charm",
@@ -833,7 +843,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         let factory: TagFactory = Box::new(|| {
             Box::new(PlaceholderTag {
                 id: TagId::Charm,
@@ -842,7 +852,7 @@ mod tests {
                 effect_type: TagEffectType::ImmediateReward,
             })
         });
-        
+
         assert!(registry.register_tag(definition, factory).is_ok());
         assert_eq!(registry.count(), 1);
         assert!(registry.is_registered(TagId::Charm));
@@ -851,7 +861,7 @@ mod tests {
     #[test]
     fn test_registry_get_definition() {
         let mut registry = TagRegistry::new();
-        
+
         let definition = TagDefinition::new(
             TagId::Economy,
             "Economy",
@@ -859,7 +869,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.5,
         );
-        
+
         let factory: TagFactory = Box::new(|| {
             Box::new(PlaceholderTag {
                 id: TagId::Economy,
@@ -868,9 +878,9 @@ mod tests {
                 effect_type: TagEffectType::ImmediateReward,
             })
         });
-        
+
         registry.register_tag(definition, factory).unwrap();
-        
+
         let retrieved_def = registry.get_definition(TagId::Economy).unwrap();
         assert_eq!(retrieved_def.id, TagId::Economy);
         assert_eq!(retrieved_def.name, "Economy");
@@ -880,10 +890,10 @@ mod tests {
     #[test]
     fn test_registry_get_definition_not_found() {
         let registry = TagRegistry::new();
-        
+
         let result = registry.get_definition(TagId::Charm);
         assert!(result.is_err());
-        
+
         if let Err(error) = result {
             assert_eq!(error.kind, TagErrorKind::TagNotFound);
         }
@@ -892,7 +902,7 @@ mod tests {
     #[test]
     fn test_registry_create_tag() {
         let mut registry = TagRegistry::new();
-        
+
         let definition = TagDefinition::new(
             TagId::Buffoon,
             "Buffoon",
@@ -900,7 +910,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         let factory: TagFactory = Box::new(|| {
             Box::new(PlaceholderTag {
                 id: TagId::Buffoon,
@@ -909,9 +919,9 @@ mod tests {
                 effect_type: TagEffectType::ImmediateReward,
             })
         });
-        
+
         registry.register_tag(definition, factory).unwrap();
-        
+
         let tag = registry.create_tag(TagId::Buffoon).unwrap();
         assert_eq!(tag.id(), TagId::Buffoon);
         assert_eq!(tag.name(), "Buffoon");
@@ -920,14 +930,26 @@ mod tests {
     #[test]
     fn test_registry_filtering() {
         let mut registry = TagRegistry::new();
-        
+
         // Register tags with different categories and types
         let definitions = vec![
-            (TagId::Charm, TagEffectType::ImmediateReward, TagCategory::Reward),
-            (TagId::Coupon, TagEffectType::NextShopModifier, TagCategory::ShopEnhancement),
-            (TagId::Boss, TagEffectType::GameStateModifier, TagCategory::Utility),
+            (
+                TagId::Charm,
+                TagEffectType::ImmediateReward,
+                TagCategory::Reward,
+            ),
+            (
+                TagId::Coupon,
+                TagEffectType::NextShopModifier,
+                TagCategory::ShopEnhancement,
+            ),
+            (
+                TagId::Boss,
+                TagEffectType::GameStateModifier,
+                TagCategory::Utility,
+            ),
         ];
-        
+
         for (id, effect_type, _category) in definitions {
             let def = TagDefinition::new(id, "Test", "Test description", effect_type, 1.0);
             let factory: TagFactory = Box::new(move || {
@@ -940,17 +962,18 @@ mod tests {
             });
             registry.register_tag(def, factory).unwrap();
         }
-        
+
         // Test category filtering
         let reward_tags = registry.get_definitions_by_category(TagCategory::Reward);
         assert_eq!(reward_tags.len(), 1);
         assert_eq!(reward_tags[0].id, TagId::Charm);
-        
+
         // Test effect type filtering
-        let immediate_tags = registry.get_definitions_by_effect_type(TagEffectType::ImmediateReward);
+        let immediate_tags =
+            registry.get_definitions_by_effect_type(TagEffectType::ImmediateReward);
         assert_eq!(immediate_tags.len(), 1);
         assert_eq!(immediate_tags[0].id, TagId::Charm);
-        
+
         // Test available tags
         let available_tags = registry.get_available_definitions();
         assert_eq!(available_tags.len(), 3); // All are available
@@ -959,20 +982,35 @@ mod tests {
     #[test]
     fn test_registry_stats() {
         let mut registry = TagRegistry::new();
-        
+
         // Add some test tags
         let tags = [
-            (TagId::Charm, TagCategory::Reward, TagEffectType::ImmediateReward, true),
-            (TagId::Economy, TagCategory::Economic, TagEffectType::ImmediateReward, true),
-            (TagId::Coupon, TagCategory::ShopEnhancement, TagEffectType::NextShopModifier, false),
+            (
+                TagId::Charm,
+                TagCategory::Reward,
+                TagEffectType::ImmediateReward,
+                true,
+            ),
+            (
+                TagId::Economy,
+                TagCategory::Economic,
+                TagEffectType::ImmediateReward,
+                true,
+            ),
+            (
+                TagId::Coupon,
+                TagCategory::ShopEnhancement,
+                TagEffectType::NextShopModifier,
+                false,
+            ),
         ];
-        
+
         for &(id, _category, effect_type, enabled) in &tags {
             let mut def = TagDefinition::new(id, "Test", "Test", effect_type, 1.0);
             if !enabled {
                 def.enabled = false;
             }
-            
+
             let factory: TagFactory = Box::new(move || {
                 Box::new(PlaceholderTag {
                     id,
@@ -983,7 +1021,7 @@ mod tests {
             });
             registry.register_tag(def, factory).unwrap();
         }
-        
+
         let stats = registry.stats();
         assert_eq!(stats.total_tags, 3);
         assert_eq!(stats.enabled_tags, 2);
@@ -994,10 +1032,10 @@ mod tests {
     fn test_global_registry() {
         let registry = TagRegistry::global();
         let read_guard = registry.read().unwrap();
-        
+
         // Should be initialized with all 24 tags
         assert_eq!(read_guard.count(), 24);
-        
+
         // Test that all expected tags are registered
         for tag_id in TagId::all().iter() {
             assert!(read_guard.is_registered(*tag_id));
@@ -1008,24 +1046,31 @@ mod tests {
     #[test]
     fn test_all_tag_definitions_completeness() {
         let definitions = get_all_tag_definitions();
-        
+
         // Should have exactly 24 definitions
         assert_eq!(definitions.len(), 24);
-        
+
         // All tag IDs should be represented
         let mut found_ids = std::collections::HashSet::new();
         for def in definitions.iter() {
             found_ids.insert(def.id);
         }
-        
+
         for expected_id in TagId::all().iter() {
-            assert!(found_ids.contains(expected_id), "Missing definition for {:?}", expected_id);
+            assert!(
+                found_ids.contains(expected_id),
+                "Missing definition for {expected_id:?}"
+            );
         }
-        
+
         // All definitions should have non-empty names and descriptions
         for def in definitions.iter() {
             assert!(!def.name.is_empty(), "Empty name for {:?}", def.id);
-            assert!(!def.description.is_empty(), "Empty description for {:?}", def.id);
+            assert!(
+                !def.description.is_empty(),
+                "Empty description for {:?}",
+                def.id
+            );
             assert!(def.base_weight >= 0.0, "Negative weight for {:?}", def.id);
         }
     }
@@ -1038,16 +1083,16 @@ mod tests {
             description: "Test description",
             effect_type: TagEffectType::ImmediateReward,
         };
-        
+
         assert_eq!(tag.id(), TagId::Charm);
         assert_eq!(tag.name(), "Test Charm");
         assert_eq!(tag.description(), "Test description");
         assert_eq!(tag.effect_type(), TagEffectType::ImmediateReward);
-        
+
         // Placeholder should always allow application
         let game = Game::default();
         assert!(tag.can_apply(&game));
-        
+
         // Placeholder should successfully apply (no-op)
         let mut game = Game::default();
         assert!(tag.apply_effect(&mut game).is_ok());
@@ -1056,7 +1101,7 @@ mod tests {
     #[test]
     fn test_registry_error_handling() {
         let mut registry = TagRegistry::new();
-        
+
         // Test registration with empty name
         let invalid_def = TagDefinition::new(
             TagId::Charm,
@@ -1065,7 +1110,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         let factory: TagFactory = Box::new(|| {
             Box::new(PlaceholderTag {
                 id: TagId::Charm,
@@ -1074,11 +1119,11 @@ mod tests {
                 effect_type: TagEffectType::ImmediateReward,
             })
         });
-        
+
         let result = registry.register_tag(invalid_def, factory);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err().kind, TagErrorKind::InvalidConfiguration);
-        
+
         // Test registration with empty description
         let invalid_def2 = TagDefinition::new(
             TagId::Economy,
@@ -1087,7 +1132,7 @@ mod tests {
             TagEffectType::ImmediateReward,
             1.0,
         );
-        
+
         let factory2: TagFactory = Box::new(|| {
             Box::new(PlaceholderTag {
                 id: TagId::Economy,
@@ -1096,9 +1141,12 @@ mod tests {
                 effect_type: TagEffectType::ImmediateReward,
             })
         });
-        
+
         let result2 = registry.register_tag(invalid_def2, factory2);
         assert!(result2.is_err());
-        assert_eq!(result2.unwrap_err().kind, TagErrorKind::InvalidConfiguration);
+        assert_eq!(
+            result2.unwrap_err().kind,
+            TagErrorKind::InvalidConfiguration
+        );
     }
 }

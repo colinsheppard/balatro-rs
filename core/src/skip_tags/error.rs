@@ -119,7 +119,7 @@ impl TagError {
     pub fn tag_not_found(tag_id: TagId) -> Self {
         Self::with_context(
             TagErrorKind::TagNotFound,
-            format!("Tag with ID '{:?}' not found in registry", tag_id),
+            format!("Tag with ID '{tag_id:?}' not found in registry"),
             TagErrorContext::TagId(tag_id),
         )
     }
@@ -313,9 +313,7 @@ impl From<TagError> for DeveloperGameError {
             }
 
             // Map application errors
-            TagErrorKind::ApplicationFailed => {
-                DeveloperGameError::InvalidOperation(error.message)
-            }
+            TagErrorKind::ApplicationFailed => DeveloperGameError::InvalidOperation(error.message),
             TagErrorKind::InvalidGameState => DeveloperGameError::InvalidStage,
             TagErrorKind::InsufficientResources => DeveloperGameError::InvalidBalance,
             TagErrorKind::ConditionNotMet => DeveloperGameError::InvalidAction,
@@ -437,7 +435,10 @@ mod tests {
     #[test]
     fn test_error_context_creation() {
         let ctx = TagErrorContext::operation("test_operation");
-        assert_eq!(ctx, TagErrorContext::Operation("test_operation".to_string()));
+        assert_eq!(
+            ctx,
+            TagErrorContext::Operation("test_operation".to_string())
+        );
 
         let ctx = TagErrorContext::game_state("invalid_stage");
         assert_eq!(ctx, TagErrorContext::GameState("invalid_stage".to_string()));
@@ -465,15 +466,18 @@ mod tests {
         let test_cases = [
             (TagErrorKind::TagNotFound, "NoJokerMatch equivalent"),
             (TagErrorKind::InvalidGameState, "InvalidStage equivalent"),
-            (TagErrorKind::InsufficientResources, "InvalidBalance equivalent"),
+            (
+                TagErrorKind::InsufficientResources,
+                "InvalidBalance equivalent",
+            ),
             (TagErrorKind::InvalidInput, "InvalidInput equivalent"),
             (TagErrorKind::SystemError, "System error conversion"),
         ];
 
         for (kind, description) in test_cases.iter() {
-            let tag_error = TagError::new(*kind, format!("Test error: {}", description));
+            let tag_error = TagError::new(*kind, format!("Test error: {description}"));
             let game_error: DeveloperGameError = tag_error.into();
-            
+
             // Verify conversion doesn't panic and produces valid error
             assert!(!game_error.to_string().is_empty());
         }
@@ -482,7 +486,7 @@ mod tests {
     #[test]
     fn test_error_display() {
         let error = TagError::new(TagErrorKind::TagNotFound, "Test message");
-        let display = format!("{}", error);
+        let display = format!("{error}");
         assert!(display.contains("Tag not found"));
         assert!(display.contains("Test message"));
     }
@@ -494,7 +498,7 @@ mod tests {
             "Debug test",
             TagErrorContext::TagId(TagId::Economy),
         );
-        let debug = format!("{:?}", error);
+        let debug = format!("{error:?}");
         assert!(debug.contains("ApplicationFailed"));
         assert!(debug.contains("Debug test"));
         assert!(debug.contains("Economy"));
@@ -526,8 +530,8 @@ mod tests {
         ];
 
         for kind in kinds.iter() {
-            let display = format!("{}", kind);
-            assert!(!display.is_empty(), "Error kind {:?} has empty display", kind);
+            let display = format!("{kind}");
+            assert!(!display.is_empty(), "Error kind {kind:?} has empty display");
         }
     }
 
@@ -535,7 +539,10 @@ mod tests {
     fn test_tag_result_alias() {
         // Test that TagResult alias works correctly
         let success: TagResult<i32> = Ok(42);
-        assert_eq!(success.unwrap(), 42);
+        match success {
+            Ok(val) => assert_eq!(val, 42),
+            Err(_) => panic!("Expected Ok, got Err"),
+        }
 
         let failure: TagResult<i32> = Err(TagError::new(TagErrorKind::SystemError, "test"));
         assert!(failure.is_err());

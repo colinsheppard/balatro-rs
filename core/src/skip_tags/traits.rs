@@ -39,18 +39,18 @@ use std::fmt;
 ///     fn id(&self) -> TagId { TagId::Charm }
 ///     fn name(&self) -> &'static str { "Charm" }
 ///     fn effect_type(&self) -> TagEffectType { TagEffectType::ImmediateReward }
-///     
+///
 ///     fn can_apply(&self, game: &Game) -> bool {
 ///         // Always applicable - charm gives immediate reward
 ///         true
 ///     }
-///     
+///
 ///     fn apply_effect(&self, game: &mut Game) -> Result<(), TagError> {
 ///         // Award $4 immediately
 ///         game.money += 4.0;
 ///         Ok(())
 ///     }
-///     
+///
 ///     fn description(&self) -> &'static str {
 ///         "Gives $4 when selected"
 ///     }
@@ -180,7 +180,7 @@ pub enum TagId {
     Foil,
     /// Next shop has Holographic Jokers
     Holographic,
-    /// Next shop has Polychrome Jokers  
+    /// Next shop has Polychrome Jokers
     Polychrome,
     /// Creates a Negative Joker
     Negative,
@@ -249,11 +249,9 @@ impl TagId {
             | TagId::Uncommon
             | TagId::TopUp => TagCategory::Reward,
 
-            TagId::Economy
-            | TagId::Investment
-            | TagId::Garbage
-            | TagId::Speed
-            | TagId::Handy => TagCategory::Economic,
+            TagId::Economy | TagId::Investment | TagId::Garbage | TagId::Speed | TagId::Handy => {
+                TagCategory::Economic
+            }
 
             TagId::Voucher
             | TagId::Coupon
@@ -296,7 +294,7 @@ impl fmt::Display for TagId {
             TagId::Orbital => "Orbital",
             TagId::Juggle => "Juggle",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -351,7 +349,7 @@ impl fmt::Display for TagEffectType {
             TagEffectType::GameStateModifier => "Game State Modifier",
             TagEffectType::SpecialMechanic => "Special Mechanic",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -376,11 +374,11 @@ impl fmt::Display for TagCategory {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let name = match self {
             TagCategory::Reward => "Reward",
-            TagCategory::Economic => "Economic", 
+            TagCategory::Economic => "Economic",
             TagCategory::ShopEnhancement => "Shop Enhancement",
             TagCategory::Utility => "Utility",
         };
-        write!(f, "{}", name)
+        write!(f, "{name}")
     }
 }
 
@@ -399,11 +397,11 @@ mod tests {
         // Verify all tag IDs are unique
         let tags = TagId::all();
         let mut unique_tags = std::collections::HashSet::new();
-        
+
         for tag in tags.iter() {
-            assert!(unique_tags.insert(*tag), "Duplicate tag found: {:?}", tag);
+            assert!(unique_tags.insert(*tag), "Duplicate tag found: {tag:?}");
         }
-        
+
         assert_eq!(unique_tags.len(), 24);
     }
 
@@ -411,16 +409,26 @@ mod tests {
     fn test_tag_categories() {
         // Verify reward tags (8)
         let reward_tags = [
-            TagId::Charm, TagId::Ethereal, TagId::Buffoon, TagId::Standard,
-            TagId::Meteor, TagId::Rare, TagId::Uncommon, TagId::TopUp,
+            TagId::Charm,
+            TagId::Ethereal,
+            TagId::Buffoon,
+            TagId::Standard,
+            TagId::Meteor,
+            TagId::Rare,
+            TagId::Uncommon,
+            TagId::TopUp,
         ];
         for tag in reward_tags.iter() {
             assert_eq!(tag.category(), TagCategory::Reward);
         }
 
-        // Verify economic tags (5)  
+        // Verify economic tags (5)
         let economic_tags = [
-            TagId::Economy, TagId::Investment, TagId::Garbage, TagId::Speed, TagId::Handy,
+            TagId::Economy,
+            TagId::Investment,
+            TagId::Garbage,
+            TagId::Speed,
+            TagId::Handy,
         ];
         for tag in economic_tags.iter() {
             assert_eq!(tag.category(), TagCategory::Economic);
@@ -428,8 +436,13 @@ mod tests {
 
         // Verify shop enhancement tags (7)
         let shop_tags = [
-            TagId::Voucher, TagId::Coupon, TagId::D6, TagId::Foil,
-            TagId::Holographic, TagId::Polychrome, TagId::Negative,
+            TagId::Voucher,
+            TagId::Coupon,
+            TagId::D6,
+            TagId::Foil,
+            TagId::Holographic,
+            TagId::Polychrome,
+            TagId::Negative,
         ];
         for tag in shop_tags.iter() {
             assert_eq!(tag.category(), TagCategory::ShopEnhancement);
@@ -453,10 +466,22 @@ mod tests {
 
     #[test]
     fn test_tag_effect_type_display() {
-        assert_eq!(TagEffectType::ImmediateReward.to_string(), "Immediate Reward");
-        assert_eq!(TagEffectType::NextShopModifier.to_string(), "Next Shop Modifier");
-        assert_eq!(TagEffectType::GameStateModifier.to_string(), "Game State Modifier");
-        assert_eq!(TagEffectType::SpecialMechanic.to_string(), "Special Mechanic");
+        assert_eq!(
+            TagEffectType::ImmediateReward.to_string(),
+            "Immediate Reward"
+        );
+        assert_eq!(
+            TagEffectType::NextShopModifier.to_string(),
+            "Next Shop Modifier"
+        );
+        assert_eq!(
+            TagEffectType::GameStateModifier.to_string(),
+            "Game State Modifier"
+        );
+        assert_eq!(
+            TagEffectType::SpecialMechanic.to_string(),
+            "Special Mechanic"
+        );
     }
 
     #[test]
@@ -471,11 +496,11 @@ mod tests {
     fn test_category_counts() {
         let tags = TagId::all();
         let mut category_counts = std::collections::HashMap::new();
-        
+
         for tag in tags.iter() {
             *category_counts.entry(tag.category()).or_insert(0) += 1;
         }
-        
+
         // Verify expected counts per architecture spec
         assert_eq!(category_counts[&TagCategory::Reward], 8);
         assert_eq!(category_counts[&TagCategory::Economic], 5);
@@ -497,18 +522,18 @@ mod tests {
         // Verify that TagId implements Hash consistently
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
-        
+
         let tag1 = TagId::Charm;
         let tag2 = TagId::Charm;
-        
+
         let mut hasher1 = DefaultHasher::new();
         tag1.hash(&mut hasher1);
         let hash1 = hasher1.finish();
-        
+
         let mut hasher2 = DefaultHasher::new();
         tag2.hash(&mut hasher2);
         let hash2 = hasher2.finish();
-        
+
         assert_eq!(hash1, hash2);
     }
 }

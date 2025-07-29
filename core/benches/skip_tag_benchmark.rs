@@ -8,8 +8,8 @@
 //!
 //! Run with: cargo bench --bench skip_tag_benchmark
 
-use balatro_rs::skip_tags::{TagId, TagRegistry, TagCategory, TagEffectType};
-use criterion::{criterion_group, criterion_main, Criterion, BenchmarkId};
+use balatro_rs::skip_tags::{TagCategory, TagEffectType, TagId, TagRegistry};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::hint::black_box;
 use std::time::Duration;
 
@@ -33,10 +33,10 @@ fn benchmark_tag_lookup(c: &mut Criterion) {
     // Benchmark lookup for all tags to find worst-case performance
     let mut group = c.benchmark_group("tag_lookup_all_tags");
     group.measurement_time(Duration::from_secs(10));
-    
+
     for tag_id in TagId::all().iter() {
         group.bench_with_input(
-            BenchmarkId::new("lookup", format!("{:?}", tag_id)),
+            BenchmarkId::new("lookup", format!("{tag_id:?}")),
             tag_id,
             |b, &tag_id| {
                 b.iter(|| {
@@ -68,7 +68,7 @@ fn benchmark_tag_creation(c: &mut Criterion) {
     // Benchmark creation for different tag types
     let mut group = c.benchmark_group("tag_creation_by_type");
     group.measurement_time(Duration::from_secs(10));
-    
+
     // Sample tags from each category
     let sample_tags = [
         (TagId::Charm, "Reward"),
@@ -76,7 +76,7 @@ fn benchmark_tag_creation(c: &mut Criterion) {
         (TagId::Coupon, "ShopEnhancement"),
         (TagId::Double, "Utility"),
     ];
-    
+
     for (tag_id, category) in sample_tags.iter() {
         group.bench_with_input(
             BenchmarkId::new("create", category),
@@ -226,6 +226,7 @@ fn benchmark_memory_efficiency(c: &mut Criterion) {
     use std::alloc::{GlobalAlloc, Layout, System};
     use std::sync::atomic::{AtomicUsize, Ordering};
 
+    #[allow(dead_code)]
     struct CountingAllocator;
 
     static ALLOCATION_COUNT: AtomicUsize = AtomicUsize::new(0);
@@ -247,18 +248,18 @@ fn benchmark_memory_efficiency(c: &mut Criterion) {
 
         b.iter(|| {
             let before = ALLOCATION_COUNT.load(Ordering::Relaxed);
-            
+
             // Perform operations that should minimize allocations
             let definition = read_guard.get_definition(black_box(TagId::Meteor)).unwrap();
             let tag = read_guard.create_tag(black_box(TagId::Meteor)).unwrap();
-            
+
             black_box((definition, tag));
-            
+
             let after = ALLOCATION_COUNT.load(Ordering::Relaxed);
             let allocations = after - before;
-            
+
             // Assert minimal allocations (tag creation may allocate the Box)
-            assert!(allocations <= 1, "Too many allocations: {}", allocations);
+            assert!(allocations <= 1, "Too many allocations: {allocations}");
         });
     });
 }
