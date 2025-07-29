@@ -15,12 +15,12 @@
 //! - Vouchers may have prerequisites (other vouchers that must be owned first)
 //! - Effects are applied passively to game state
 
+#[cfg(feature = "python")]
+use pyo3;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use strum::{EnumIter, IntoEnumIterator};
 use thiserror::Error;
-#[cfg(feature = "python")]
-use pyo3;
 
 // Module for individual voucher implementations
 pub mod implementations;
@@ -243,7 +243,8 @@ impl VoucherEffect {
             }
             VoucherEffect::AnteWinRequirementIncrease(amount) => {
                 if *amount > 8 {
-                    return Err(VoucherError::ExcessiveHandSize { amount: *amount }); // Reuse error type
+                    return Err(VoucherError::ExcessiveHandSize { amount: *amount });
+                    // Reuse error type
                 }
             }
             VoucherEffect::DiscardDecrease(amount) => {
@@ -253,12 +254,14 @@ impl VoucherEffect {
             }
             VoucherEffect::TarotFrequencyMultiplier(multiplier) => {
                 if !multiplier.is_finite() || *multiplier <= 0.0 || *multiplier > 10.0 {
-                    return Err(VoucherError::InvalidScaling { multiplier: *multiplier });
+                    return Err(VoucherError::InvalidScaling {
+                        multiplier: *multiplier,
+                    });
                 }
             }
-            VoucherEffect::ShopPlayingCardsEnabled => {},
-            VoucherEffect::ShopEnhancementsEnabled => {},
-            VoucherEffect::NoEffect => {},
+            VoucherEffect::ShopPlayingCardsEnabled => {}
+            VoucherEffect::ShopEnhancementsEnabled => {}
+            VoucherEffect::NoEffect => {}
         }
         Ok(())
     }
@@ -614,7 +617,6 @@ pub enum VoucherId {
     /// Observatory voucher - Planet cards in shop give x1.5 mult
     Observatory,
 
-
     // Gameplay vouchers from Issue #18
     /// Grabber voucher - +1 hand size permanently
     Grabber,
@@ -712,7 +714,6 @@ impl VoucherId {
             // Upgraded versions require base versions
             VoucherId::OverstockPlus => vec![VoucherId::Overstock],
 
-
             // Gameplay vouchers from Issue #18 - most are base vouchers
             VoucherId::Grabber => vec![],
             VoucherId::NachoTong => vec![],
@@ -756,13 +757,13 @@ impl VoucherId {
             VoucherId::NachoTong => 10,
             VoucherId::Wasteful => 10,
             VoucherId::SeedMoney => 10,
-            VoucherId::MoneyTree => 20, // Upgraded version
+            VoucherId::MoneyTree => 20,  // Upgraded version
             VoucherId::Hieroglyph => 20, // Powerful negative effect
             VoucherId::Petroglyph => 30, // Even more powerful negative effect
             VoucherId::Antimatter => 15, // Very valuable joker slot
             VoucherId::MagicTrick => 15, // Shop enhancement
-            VoucherId::Illusion => 15, // Shop enhancement
-            VoucherId::Blank => 5, // Does nothing
+            VoucherId::Illusion => 15,   // Shop enhancement
+            VoucherId::Blank => 5,       // Does nothing
             VoucherId::PaintBrush => 10, // Mixed effect
             VoucherId::TarotMerchant => 10,
             VoucherId::TarotTycoon => 20, // Upgraded version
