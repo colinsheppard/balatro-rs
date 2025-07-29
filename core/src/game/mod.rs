@@ -18,6 +18,7 @@ use crate::rank::HandRank;
 use crate::scaling_joker::ScalingEvent;
 use crate::shop::packs::{OpenPackState, Pack};
 use crate::shop::Shop;
+use crate::skip_tags::SkipTagId;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::target_context::TargetContext;
@@ -245,6 +246,14 @@ pub struct Game {
     /// Memory monitor for tracking and controlling memory usage
     #[cfg_attr(feature = "serde", serde(skip))]
     pub memory_monitor: MemoryMonitor,
+
+    /// Skip tags system state
+    /// Available skip tags for selection
+    pub available_skip_tags: Vec<crate::skip_tags::SkipTagInstance>,
+    /// Active skip tags (for stacking effects like Juggle)
+    pub active_skip_tags: Vec<crate::skip_tags::SkipTagInstance>,
+    /// Pending skip tag selection (after skipping a blind)
+    pub pending_tag_selection: bool,
 }
 
 #[cfg(feature = "serde")]
@@ -355,6 +364,11 @@ impl Game {
 
             // Initialize memory monitor with default configuration
             memory_monitor: MemoryMonitor::default(),
+
+            // Initialize skip tags system
+            available_skip_tags: Vec::new(),
+            active_skip_tags: Vec::new(),
+            pending_tag_selection: false,
 
             config,
         }
@@ -1783,6 +1797,8 @@ impl Game {
                 // TODO: Implement multi-select deactivation
                 Err(GameError::InvalidAction)
             }
+            Action::SkipBlind(blind) => self.handle_skip_blind(blind),
+            Action::SelectSkipTag(tag_id) => self.handle_select_skip_tag(tag_id),
         }
     }
 
@@ -1790,6 +1806,122 @@ impl Game {
         let space = self.gen_action_space();
         let action = space.to_action(index, self)?;
         self.handle_action(action)
+    }
+
+    /// Handle skipping a blind and potentially getting skip tags
+    fn handle_skip_blind(&mut self, _blind: Blind) -> Result<(), GameError> {
+        use crate::skip_tags::tag_registry::global_registry;
+        use crate::skip_tags::SkipTagInstance;
+
+        // Only allow skipping during blind selection
+        if !matches!(self.stage, Stage::PreBlind()) {
+            return Err(GameError::InvalidAction);
+        }
+
+        // Generate potential skip tags based on rarity weights
+        let registry = global_registry();
+        let weighted_tags = registry.get_weighted_tags();
+
+        if !weighted_tags.is_empty() {
+            // For utility tags, generate one tag with some probability
+            let tag_chance = 0.5; // 50% chance to get a tag when skipping
+
+            if self.rng.gen_range(0.0..1.0) < tag_chance {
+                // Select a weighted random tag
+                let total_weight: f64 = weighted_tags.iter().map(|(_, weight)| weight).sum();
+                let mut random_value = self.rng.gen_range(0.0..total_weight);
+
+                for (tag_id, weight) in weighted_tags {
+                    random_value -= weight;
+                    if random_value <= 0.0 {
+                        self.available_skip_tags.push(SkipTagInstance::new(tag_id));
+                        self.pending_tag_selection = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Skip to the next stage
+        self.stage = Stage::PostBlind();
+        Ok(())
+    }
+
+    /// Handle selecting and activating a skip tag
+    fn handle_select_skip_tag(&mut self, tag_id: SkipTagId) -> Result<(), GameError> {
+        use crate::skip_tags::tag_registry::global_registry;
+        use crate::skip_tags::{SkipTagContext, SkipTagInstance};
+
+        if !self.pending_tag_selection {
+            return Err(GameError::InvalidAction);
+        }
+
+        // Find the tag in available tags
+        let tag_index = self
+            .available_skip_tags
+            .iter()
+            .position(|tag| tag.id == tag_id)
+            .ok_or(GameError::InvalidAction)?;
+
+        let selected_tag = self.available_skip_tags.remove(tag_index);
+
+        // Get the tag implementation
+        let registry = global_registry();
+        let tag_impl = registry.get_tag(tag_id).ok_or(GameError::InvalidAction)?;
+
+        // Create context for tag activation
+        let available_tag_ids: Vec<_> = self.available_skip_tags.iter().map(|t| t.id).collect();
+
+        let context = SkipTagContext {
+            game: std::mem::take(self),
+            skipped_blind: self.blind,
+            available_tags: available_tag_ids,
+        };
+
+        // Activate the tag
+        let result = tag_impl.activate(context);
+
+        if result.success {
+            // Update game state with result
+            *self = result.game;
+
+            // Handle additional tags (from Double tag)
+            for additional_tag_id in result.additional_tags {
+                let tag_instance = SkipTagInstance::new(additional_tag_id);
+
+                // Check if this tag can be stacked with existing active tags
+                if let Some(existing) = self
+                    .active_skip_tags
+                    .iter_mut()
+                    .find(|t| t.id == additional_tag_id)
+                {
+                    if existing.add_stack(registry) {
+                        continue; // Successfully stacked
+                    }
+                }
+
+                // Add as new active tag
+                self.active_skip_tags.push(tag_instance);
+            }
+
+            // Handle tag stacking for the original tag
+            if tag_impl.stackable() {
+                if let Some(existing) = self.active_skip_tags.iter_mut().find(|t| t.id == tag_id) {
+                    existing.add_stack(registry);
+                } else {
+                    self.active_skip_tags.push(selected_tag);
+                }
+            } else {
+                self.active_skip_tags.push(selected_tag);
+            }
+        }
+
+        // Clear pending selection if no more tags available
+        if self.available_skip_tags.is_empty() {
+            self.pending_tag_selection = false;
+        }
+
+        Ok(())
     }
 
     /// Remove a joker from the specified slot and clean up its state.
@@ -2152,6 +2284,10 @@ impl Game {
             rng: crate::rng::GameRng::secure(),
             // Initialize memory monitor (not serialized)
             memory_monitor: MemoryMonitor::default(),
+            // Initialize skip tags system (not serialized)
+            available_skip_tags: Vec::new(),
+            active_skip_tags: Vec::new(),
+            pending_tag_selection: false,
         };
 
         // Restore joker states to the state manager
