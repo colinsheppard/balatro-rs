@@ -1290,6 +1290,12 @@ impl Justice {
     }
 }
 
+impl Default for Justice {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for Justice {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Justice")
@@ -1398,6 +1404,12 @@ impl TheHangedMan {
     }
 }
 
+impl Default for TheHangedMan {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for TheHangedMan {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The Hanged Man")
@@ -1454,7 +1466,7 @@ impl Consumable for TheHangedMan {
     fn can_use(&self, game_state: &Game, target: &Target) -> bool {
         if let Target::Cards(card_target) = target {
             let count = card_target.indices.len();
-            count >= 1 && count <= 2 && card_target.validate(game_state).is_ok()
+            (1..=2).contains(&count) && card_target.validate(game_state).is_ok()
         } else {
             false
         }
@@ -1499,6 +1511,12 @@ pub struct Death;
 impl Death {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for Death {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1604,6 +1622,12 @@ impl Temperance {
     }
 }
 
+impl Default for Temperance {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for Temperance {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Temperance")
@@ -1692,6 +1716,12 @@ pub struct TheDevil;
 impl TheDevil {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for TheDevil {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -1802,6 +1832,12 @@ impl TheTower {
     }
 }
 
+impl Default for TheTower {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for TheTower {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The Tower")
@@ -1909,6 +1945,12 @@ impl TheStar {
     }
 }
 
+impl Default for TheStar {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for TheStar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The Star")
@@ -1965,7 +2007,7 @@ impl Consumable for TheStar {
     fn can_use(&self, game_state: &Game, target: &Target) -> bool {
         if let Target::Cards(card_target) = target {
             let count = card_target.indices.len();
-            count >= 1 && count <= 3 && card_target.validate(game_state).is_ok()
+            (1..=3).contains(&count) && card_target.validate(game_state).is_ok()
         } else {
             false
         }
@@ -2010,6 +2052,12 @@ pub struct TheMoon;
 impl TheMoon {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for TheMoon {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -2069,7 +2117,7 @@ impl Consumable for TheMoon {
     fn can_use(&self, game_state: &Game, target: &Target) -> bool {
         if let Target::Cards(card_target) = target {
             let count = card_target.indices.len();
-            count >= 1 && count <= 3 && card_target.validate(game_state).is_ok()
+            (1..=3).contains(&count) && card_target.validate(game_state).is_ok()
         } else {
             false
         }
@@ -2114,6 +2162,12 @@ pub struct TheSun;
 impl TheSun {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for TheSun {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -2173,7 +2227,7 @@ impl Consumable for TheSun {
     fn can_use(&self, game_state: &Game, target: &Target) -> bool {
         if let Target::Cards(card_target) = target {
             let count = card_target.indices.len();
-            count >= 1 && count <= 3 && card_target.validate(game_state).is_ok()
+            (1..=3).contains(&count) && card_target.validate(game_state).is_ok()
         } else {
             false
         }
@@ -2218,6 +2272,12 @@ pub struct Judgement;
 impl Judgement {
     pub fn new() -> Self {
         Self
+    }
+}
+
+impl Default for Judgement {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -2320,6 +2380,12 @@ impl TheWorld {
     }
 }
 
+impl Default for TheWorld {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl fmt::Display for TheWorld {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "The World")
@@ -2376,7 +2442,7 @@ impl Consumable for TheWorld {
     fn can_use(&self, game_state: &Game, target: &Target) -> bool {
         if let Target::Cards(card_target) = target {
             let count = card_target.indices.len();
-            count >= 1 && count <= 3 && card_target.validate(game_state).is_ok()
+            (1..=3).contains(&count) && card_target.validate(game_state).is_ok()
         } else {
             false
         }
