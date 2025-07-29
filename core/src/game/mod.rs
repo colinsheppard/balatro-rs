@@ -18,6 +18,7 @@ use crate::rank::HandRank;
 use crate::scaling_joker::ScalingEvent;
 use crate::shop::packs::{OpenPackState, Pack};
 use crate::shop::Shop;
+use crate::skip_tags::{SkipTagRegistry, TagId};
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::target_context::TargetContext;
@@ -226,6 +227,13 @@ pub struct Game {
     /// Version of the game state for serialization compatibility
     pub state_version: StateVersion,
 
+    /// Skip tag system
+    #[cfg_attr(feature = "serde", serde(skip, default = "SkipTagRegistry::new"))]
+    pub skip_tag_registry: SkipTagRegistry,
+    
+    /// Currently selected tags awaiting application
+    pub selected_tags: Vec<TagId>,
+
     /// Debug logging enabled flag
     #[cfg_attr(feature = "serde", serde(skip))]
     pub debug_logging_enabled: bool,
@@ -355,6 +363,10 @@ impl Game {
 
             // Initialize memory monitor with default configuration
             memory_monitor: MemoryMonitor::default(),
+
+            // Initialize skip tag system
+            skip_tag_registry: SkipTagRegistry::new(),
+            selected_tags: Vec::new(),
 
             config,
         }
@@ -1561,6 +1573,58 @@ impl Game {
         Ok(())
     }
 
+    fn skip_blind(&mut self, blind: Blind) -> Result<(), GameError> {
+        // Can only skip blind if stage is pre blind
+        if self.stage != Stage::PreBlind() {
+            return Err(GameError::InvalidStage);
+        }
+        
+        // Provided blind must be the expected next blind
+        if let Some(current) = self.blind {
+            if blind != current.next() {
+                return Err(GameError::InvalidBlind);
+            }
+        } else {
+            // If game just started, blind will be None, only Small can be skipped
+            if blind != Blind::Small {
+                return Err(GameError::InvalidBlind);
+            }
+        }
+        
+        // Generate reward tags for skipping
+        let available_tags = self.skip_tag_registry.available_tags();
+        if !available_tags.is_empty() {
+            // For now, select a random tag
+            let selected_tag = *self.rng.choose(&available_tags).unwrap();
+            self.selected_tags.push(selected_tag);
+        }
+        
+        // Update blind state to show we've processed this blind
+        self.blind = Some(blind);
+        
+        // If this was the Boss blind, advance to next round
+        if blind == Blind::Boss {
+            self.next_round()?;
+        }
+        // Otherwise stay in PreBlind stage for next blind
+        
+        Ok(())
+    }
+
+    fn select_tag(&mut self, tag_id: TagId) -> Result<(), GameError> {
+        // Check if the tag is in our selected tags
+        if let Some(pos) = self.selected_tags.iter().position(|&t| t == tag_id) {
+            // Remove the tag from selected tags
+            self.selected_tags.remove(pos);
+            
+            // For now, just return Ok since tag effects are not fully implemented
+            // TODO: Implement actual tag effects
+            Ok(())
+        } else {
+            Err(GameError::InvalidAction)
+        }
+    }
+
     // Returns true if should clear blind after, false if not.
     fn handle_score(&mut self, score: f64) -> Result<bool, GameError> {
         // can only handle score if stage is blind
@@ -1728,6 +1792,13 @@ impl Game {
             Action::DeactivateMultiSelect() => {
                 // TODO: Implement multi-select deactivation
                 Err(GameError::InvalidAction)
+            }
+            Action::SkipBlind(blind) => match self.stage {
+                Stage::PreBlind() => self.skip_blind(blind),
+                _ => Err(GameError::InvalidStage),
+            },
+            Action::SelectTag(tag_id) => {
+                self.select_tag(tag_id)
             }
         }
     }
@@ -2098,6 +2169,9 @@ impl Game {
             rng: crate::rng::GameRng::secure(),
             // Initialize memory monitor (not serialized)
             memory_monitor: MemoryMonitor::default(),
+            // Initialize skip tag system (not serialized)
+            skip_tag_registry: SkipTagRegistry::new(),
+            selected_tags: Vec::new(),
         };
 
         // Restore joker states to the state manager
