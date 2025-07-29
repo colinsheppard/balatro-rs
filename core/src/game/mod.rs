@@ -1293,20 +1293,20 @@ impl Game {
     }
 
     /// Purchase a voucher by ID
-    /// 
+    ///
     /// Validates game state, checks prerequisites, verifies cost, and adds voucher to collection.
     /// Vouchers provide permanent upgrades that persist for the entire run.
-    /// 
+    ///
     /// # Arguments
     /// * `voucher_id` - The voucher to purchase
-    /// 
+    ///
     /// # Returns
-    /// * `Ok(())` - Voucher purchased successfully  
+    /// * `Ok(())` - Voucher purchased successfully
     /// * `InvalidStage` - Not in shop stage
     /// * `InvalidBalance` - Insufficient funds
     /// * `InvalidOperation` - Voucher already owned or prerequisites not met
     pub(crate) fn buy_voucher(&mut self, voucher_id: VoucherId) -> Result<(), GameError> {
-        
+
         // Validate stage
         if self.stage != Stage::Shop() {
             return Err(GameError::InvalidStage);
@@ -1328,13 +1328,13 @@ impl Game {
 
         // Get voucher cost
         let cost = voucher_id.base_cost();
-        
+
         // Check if player has enough money
         if (self.money as usize) < cost {
             return Err(GameError::InvalidBalance);
         }
 
-        // Deduct money 
+        // Deduct money
         self.money -= cost as f64;
 
         // Add voucher to collection

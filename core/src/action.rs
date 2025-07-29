@@ -97,7 +97,7 @@ impl fmt::Display for Action {
             }
             Self::BuyJoker { joker_id, slot } => {
                 write!(f, "BuyJoker: {joker_id:?} at slot {slot}")
-            
+
             }
             Self::BuyPack { pack_type } => {
                 write!(f, "BuyPack: {pack_type}")

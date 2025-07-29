@@ -497,7 +497,7 @@ pub enum VoucherId {
     // Existing vouchers
     /// Grab Bag voucher - +1 pack option for all booster packs
     GrabBag,
-    
+
     // Shop vouchers from Issue #17
     /// Overstock voucher - +1 card slot in shop
     Overstock,
@@ -507,7 +507,7 @@ pub enum VoucherId {
     ClearanceSale,
     /// Hone voucher - Foil/Holo/Polychrome cards appear 2X more
     Hone,
-    /// Reroll Surplus voucher - Rerolls cost $1 less  
+    /// Reroll Surplus voucher - Rerolls cost $1 less
     RerollSurplus,
     /// Crystal Ball voucher - +1 consumable slot
     CrystalBall,
@@ -521,7 +521,7 @@ pub enum VoucherId {
     OmenGlobe,
     /// Observatory voucher - Planet cards in shop give x1.5 mult
     Observatory,
-    
+
     /// Placeholder for future voucher implementations
     VoucherPlaceholder,
 }
@@ -572,10 +572,10 @@ impl VoucherId {
             VoucherId::RerollGlut => vec![],
             VoucherId::OmenGlobe => vec![],
             VoucherId::Observatory => vec![],
-            
+
             // Upgraded versions require base versions
             VoucherId::OverstockPlus => vec![VoucherId::Overstock],
-            
+
             VoucherId::VoucherPlaceholder => vec![],
         }
     }
@@ -593,7 +593,7 @@ impl VoucherId {
             VoucherId::Telescope => 10,
             VoucherId::Liquidation => 10,
             VoucherId::RerollGlut => 20, // More powerful, costs more
-            VoucherId::OmenGlobe => 10, 
+            VoucherId::OmenGlobe => 10,
             VoucherId::Observatory => 10,
             VoucherId::VoucherPlaceholder => 10,
         }
