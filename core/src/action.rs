@@ -1,6 +1,7 @@
 use crate::card::Card;
 use crate::joker::JokerId;
 use crate::shop::packs::PackType;
+use crate::skip_tags::TagId;
 use crate::stage::Blind;
 #[cfg(feature = "python")]
 use pyo3::pyclass;
@@ -71,7 +72,9 @@ pub enum Action {
     ActivateMultiSelect(), // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
-                           // SkipBlind(Blind),
+    // Skip Tag System Actions
+    SkipBlind(Blind),           // Skip the current blind
+    SelectSkipTag(TagId),       // Select a tag from available options
 }
 
 impl fmt::Display for Action {
@@ -178,6 +181,14 @@ impl fmt::Display for Action {
             }
             Self::DeactivateMultiSelect() => {
                 write!(f, "DeactivateMultiSelect")
+            }
+
+            // Skip Tag System Actions
+            Self::SkipBlind(blind) => {
+                write!(f, "SkipBlind: {blind}")
+            }
+            Self::SelectSkipTag(tag_id) => {
+                write!(f, "SelectSkipTag: {tag_id}")
             }
         }
     }

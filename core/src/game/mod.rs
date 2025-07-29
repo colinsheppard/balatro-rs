@@ -1729,6 +1729,16 @@ impl Game {
                 // TODO: Implement multi-select deactivation
                 Err(GameError::InvalidAction)
             }
+            Action::SkipBlind(_blind) => {
+                // TODO: Implement skip blind functionality
+                // This will be implemented in subsequent skip tag tasks
+                Err(GameError::InvalidAction)
+            }
+            Action::SelectSkipTag(_tag_id) => {
+                // TODO: Implement skip tag selection functionality
+                // This will be implemented in subsequent skip tag tasks
+                Err(GameError::InvalidAction)
+            }
         }
     }
 
