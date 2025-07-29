@@ -83,7 +83,7 @@ impl RerollMechanics for StandardRerollMechanics {
 
         for &voucher in vouchers {
             match voucher {
-                VoucherId::Reroll => {
+                VoucherId::RerollSurplus => {
                     // Reroll voucher provides free rerolls or reduces cost
                     final_cost = 0.0; // Makes rerolls free
                 }
@@ -200,11 +200,11 @@ impl WeightedGenerator {
                     weights.pack_weight *= 1.2;
                     weights.playing_card_weight *= 1.2;
                 }
-                VoucherId::ClearancePackage => {
+                VoucherId::ClearanceSale => {
                     // Increases pack weight by 50%
                     weights.pack_weight *= 1.5;
                 }
-                VoucherId::Coupon => {
+                VoucherId::Hone => {
                     // Increases joker weight by 30%
                     weights.joker_weight *= 1.3;
                 }
@@ -302,13 +302,10 @@ impl WeightedGenerator {
     fn generate_random_voucher(&self) -> Option<ShopItem> {
         let vouchers = [
             VoucherId::Overstock,
-            VoucherId::ClearancePackage,
+            VoucherId::ClearanceSale,
             VoucherId::Liquidation,
-            VoucherId::Coupon,
-            VoucherId::Poll,
             VoucherId::Hone,
-            VoucherId::Glow,
-            VoucherId::Reroll,
+            VoucherId::RerollSurplus,
         ];
 
         let random_voucher = *self.rng.choose(&vouchers).unwrap();
@@ -367,7 +364,7 @@ impl WeightedGenerator {
         for &voucher in vouchers {
             match voucher {
                 VoucherId::Liquidation => final_cost *= 0.8, // 20% discount on all items
-                VoucherId::Coupon => final_cost *= 0.9, // 10% discount (applies to jokers specifically)
+                VoucherId::ClearanceSale => final_cost *= 0.9, // 10% discount (applies to jokers specifically)
                 _ => {}                                 // Other vouchers don't affect cost directly
             }
         }
@@ -698,7 +695,7 @@ mod tests {
     fn test_voucher_effect_clearance_package() {
         let generator = WeightedGenerator::new();
         let base_weights = ItemWeights::default();
-        let vouchers = vec![VoucherId::ClearancePackage];
+        let vouchers = vec![VoucherId::ClearanceSale];
 
         let modified_weights = generator.apply_voucher_effects(base_weights.clone(), &vouchers);
 
@@ -715,7 +712,7 @@ mod tests {
     fn test_voucher_effect_coupon() {
         let generator = WeightedGenerator::new();
         let base_weights = ItemWeights::default();
-        let vouchers = vec![VoucherId::Coupon];
+        let vouchers = vec![VoucherId::ClearanceSale];
 
         let modified_weights = generator.apply_voucher_effects(base_weights.clone(), &vouchers);
 
@@ -735,7 +732,7 @@ mod tests {
     fn test_multiple_voucher_effects() {
         let generator = WeightedGenerator::new();
         let base_weights = ItemWeights::default();
-        let vouchers = vec![VoucherId::Overstock, VoucherId::Coupon];
+        let vouchers = vec![VoucherId::Overstock, VoucherId::ClearanceSale];
 
         let modified_weights = generator.apply_voucher_effects(base_weights.clone(), &vouchers);
 
@@ -1127,7 +1124,7 @@ mod tests {
     #[test]
     fn test_standard_reroll_mechanics_apply_voucher_effects_reroll() {
         let mechanics = StandardRerollMechanics::new();
-        let vouchers = vec![VoucherId::Reroll];
+        let vouchers = vec![VoucherId::RerollSurplus];
 
         // Reroll voucher should make rerolls free
         assert_eq!(mechanics.apply_voucher_effects(10, &vouchers), 0);
@@ -1147,7 +1144,7 @@ mod tests {
     #[test]
     fn test_standard_reroll_mechanics_apply_voucher_effects_multiple() {
         let mechanics = StandardRerollMechanics::new();
-        let vouchers = vec![VoucherId::Liquidation, VoucherId::Reroll];
+        let vouchers = vec![VoucherId::Liquidation, VoucherId::RerollSurplus];
 
         // Reroll should override liquidation, making it free
         assert_eq!(mechanics.apply_voucher_effects(10, &vouchers), 0);
@@ -1157,7 +1154,7 @@ mod tests {
     #[test]
     fn test_standard_reroll_mechanics_apply_voucher_effects_other_vouchers() {
         let mechanics = StandardRerollMechanics::new();
-        let vouchers = vec![VoucherId::Overstock, VoucherId::Coupon];
+        let vouchers = vec![VoucherId::Overstock, VoucherId::ClearanceSale];
 
         // Other vouchers should not affect reroll cost
         assert_eq!(mechanics.apply_voucher_effects(10, &vouchers), 10);

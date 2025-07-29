@@ -2,6 +2,7 @@ use crate::card::Card;
 use crate::error::GameError;
 use crate::game::Game;
 use crate::joker::JokerId;
+use crate::vouchers::VoucherId;
 
 // Re-export legacy shop for backward compatibility
 pub use legacy::*;
@@ -206,8 +207,8 @@ impl ShopItem {
     pub fn is_affected_by_voucher(&self, voucher: VoucherId) -> bool {
         match voucher {
             VoucherId::Overstock => true, // Affects all shop items
-            VoucherId::ClearancePackage => matches!(self, ShopItem::Pack(_)),
-            VoucherId::Coupon => matches!(self, ShopItem::Joker(_)),
+            VoucherId::ClearanceSale => matches!(self, ShopItem::Pack(_)),
+            VoucherId::Liquidation => matches!(self, ShopItem::Joker(_)),
             _ => false,
         }
     }
@@ -223,20 +224,6 @@ pub enum ConsumableType {
     Spectral,
 }
 
-/// Voucher identifiers for shop vouchers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-pub enum VoucherId {
-    Overstock,
-    ClearancePackage,
-    Liquidation,
-    Coupon,
-    Poll,
-    Hone,
-    Glow,
-    Reroll,
-    // ... more vouchers to be added
-}
 
 /// Individual slot in the enhanced shop
 #[derive(Debug, Clone)]
@@ -577,14 +564,14 @@ mod tests {
         assert!(card_item.is_affected_by_voucher(VoucherId::Overstock));
 
         // ClearancePackage only affects packs
-        assert!(!joker_item.is_affected_by_voucher(VoucherId::ClearancePackage));
-        assert!(pack_item.is_affected_by_voucher(VoucherId::ClearancePackage));
-        assert!(!card_item.is_affected_by_voucher(VoucherId::ClearancePackage));
+        assert!(!joker_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(pack_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(!card_item.is_affected_by_voucher(VoucherId::ClearanceSale));
 
         // Coupon only affects jokers
-        assert!(joker_item.is_affected_by_voucher(VoucherId::Coupon));
-        assert!(!pack_item.is_affected_by_voucher(VoucherId::Coupon));
-        assert!(!card_item.is_affected_by_voucher(VoucherId::Coupon));
+        assert!(joker_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(!pack_item.is_affected_by_voucher(VoucherId::ClearanceSale));
+        assert!(!card_item.is_affected_by_voucher(VoucherId::ClearanceSale));
     }
 
     #[test]

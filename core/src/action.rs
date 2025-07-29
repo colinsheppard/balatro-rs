@@ -2,6 +2,7 @@ use crate::card::Card;
 use crate::joker::JokerId;
 use crate::shop::packs::PackType;
 use crate::stage::Blind;
+use crate::vouchers::VoucherId;
 #[cfg(feature = "python")]
 use pyo3::pyclass;
 use std::fmt;
@@ -38,6 +39,7 @@ pub enum Action {
     Discard(),
     CashOut(f64),
     BuyJoker { joker_id: JokerId, slot: usize },
+    BuyVoucher { voucher_id: VoucherId },
     BuyPack { pack_type: PackType },
     OpenPack { pack_id: usize },
     SelectFromPack { pack_id: usize, option_index: usize },
@@ -95,9 +97,13 @@ impl fmt::Display for Action {
             }
             Self::BuyJoker { joker_id, slot } => {
                 write!(f, "BuyJoker: {joker_id:?} at slot {slot}")
+            
             }
             Self::BuyPack { pack_type } => {
                 write!(f, "BuyPack: {pack_type}")
+            }
+            Self::BuyVoucher { voucher_id } => {
+                write!(f, "BuyVoucher: {voucher_id:?}")
             }
             Self::OpenPack { pack_id } => {
                 write!(f, "OpenPack: {pack_id}")
