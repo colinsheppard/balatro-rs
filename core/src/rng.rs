@@ -468,8 +468,9 @@ mod tests {
         let val: u32 = rng.gen_range(0..100);
         assert!(val < 100);
 
-        // Test boolean generation - just verify it doesn't panic
+        // Test boolean generation
         let _bool_val = rng.gen_bool(0.5);
+        // _bool_val is a valid boolean value (test passes if it runs without panic)
 
         // Test shuffle
         let mut vec = vec![1, 2, 3, 4, 5];

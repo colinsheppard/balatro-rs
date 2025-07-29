@@ -1338,6 +1338,9 @@ pub mod advanced_conditions;
 pub mod advanced_traits;
 pub mod compatibility_bridge;
 
+// Re-export static joker trait system for migration infrastructure
+pub use crate::static_joker::{StaticContext, StaticJoker, StaticJokerAdapter};
+
 // Re-export old API types for backwards compatibility
 pub use compat::{Joker as OldJoker, Jokers};
 
@@ -1368,5 +1371,20 @@ mod joker_trait_tests {
         // This won't compile if Joker doesn't have Send + Sync bounds
         fn assert_send_sync<T: Send + Sync>() {}
         assert_send_sync::<Box<dyn Joker>>();
+    }
+
+    #[test]
+    fn test_joker_effect_default_mult_multiplier() {
+        let effect = JokerEffect::new();
+        assert_eq!(
+            effect.mult_multiplier, 1.0,
+            "Default mult_multiplier should be 1.0"
+        );
+
+        let effect2 = JokerEffect::default();
+        assert_eq!(
+            effect2.mult_multiplier, 1.0,
+            "Default mult_multiplier should be 1.0"
+        );
     }
 }

@@ -70,16 +70,17 @@ fn test_combination_edge_cases() {
     assert!(targets.is_empty(), "Requesting 0 cards should return empty");
 
     // Test requesting more cards than available
-    let _targets = Target::get_available_targets(TargetType::Cards(5), &game);
+    let targets = Target::get_available_targets(TargetType::Cards(5), &game);
     assert!(
         targets.is_empty(),
         "Requesting more cards than available should return empty"
     );
 
     // Test requesting exactly the number of cards available
-    let _targets = Target::get_available_targets(TargetType::Cards(3), &game);
+    let targets = Target::get_available_targets(TargetType::Cards(3), &game);
     // Should return one combination: all cards
     // Note: Actual behavior depends on game implementation
+    let _ = targets; // Suppress unused variable warning
 }
 
 #[test]
@@ -103,9 +104,9 @@ fn test_performance_limits() {
 fn test_combination_content_correctness() {
     // Test that generated combinations contain valid card indices
     let game = create_game_with_cards(4);
-    let targets = Target::get_available_targets(TargetType::Cards(2), &game);
+    let _targets = Target::get_available_targets(TargetType::Cards(2), &game);
 
-    for target in targets {
+    for target in _targets {
         if let Target::Cards(indices) = target {
             // Verify all indices are valid
             for &index in &indices.indices {
