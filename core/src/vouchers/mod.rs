@@ -678,16 +678,10 @@ pub enum VoucherId {
     RerollSurplus,
     /// Crystal Ball voucher - +1 consumable slot
     CrystalBall,
-    /// Telescope voucher - Celestial packs have 1 more planet card
-    Telescope,
     /// Liquidation voucher - All cards and packs in shop are 50% off
     Liquidation,
     /// Reroll Glut voucher - Rerolls cost $2 less
     RerollGlut,
-    /// Omen Globe voucher - Spectral packs may contain Planet cards
-    OmenGlobe,
-    /// Observatory voucher - Planet cards in Celestial Packs appear 3X more frequently
-    Observatory,
 
     // Gameplay vouchers from Issue #18
     /// Grabber voucher - +1 hand size permanently
@@ -749,11 +743,8 @@ impl fmt::Display for VoucherId {
             VoucherId::Hone => write!(f, "Hone"),
             VoucherId::RerollSurplus => write!(f, "Reroll Surplus"),
             VoucherId::CrystalBall => write!(f, "Crystal Ball"),
-            VoucherId::Telescope => write!(f, "Telescope"),
             VoucherId::Liquidation => write!(f, "Liquidation"),
             VoucherId::RerollGlut => write!(f, "Reroll Glut"),
-            VoucherId::OmenGlobe => write!(f, "Omen Globe"),
-            VoucherId::Observatory => write!(f, "Observatory"),
             VoucherId::Grabber => write!(f, "Grabber"),
             VoucherId::NachoTong => write!(f, "Nacho Tong"),
             VoucherId::Wasteful => write!(f, "Wasteful"),
@@ -801,11 +792,8 @@ impl VoucherId {
             VoucherId::Hone => vec![],
             VoucherId::RerollSurplus => vec![],
             VoucherId::CrystalBall => vec![],
-            VoucherId::Telescope => vec![],
             VoucherId::Liquidation => vec![VoucherId::ClearanceSale],
             VoucherId::RerollGlut => vec![VoucherId::RerollSurplus],
-            VoucherId::OmenGlobe => vec![],
-            VoucherId::Observatory => vec![VoucherId::Telescope],
 
             // Upgraded versions require base versions
             VoucherId::OverstockPlus => vec![VoucherId::Overstock],
@@ -851,11 +839,8 @@ impl VoucherId {
             VoucherId::Hone => 10,
             VoucherId::RerollSurplus => 10,
             VoucherId::CrystalBall => 10,
-            VoucherId::Telescope => 10,
             VoucherId::Liquidation => 10,
             VoucherId::RerollGlut => 10,
-            VoucherId::OmenGlobe => 10,
-            VoucherId::Observatory => 10,
             VoucherId::VoucherPlaceholder => 10,
 
             // Gameplay vouchers from Issue #18

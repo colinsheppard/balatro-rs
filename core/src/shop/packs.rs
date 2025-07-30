@@ -354,7 +354,7 @@ impl Pack {
         Ok(())
     }
 
-    /// Generate celestial pack options (planet cards, with Observatory voucher affecting frequency)
+    /// Generate celestial pack options (planet cards)
     fn generate_celestial_options(
         &mut self,
         count: usize,
@@ -363,19 +363,8 @@ impl Pack {
     ) -> Result<(), GameError> {
         let planet_cards = ConsumableId::planet_cards();
 
-        // Observatory voucher affects planet card selection frequency
-        // For now, maintain backward compatibility by generating only planet cards
-        // but the frequency multiplier infrastructure is ready for future mixed content
-        let _planet_frequency_multiplier =
-            if game.vouchers.owns(crate::vouchers::VoucherId::Observatory) {
-                3.0
-            } else {
-                1.0
-            };
-
         for _ in 0..count {
             // Select specific planet card for preview info
-            // Observatory voucher could affect distribution of which planet cards appear
             let selected_planet = game
                 .rng
                 .choose(&planet_cards)

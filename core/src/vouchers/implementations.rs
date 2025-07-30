@@ -589,48 +589,6 @@ impl Voucher for TarotTycoonVoucher {
     }
 }
 
-/// Observatory voucher - Planet cards in Celestial Packs appear 3X more frequently
-#[derive(Debug, Clone)]
-pub struct ObservatoryVoucher;
-
-impl Voucher for ObservatoryVoucher {
-    fn id(&self) -> VoucherId {
-        VoucherId::Observatory
-    }
-
-    fn tier(&self) -> VoucherTier {
-        VoucherTier::Upgraded
-    }
-
-    fn prerequisite(&self) -> Option<VoucherId> {
-        Some(VoucherId::Telescope)
-    }
-
-    fn can_purchase(&self, game_state: &GameState) -> bool {
-        game_state.can_afford(self.cost())
-            && !game_state.owns_voucher(self.id())
-            && game_state.owns_voucher(VoucherId::Telescope)
-    }
-
-    fn apply_effect(&self, game_state: &mut GameState) {
-        for effect in self.get_effects() {
-            let _ = game_state.apply_voucher_effect(&effect);
-        }
-    }
-
-    fn get_effects(&self) -> Vec<VoucherEffect> {
-        vec![VoucherEffect::PlanetFrequencyMultiplier(3.0)]
-    }
-
-    fn name(&self) -> &'static str {
-        "Observatory"
-    }
-
-    fn description(&self) -> &'static str {
-        "Planet cards in Celestial Packs appear 3X more frequently"
-    }
-}
-
 /// Glow Up voucher - Foil, Holographic, and Polychrome cards appear 4X more often (upgrade of Hone)
 #[derive(Debug, Clone)]
 pub struct GlowUpVoucher;
