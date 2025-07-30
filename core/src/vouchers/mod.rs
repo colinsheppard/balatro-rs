@@ -742,14 +742,14 @@ impl VoucherId {
         match self {
             VoucherId::GrabBag => 10,
             VoucherId::Overstock => 10,
-            VoucherId::OverstockPlus => 20, // Upgraded version costs more
+            VoucherId::OverstockPlus => 10,
             VoucherId::ClearanceSale => 10,
             VoucherId::Hone => 10,
             VoucherId::RerollSurplus => 10,
             VoucherId::CrystalBall => 10,
             VoucherId::Telescope => 10,
             VoucherId::Liquidation => 10,
-            VoucherId::RerollGlut => 20, // More powerful, costs more
+            VoucherId::RerollGlut => 10,
             VoucherId::OmenGlobe => 10,
             VoucherId::Observatory => 10,
             VoucherId::VoucherPlaceholder => 10,
@@ -759,16 +759,16 @@ impl VoucherId {
             VoucherId::NachoTong => 10,
             VoucherId::Wasteful => 10,
             VoucherId::SeedMoney => 10,
-            VoucherId::MoneyTree => 20,  // Upgraded version
-            VoucherId::Hieroglyph => 20, // Powerful negative effect
-            VoucherId::Petroglyph => 30, // Even more powerful negative effect
-            VoucherId::Antimatter => 15, // Very valuable joker slot
-            VoucherId::MagicTrick => 15, // Shop enhancement
-            VoucherId::Illusion => 15,   // Shop enhancement
-            VoucherId::Blank => 5,       // Does nothing
+            VoucherId::MoneyTree => 10,
+            VoucherId::Hieroglyph => 10,
+            VoucherId::Petroglyph => 10,
+            VoucherId::Antimatter => 10,
+            VoucherId::MagicTrick => 10,
+            VoucherId::Illusion => 10,
+            VoucherId::Blank => 10,
             VoucherId::PaintBrush => 10, // Mixed effect
             VoucherId::TarotMerchant => 10,
-            VoucherId::TarotTycoon => 20, // Upgraded version
+            VoucherId::TarotTycoon => 10,
         }
     }
 }
