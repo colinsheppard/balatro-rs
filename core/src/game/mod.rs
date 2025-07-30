@@ -398,8 +398,7 @@ impl Game {
         // Cap level at reasonable maximum (e.g., 10)
         if current_level >= 10 {
             return Err(ConsumableError::InvalidGameState(format!(
-                "Hand {:?} is already at maximum level",
-                hand_rank
+                "Hand {hand_rank:?} is already at maximum level"
             )));
         }
 
@@ -3597,7 +3596,7 @@ impl Game {
     pub fn use_consumable(&mut self, _consumable_slot: usize) -> Result<(), GameError> {
         // For now, return error until consumable_slots is implemented
         // Get the consumable from the slot
-        if let Some(consumable) = self.consumable_slots.get_consumable(_consumable_slot) {
+        if let Some(_consumable) = self.consumable_slots.get_consumable(_consumable_slot) {
             // Use the consumable - for now just remove it and return success
             // TODO: Implement actual consumable targeting and effects
             if let Ok(_removed_consumable) =

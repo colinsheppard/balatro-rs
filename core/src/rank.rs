@@ -1,4 +1,4 @@
-use strum::{EnumIter, IntoEnumIterator};
+use strum::EnumIter;
 pub struct Level {
     pub level: usize,
     pub chips: usize,

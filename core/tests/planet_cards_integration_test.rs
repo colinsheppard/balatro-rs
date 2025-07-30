@@ -10,7 +10,10 @@ use balatro_rs::{
     action::Action,
     config::Config,
     consumables::{
-        planet::{create_planet_card, Earth, Jupiter, Mars, Mercury, Venus, Saturn, Uranus, Neptune, Pluto, PlanetX, Ceres, Eris},
+        planet::{
+            create_planet_card, Ceres, Earth, Eris, Jupiter, Mars, Mercury, Neptune, PlanetX,
+            Pluto, Saturn, Uranus, Venus,
+        },
         Consumable, ConsumableId, ConsumableType, Target,
     },
     game::Game,
@@ -195,18 +198,18 @@ fn test_all_planet_cards_integration() {
 
     // Test each planet card with its corresponding hand type
     let test_cases = vec![
-        (5, 1, HandRank::OnePair),      // Mercury -> OnePair
-        (6, 2, HandRank::TwoPair),      // Venus -> TwoPair
-        (7, 6, HandRank::FullHouse),    // Earth -> FullHouse
-        (8, 3, HandRank::ThreeOfAKind), // Mars -> ThreeOfAKind
-        (9, 4, HandRank::Straight),     // Jupiter -> Straight
-        (10, 4, HandRank::Straight),    // Saturn -> Straight
-        (11, 2, HandRank::TwoPair),     // Uranus -> TwoPair
+        (5, 1, HandRank::OnePair),        // Mercury -> OnePair
+        (6, 2, HandRank::TwoPair),        // Venus -> TwoPair
+        (7, 6, HandRank::FullHouse),      // Earth -> FullHouse
+        (8, 3, HandRank::ThreeOfAKind),   // Mars -> ThreeOfAKind
+        (9, 4, HandRank::Straight),       // Jupiter -> Straight
+        (10, 4, HandRank::Straight),      // Saturn -> Straight
+        (11, 2, HandRank::TwoPair),       // Uranus -> TwoPair
         (12, 8, HandRank::StraightFlush), // Neptune -> StraightFlush
-        (13, 0, HandRank::HighCard),    // Pluto -> HighCard
-        (14, 10, HandRank::FiveOfAKind), // PlanetX -> FiveOfAKind
-        (15, 11, HandRank::FlushHouse), // Ceres -> FlushHouse
-        (16, 12, HandRank::FlushFive),  // Eris -> FlushFive
+        (13, 0, HandRank::HighCard),      // Pluto -> HighCard
+        (14, 10, HandRank::FiveOfAKind),  // PlanetX -> FiveOfAKind
+        (15, 11, HandRank::FlushHouse),   // Ceres -> FlushHouse
+        (16, 12, HandRank::FlushFive),    // Eris -> FlushFive
     ];
 
     for (planet_id, hand_id, hand_rank) in test_cases {

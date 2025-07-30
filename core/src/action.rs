@@ -205,7 +205,7 @@ impl fmt::Display for Action {
             }
             // Consumable actions
             Self::UseConsumable { consumable_slot } => {
-                write!(f, "UseConsumable: slot {}", consumable_slot)
+                write!(f, "UseConsumable: slot {consumable_slot}")
             }
             Self::UsePlanetCard {
                 planet_card_id,
@@ -213,8 +213,7 @@ impl fmt::Display for Action {
             } => {
                 write!(
                     f,
-                    "UsePlanetCard: card {} on hand {}",
-                    planet_card_id, hand_rank_id
+                    "UsePlanetCard: card {planet_card_id} on hand {hand_rank_id}"
                 )
             }
         }

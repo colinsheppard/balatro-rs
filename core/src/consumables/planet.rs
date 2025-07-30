@@ -806,7 +806,10 @@ mod tests {
         assert_eq!(uranus.get_effect_category(), ConsumableEffect::Enhancement);
         assert_eq!(neptune.get_effect_category(), ConsumableEffect::Enhancement);
         assert_eq!(pluto.get_effect_category(), ConsumableEffect::Enhancement);
-        assert_eq!(planet_x.get_effect_category(), ConsumableEffect::Enhancement);
+        assert_eq!(
+            planet_x.get_effect_category(),
+            ConsumableEffect::Enhancement
+        );
         assert_eq!(ceres.get_effect_category(), ConsumableEffect::Enhancement);
         assert_eq!(eris.get_effect_category(), ConsumableEffect::Enhancement);
     }
