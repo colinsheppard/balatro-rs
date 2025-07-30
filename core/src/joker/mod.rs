@@ -367,6 +367,7 @@ impl Default for JokerEffect {
             mult_multiplier: 1.0, // Default to "no change" rather than 0.0
             retrigger: 0,
             destroy_self: false,
+            consumables_created: Vec::new(),
             destroy_others: Vec::new(),
             transform_cards: Vec::new(),
             hand_size_mod: 0,

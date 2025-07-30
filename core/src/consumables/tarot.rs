@@ -26,6 +26,39 @@ use crate::game::Game;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// Error types specific to tarot card operations
+pub type TarotError = ConsumableError;
+
+/// Effect types for tarot cards
+pub type TarotEffect = ConsumableEffect;
+
+/// Rarity levels for tarot cards
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TarotRarity {
+    Common,
+    Uncommon,
+    Rare,
+}
+
+/// Card enhancements that can be applied by tarot cards
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CardEnhancement {
+    Glass,
+    Gold,
+    Stone,
+}
+
+/// Metadata for tarot cards used in shop generation and UI
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TarotCardMetadata {
+    pub name: String,
+    pub description: String,
+    pub rarity: TarotRarity,
+    pub target_type: TargetType,
+    pub effect_category: ConsumableEffect,
+    pub implemented: bool,
+}
+
 /// Factory for creating tarot card instances
 ///
 /// Following the Factory pattern for clean object creation and
@@ -97,6 +130,31 @@ impl TarotFactory {
             ConsumableId::Judgement,
             ConsumableId::TheWorld,
         ]
+    }
+
+    /// Get all available tarot card IDs (for shop generation)
+    pub fn available_cards(&self) -> Result<Vec<ConsumableId>, TarotError> {
+        Ok(Self::get_implemented_cards())
+    }
+
+    /// Get metadata for a specific tarot card
+    pub fn get_metadata(&self, id: ConsumableId) -> Result<Option<TarotCardMetadata>, TarotError> {
+        if Self::get_implemented_cards().contains(&id) {
+            // Create a tarot card instance to get its metadata
+            match Self::create(id) {
+                Some(card) => Ok(Some(TarotCardMetadata {
+                    name: card.name().to_string(),
+                    description: card.description().to_string(),
+                    rarity: TarotRarity::Common, // Default rarity
+                    target_type: card.get_target_type(),
+                    effect_category: card.get_effect_category(),
+                    implemented: true,
+                })),
+                None => Ok(None),
+            }
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -307,10 +365,14 @@ impl Consumable for TheHangedMan {
         // Destroy the targeted cards by removing them from their collection
         match card_target.collection {
             crate::consumables::CardCollection::Hand => {
-                game_state.available.remove_cards_by_indices(card_target.indices.clone());
+                game_state
+                    .available
+                    .remove_cards_by_indices(card_target.indices.clone());
             }
             crate::consumables::CardCollection::Deck => {
-                game_state.deck.remove_cards_by_indices(card_target.indices.clone());
+                game_state
+                    .deck
+                    .remove_cards_by_indices(card_target.indices.clone());
             }
             crate::consumables::CardCollection::DiscardPile => {
                 // Sort indices in descending order to remove from the end first
@@ -574,7 +636,7 @@ impl Consumable for Temperance {
 
         // Calculate total sell value of all jokers and add to money
         let mut total_sell_value = 0.0;
-        
+
         for joker in &game_state.jokers {
             // Get the joker's rarity and calculate its sell value
             let rarity = joker.rarity();
@@ -1325,12 +1387,17 @@ impl Consumable for Judgement {
         use crate::joker_factory::JokerFactory;
 
         // Define weighted rarity distribution for random joker creation
-        let rarity_weights = [(70, JokerRarity::Common), (20, JokerRarity::Uncommon), (8, JokerRarity::Rare), (2, JokerRarity::Legendary)];
-        
+        let rarity_weights = [
+            (70, JokerRarity::Common),
+            (20, JokerRarity::Uncommon),
+            (8, JokerRarity::Rare),
+            (2, JokerRarity::Legendary),
+        ];
+
         // Select random rarity based on weights
         let total_weight: u32 = rarity_weights.iter().map(|(weight, _)| weight).sum();
         let mut random_value = game_state.rng.gen_range(0..total_weight);
-        
+
         let mut selected_rarity = JokerRarity::Common;
         for (weight, rarity) in rarity_weights.iter() {
             if random_value < *weight {
@@ -1342,7 +1409,7 @@ impl Consumable for Judgement {
 
         // Get all jokers of the selected rarity
         let jokers_of_rarity = JokerFactory::get_by_rarity(selected_rarity);
-        
+
         if jokers_of_rarity.is_empty() {
             return Err(ConsumableError::InsufficientResources);
         }
@@ -1600,4 +1667,20 @@ mod tests {
         assert_eq!(Judgement::new().arcana_number(), 20);
         assert_eq!(TheWorld::new().arcana_number(), 21);
     }
+}
+
+/// Global factory instance access function
+///
+/// Returns a reference to the tarot factory for use throughout the codebase.
+pub fn get_tarot_factory() -> &'static TarotFactory {
+    static FACTORY: TarotFactory = TarotFactory;
+    &FACTORY
+}
+
+/// Initialize the tarot factory system
+///
+/// Called during game initialization to set up the tarot card system.
+/// Currently a no-op as the factory is stateless.
+pub fn initialize_tarot_factory() {
+    // No initialization needed for stateless factory
 }

@@ -1000,6 +1000,7 @@ impl ConsumableId {
             | ConsumableId::TheHighPriestess
             | ConsumableId::TheEmperor
             | ConsumableId::TheEmpress
+            | ConsumableId::TheHierophant
             | ConsumableId::TheLovers
             | ConsumableId::TheChariot
             | ConsumableId::Strength
@@ -1771,8 +1772,8 @@ impl<'de> Deserialize<'de> for ConsumableSlots {
 }
 
 // Re-export submodules when they are implemented
-pub mod tarot;
 pub mod spectral;
+pub mod tarot;
 // pub mod planet; // Disabled in main until planet card system is ready
 
 // Re-export key tarot types for convenience

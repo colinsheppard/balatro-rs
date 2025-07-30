@@ -28,6 +28,13 @@ This file tracks orchestration activities and task management for the issue-686-
 ### ✅ Completed Tasks
 - [x] Created TASKS.md for orchestration tracking
 
+## Review Queue
+
+| PR | Title | Reviewer(s) | Status | Started | Notes |
+|----|-------|-------------|--------|---------|-------|  
+| #705 | TAROT-WAVE2 | NONE | ❌ **BLOCKED** - CI failures | - | Fix CI before review |
+| #770 | Vagabond Joker | linus-style-reviewer, unclebot | 🔄 **IN REVIEW** | 2025-07-30T14:31:53-07:00 | Dual review in progress |
+
 ## Active PR Assignments
 
 | PR | Issue | Agent | Status | Started | Priority |
@@ -63,4 +70,4 @@ This file tracks orchestration activities and task management for the issue-686-
 This file serves as a central location for tracking all orchestration activities within this worktree. Each major task or activity should be documented here with appropriate status updates.
 
 ---
-*Last Updated: 2025-07-29*
+*Last Updated: 2025-07-30*
