@@ -827,6 +827,20 @@ pub enum ConsumableId {
     Mars,
     /// Jupiter - Levels up Straight
     Jupiter,
+    /// Saturn - Levels up Straight
+    Saturn,
+    /// Uranus - Levels up Two Pair
+    Uranus,
+    /// Neptune - Levels up Straight Flush
+    Neptune,
+    /// Pluto - Levels up High Card
+    Pluto,
+    /// Planet X - Levels up Five of a Kind
+    PlanetX,
+    /// Ceres - Levels up Flush House
+    Ceres,
+    /// Eris - Levels up Flush Five
+    Eris,
 
     // Spectral Cards
     /// Familiar - Destroys 1 random card, add 3 random Enhanced face cards to deck
@@ -861,6 +875,13 @@ impl fmt::Display for ConsumableId {
             ConsumableId::Earth => write!(f, "Earth"),
             ConsumableId::Mars => write!(f, "Mars"),
             ConsumableId::Jupiter => write!(f, "Jupiter"),
+            ConsumableId::Saturn => write!(f, "Saturn"),
+            ConsumableId::Uranus => write!(f, "Uranus"),
+            ConsumableId::Neptune => write!(f, "Neptune"),
+            ConsumableId::Pluto => write!(f, "Pluto"),
+            ConsumableId::PlanetX => write!(f, "Planet X"),
+            ConsumableId::Ceres => write!(f, "Ceres"),
+            ConsumableId::Eris => write!(f, "Eris"),
 
             // Spectral Cards
             ConsumableId::Familiar => write!(f, "Familiar"),
@@ -898,6 +919,13 @@ impl ConsumableId {
             | ConsumableId::Earth
             | ConsumableId::Mars
             | ConsumableId::Jupiter
+            | ConsumableId::Saturn
+            | ConsumableId::Uranus
+            | ConsumableId::Neptune
+            | ConsumableId::Pluto
+            | ConsumableId::PlanetX
+            | ConsumableId::Ceres
+            | ConsumableId::Eris
             | ConsumableId::PlanetPlaceholder => ConsumableType::Planet,
 
             // Spectral Cards
@@ -927,6 +955,13 @@ impl ConsumableId {
             ConsumableId::Earth,
             ConsumableId::Mars,
             ConsumableId::Jupiter,
+            ConsumableId::Saturn,
+            ConsumableId::Uranus,
+            ConsumableId::Neptune,
+            ConsumableId::Pluto,
+            ConsumableId::PlanetX,
+            ConsumableId::Ceres,
+            ConsumableId::Eris,
         ]
     }
 
@@ -1504,7 +1539,7 @@ impl<'de> Deserialize<'de> for ConsumableSlots {
 
 // Re-export submodules when they are implemented
 // pub mod tarot;
-// pub mod planet;
+pub mod planet;
 // pub mod spectral;
 
 // Test module

@@ -37,11 +37,23 @@ pub enum Action {
     Play(),
     Discard(),
     CashOut(f64),
-    BuyJoker { joker_id: JokerId, slot: usize },
-    BuyPack { pack_type: PackType },
-    OpenPack { pack_id: usize },
-    SelectFromPack { pack_id: usize, option_index: usize },
-    SkipPack { pack_id: usize },
+    BuyJoker {
+        joker_id: JokerId,
+        slot: usize,
+    },
+    BuyPack {
+        pack_type: PackType,
+    },
+    OpenPack {
+        pack_id: usize,
+    },
+    SelectFromPack {
+        pack_id: usize,
+        option_index: usize,
+    },
+    SkipPack {
+        pack_id: usize,
+    },
     RerollShop(),
     NextRound(),
     SelectBlind(Blind),
@@ -53,7 +65,10 @@ pub enum Action {
     ToggleCardSelection(Card), // Toggle selection state of a card
     SelectAllCards(),          // Select all available cards
     DeselectAllCards(),        // Clear all card selections
-    RangeSelectCards { start: Card, end: Card }, // Select range of cards
+    RangeSelectCards {
+        start: Card,
+        end: Card,
+    }, // Select range of cards
 
     // Multi-select actions for jokers
     SelectJoker(JokerId),          // Select a joker
@@ -68,10 +83,19 @@ pub enum Action {
     BuyPacks(Vec<PackType>),          // Buy multiple packs
 
     // Multi-select control
-    ActivateMultiSelect(), // Enter multi-select mode
+    ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
-                           // SkipBlind(Blind),
+    // Consumable actions
+    // Consumable actions (simplified for now to avoid Python binding issues)
+    UseConsumable {
+        consumable_slot: usize,
+    },
+    UsePlanetCard {
+        planet_card_id: u32,
+        hand_rank_id: u32,
+    },
+    // SkipBlind(Blind),
 }
 
 impl fmt::Display for Action {
@@ -178,6 +202,20 @@ impl fmt::Display for Action {
             }
             Self::DeactivateMultiSelect() => {
                 write!(f, "DeactivateMultiSelect")
+            }
+            // Consumable actions
+            Self::UseConsumable { consumable_slot } => {
+                write!(f, "UseConsumable: slot {}", consumable_slot)
+            }
+            Self::UsePlanetCard {
+                planet_card_id,
+                hand_rank_id,
+            } => {
+                write!(
+                    f,
+                    "UsePlanetCard: card {} on hand {}",
+                    planet_card_id, hand_rank_id
+                )
             }
         }
     }
