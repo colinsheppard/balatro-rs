@@ -104,8 +104,14 @@ pub enum VoucherEffect {
     PlanetFrequencyMultiplier(f64),
     /// Multiplies enhanced card (foil/holo/polychrome) appearance frequency
     PolychromeFrequencyMultiplier(f64),
+    /// Provides percentage discount on all shop items
+    ShopDiscountPercent(f64),
     /// Applies discount multiplier to shop items (0.5 = 50% off)
     ShopDiscountMultiplier(f64),
+    /// Reduces reroll cost by specified amount
+    RerollCostReduction(usize),
+    /// Increases consumable slots
+    ConsumableSlotIncrease(usize),
     /// Enables boss blind reroll functionality (limited or unlimited)
     BossBlindRerollEnabled {
         unlimited: bool,
@@ -138,7 +144,10 @@ impl VoucherEffect {
                 | VoucherEffect::TarotFrequencyMultiplier(_)
                 | VoucherEffect::PlanetFrequencyMultiplier(_)
                 | VoucherEffect::PolychromeFrequencyMultiplier(_)
+                | VoucherEffect::ShopDiscountPercent(_)
                 | VoucherEffect::ShopDiscountMultiplier(_)
+                | VoucherEffect::RerollCostReduction(_)
+                | VoucherEffect::ConsumableSlotIncrease(_)
                 | VoucherEffect::BossBlindRerollEnabled { .. }
         )
     }
@@ -297,11 +306,28 @@ impl VoucherEffect {
                     });
                 }
             }
+            VoucherEffect::ShopDiscountPercent(discount) => {
+                if !discount.is_finite() || *discount <= 0.0 || *discount > 100.0 {
+                    return Err(VoucherError::InvalidScaling {
+                        multiplier: *discount,
+                    });
+                }
+            }
             VoucherEffect::ShopDiscountMultiplier(multiplier) => {
                 if !multiplier.is_finite() || *multiplier <= 0.0 || *multiplier > 1.0 {
                     return Err(VoucherError::InvalidBlindReduction {
                         multiplier: *multiplier,
                     });
+                }
+            }
+            VoucherEffect::RerollCostReduction(amount) => {
+                if *amount > 10 {
+                    return Err(VoucherError::ExcessiveMoneyGain { amount: *amount });
+                }
+            }
+            VoucherEffect::ConsumableSlotIncrease(amount) => {
+                if *amount > 10 {
+                    return Err(VoucherError::ExcessiveJokerSlots { amount: *amount });
                 }
             }
             VoucherEffect::BossBlindRerollEnabled { cost_per_roll, .. } => {
@@ -522,9 +548,21 @@ impl GameState {
                 // Enhanced card frequency affects shop/pack generation, not game state directly
                 // This would be handled by the shop system
             }
+            VoucherEffect::ShopDiscountPercent(_discount) => {
+                // Shop discount affects item pricing, not game state directly
+                // This would be handled by the shop system
+            }
             VoucherEffect::ShopDiscountMultiplier(_multiplier) => {
                 // Shop discount affects shop pricing, not game state directly
                 // This would be handled by the shop system
+            }
+            VoucherEffect::RerollCostReduction(_amount) => {
+                // Reroll cost reduction affects shop reroll pricing, not game state directly
+                // This would be handled by the shop system
+            }
+            VoucherEffect::ConsumableSlotIncrease(_amount) => {
+                // Consumable slots affect inventory capacity, not current game state
+                // This would be handled by the inventory system
             }
             VoucherEffect::BossBlindRerollEnabled { .. } => {
                 // Boss blind reroll affects blind mechanics, not game state directly
