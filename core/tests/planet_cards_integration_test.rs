@@ -160,10 +160,10 @@ fn test_planet_card_action_integration() {
     // This should return InvalidAction since no consumables are in slots
     assert!(game.handle_action(consumable_action).is_err());
 
-    // Test UsePlanetCard action with Mercury (ID 5 in enum) and OnePair (ID 1 in enum)
+    // Test UsePlanetCard action with Mercury (ID 11 in enum) and OnePair (ID 1 in enum)
     let planet_action = Action::UsePlanetCard {
-        planet_card_id: 5, // Mercury
-        hand_rank_id: 1,   // OnePair
+        planet_card_id: 11, // Mercury
+        hand_rank_id: 1,    // OnePair
     };
 
     // Get initial hand level
@@ -185,8 +185,8 @@ fn test_multiple_planet_card_usage() {
     // Level up OnePair multiple times
     for expected_level in 2..=5 {
         let planet_action = Action::UsePlanetCard {
-            planet_card_id: 5, // Mercury
-            hand_rank_id: 1,   // OnePair
+            planet_card_id: 11, // Mercury
+            hand_rank_id: 1,    // OnePair
         };
         assert!(game.handle_action(planet_action).is_ok());
 
@@ -197,22 +197,22 @@ fn test_multiple_planet_card_usage() {
 
 #[test]
 fn test_all_planet_cards_integration() {
-    let mut game = Game::new(Config::default());
+    let _game = Game::new(Config::default());
 
     // Test each planet card with its corresponding hand type
     let test_cases = vec![
-        (5, 1, HandRank::OnePair),        // Mercury -> OnePair
-        (6, 2, HandRank::TwoPair),        // Venus -> TwoPair
-        (7, 6, HandRank::FullHouse),      // Earth -> FullHouse
-        (8, 3, HandRank::ThreeOfAKind),   // Mars -> ThreeOfAKind
-        (9, 4, HandRank::Straight),       // Jupiter -> Straight
-        (10, 4, HandRank::Straight),      // Saturn -> Straight
-        (11, 2, HandRank::TwoPair),       // Uranus -> TwoPair
-        (12, 8, HandRank::StraightFlush), // Neptune -> StraightFlush
-        (13, 0, HandRank::HighCard),      // Pluto -> HighCard
-        (14, 10, HandRank::FiveOfAKind),  // PlanetX -> FiveOfAKind
-        (15, 11, HandRank::FlushHouse),   // Ceres -> FlushHouse
-        (16, 12, HandRank::FlushFive),    // Eris -> FlushFive
+        (11, 1, HandRank::OnePair),       // Mercury -> OnePair
+        (12, 2, HandRank::TwoPair),       // Venus -> TwoPair
+        (13, 6, HandRank::FullHouse),     // Earth -> FullHouse
+        (14, 3, HandRank::ThreeOfAKind),  // Mars -> ThreeOfAKind
+        (15, 4, HandRank::Straight),      // Jupiter -> Straight
+        (16, 4, HandRank::Straight),      // Saturn -> Straight
+        (17, 2, HandRank::TwoPair),       // Uranus -> TwoPair
+        (18, 8, HandRank::StraightFlush), // Neptune -> StraightFlush
+        (19, 0, HandRank::HighCard),      // Pluto -> HighCard
+        (20, 10, HandRank::FiveOfAKind),  // PlanetX -> FiveOfAKind
+        (21, 11, HandRank::FlushHouse),   // Ceres -> FlushHouse
+        (22, 12, HandRank::FlushFive),    // Eris -> FlushFive
     ];
 
     for (planet_id, hand_id, hand_rank) in test_cases {
@@ -249,7 +249,7 @@ fn test_invalid_planet_card_usage() {
 
     // Test invalid hand rank ID
     let invalid_hand_action = Action::UsePlanetCard {
-        planet_card_id: 5,
+        planet_card_id: 11,
         hand_rank_id: 999,
     };
     assert!(game.handle_action(invalid_hand_action).is_err());

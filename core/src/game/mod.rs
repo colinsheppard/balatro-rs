@@ -2402,6 +2402,70 @@ impl Game {
     }
 }
 
+// Consumable functionality for Game
+impl Game {
+    /// Use a consumable from the players consumable slots
+    pub fn use_consumable(&mut self, _consumable_slot: usize) -> Result<(), GameError> {
+        // For now, return error until consumable_slots is implemented
+        // Get the consumable from the slot
+        if let Some(_consumable) = self.consumable_slots.get_consumable(_consumable_slot) {
+            // Use the consumable - for now just remove it and return success
+            // TODO: Implement actual consumable targeting and effects
+            if let Ok(_removed_consumable) =
+                self.consumable_slots.remove_consumable(_consumable_slot)
+            {
+                // Consumable was used successfully
+                Ok(())
+            } else {
+                Err(GameError::InvalidAction)
+            }
+        } else {
+            Err(GameError::InvalidAction)
+        }
+    }
+
+    /// Use a planet card to level up a hand type
+    pub fn use_planet_card(
+        &mut self,
+        planet_card_id: u32,
+        hand_rank_id: u32,
+    ) -> Result<(), GameError> {
+        use crate::consumables::planet::create_planet_card;
+        use crate::rank::HandRank;
+        use strum::IntoEnumIterator;
+
+        // Convert IDs back to proper types
+        let planet_card = crate::consumables::ConsumableId::iter()
+            .nth(planet_card_id as usize)
+            .ok_or(GameError::InvalidAction)?;
+        let hand_rank = HandRank::iter()
+            .nth(hand_rank_id as usize)
+            .ok_or(GameError::InvalidAction)?;
+
+        // Validate that this is a planet card
+        if !matches!(
+            planet_card.consumable_type(),
+            crate::consumables::ConsumableType::Planet
+        ) {
+            return Err(GameError::InvalidAction);
+        }
+
+        // Create the planet card instance and use it
+        if let Some(card) = create_planet_card(planet_card) {
+            let target = crate::consumables::Target::HandType(hand_rank);
+            if card.can_use(self, &target) {
+                card.use_effect(self, target)
+                    .map_err(|_| GameError::InvalidAction)?;
+                Ok(())
+            } else {
+                Err(GameError::InvalidAction)
+            }
+        } else {
+            Err(GameError::InvalidAction)
+        }
+    }
+}
+
 #[cfg(test)]
 #[allow(clippy::field_reassign_with_default)]
 mod tests {
@@ -3800,69 +3864,5 @@ mod tests {
         assert_eq!(game.money, 100.0);
         assert_eq!(game.shop_reroll_cost, 10.0);
         assert_eq!(game.shop_rerolls_this_round, 1);
-    }
-}
-
-// Consumable functionality for Game
-impl Game {
-    /// Use a consumable from the players consumable slots
-    pub fn use_consumable(&mut self, _consumable_slot: usize) -> Result<(), GameError> {
-        // For now, return error until consumable_slots is implemented
-        // Get the consumable from the slot
-        if let Some(_consumable) = self.consumable_slots.get_consumable(_consumable_slot) {
-            // Use the consumable - for now just remove it and return success
-            // TODO: Implement actual consumable targeting and effects
-            if let Ok(_removed_consumable) =
-                self.consumable_slots.remove_consumable(_consumable_slot)
-            {
-                // Consumable was used successfully
-                Ok(())
-            } else {
-                Err(GameError::InvalidAction)
-            }
-        } else {
-            Err(GameError::InvalidAction)
-        }
-    }
-
-    /// Use a planet card to level up a hand type
-    pub fn use_planet_card(
-        &mut self,
-        planet_card_id: u32,
-        hand_rank_id: u32,
-    ) -> Result<(), GameError> {
-        use crate::consumables::planet::create_planet_card;
-        use crate::rank::HandRank;
-        use strum::IntoEnumIterator;
-
-        // Convert IDs back to proper types
-        let planet_card = crate::consumables::ConsumableId::iter()
-            .nth(planet_card_id as usize)
-            .ok_or(GameError::InvalidAction)?;
-        let hand_rank = HandRank::iter()
-            .nth(hand_rank_id as usize)
-            .ok_or(GameError::InvalidAction)?;
-
-        // Validate that this is a planet card
-        if !matches!(
-            planet_card.consumable_type(),
-            crate::consumables::ConsumableType::Planet
-        ) {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Create the planet card instance and use it
-        if let Some(card) = create_planet_card(planet_card) {
-            let target = crate::consumables::Target::HandType(hand_rank);
-            if card.can_use(self, &target) {
-                card.use_effect(self, target)
-                    .map_err(|_| GameError::InvalidAction)?;
-                Ok(())
-            } else {
-                Err(GameError::InvalidAction)
-            }
-        } else {
-            Err(GameError::InvalidAction)
-        }
     }
 }
