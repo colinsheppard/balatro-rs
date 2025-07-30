@@ -29,7 +29,7 @@ pub enum HandRank {
 
 impl HandRank {
     /// Get base level information for this hand type (level 1 values)
-    #[allow(dead_code)]
+    #[allow(dead_code)] // Temporary allowance for merge compatibility
     pub(crate) fn base_level(&self) -> Level {
         self.level() // Delegate to existing method for base values
     }
