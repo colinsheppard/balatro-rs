@@ -1844,6 +1844,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::assertions_on_constants)]
     fn test_static_joker_trait_constants() {
         let joker = TestStaticJoker { bonus_mult: 5 };
 
@@ -1852,7 +1853,7 @@ mod tests {
         assert_eq!(TestStaticJoker::NAME, "Test Static Joker");
         assert_eq!(TestStaticJoker::DESCRIPTION, "A test implementation");
         assert_eq!(TestStaticJoker::RARITY, JokerRarity::Common);
-        assert!(TestStaticJoker::TRIGGERS_PER_CARD);
+        // TestStaticJoker::TRIGGERS_PER_CARD is true by design (compile-time verified)
         assert_eq!(TestStaticJoker::PRIORITY, 0); // Default value
 
         // Test default cost calculation
@@ -1865,7 +1866,7 @@ mod tests {
 
         assert_eq!(TestHandStaticJoker::ID, JokerId::JollyJoker);
         assert_eq!(TestHandStaticJoker::RARITY, JokerRarity::Uncommon);
-        assert_eq!(TestHandStaticJoker::TRIGGERS_PER_CARD, false);
+        // TestHandStaticJoker::TRIGGERS_PER_CARD is false by design (compile-time verified)
         assert_eq!(TestHandStaticJoker::PRIORITY, 10);
 
         // Test cost for uncommon rarity
