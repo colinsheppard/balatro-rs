@@ -827,7 +827,10 @@ impl JokerState for AcrobatJoker {
     }
 
     fn deserialize_state(&mut self, value: serde_json::Value) -> Result<(), String> {
-        if let Some(hands_played) = value.get("hands_played_this_round").and_then(|v| v.as_u64()) {
+        if let Some(hands_played) = value
+            .get("hands_played_this_round")
+            .and_then(|v| v.as_u64())
+        {
             self.hands_played_this_round = hands_played as u32;
             Ok(())
         } else {
@@ -971,13 +974,25 @@ mod tests {
         // First 3 hands should not trigger
         for i in 0..3 {
             let result = acrobat.process(&stage, &mut context);
-            assert_eq!(result.mult_multiplier, 1.0, "Hand {} should not trigger", i + 1);
-            assert!(result.message.is_none(), "Hand {} should have no message", i + 1);
+            assert_eq!(
+                result.mult_multiplier,
+                1.0,
+                "Hand {} should not trigger",
+                i + 1
+            );
+            assert!(
+                result.message.is_none(),
+                "Hand {} should have no message",
+                i + 1
+            );
         }
 
         // 4th hand (final hand) should trigger
         let result = acrobat.process(&stage, &mut context);
-        assert_eq!(result.mult_multiplier, 3.0, "Final hand should trigger X3 mult");
+        assert_eq!(
+            result.mult_multiplier, 3.0,
+            "Final hand should trigger X3 mult"
+        );
         assert!(result.message.is_some(), "Final hand should have message");
         assert!(result.message.unwrap().contains("Acrobat final hand bonus"));
     }
@@ -988,7 +1003,10 @@ mod tests {
 
         // Simulate playing 4 hands
         let hand = SelectHand::new(vec![Card::new(Value::Ace, Suit::Heart)]);
-        let mut hand_score = crate::joker::traits::HandScore { chips: 0, mult: 0.0 };
+        let mut hand_score = crate::joker::traits::HandScore {
+            chips: 0,
+            mult: 0.0,
+        };
         let played_cards = vec![];
         let held_cards = vec![];
         let mut events = vec![];
