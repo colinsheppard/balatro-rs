@@ -1,7 +1,9 @@
 use crate::card::Card;
+use crate::consumables::ConsumableId;
 use crate::joker::JokerId;
 use crate::shop::packs::PackType;
 use crate::stage::Blind;
+use crate::vouchers::VoucherId;
 #[cfg(feature = "python")]
 use pyo3::pyclass;
 use std::fmt;
@@ -40,6 +42,20 @@ pub enum Action {
     BuyJoker {
         joker_id: JokerId,
         slot: usize,
+    },
+    BuyConsumable {
+        consumable_id: ConsumableId,
+        slot: usize,
+    },
+    UseConsumable {
+        slot: usize,
+        target_description: String,
+    },
+    SellConsumable {
+        slot: usize,
+    },
+    BuyVoucher {
+        voucher_id: VoucherId,
     },
     BuyPack {
         pack_type: PackType,
@@ -86,16 +102,15 @@ pub enum Action {
     ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
-    // Consumable actions
-    // Consumable actions (simplified for now to avoid Python binding issues)
-    UseConsumable {
-        consumable_slot: usize,
-    },
+    // Planet card actions (simplified for now to avoid Python binding issues)
     UsePlanetCard {
         planet_card_id: u32,
         hand_rank_id: u32,
     },
-    // SkipBlind(Blind),
+
+    // Skip tags system
+    SkipBlind(Blind), // Skip a blind and potentially get tags
+    SelectSkipTag(crate::skip_tags::SkipTagId), // Select a skip tag for activation
 }
 
 impl fmt::Display for Action {
@@ -120,8 +135,29 @@ impl fmt::Display for Action {
             Self::BuyJoker { joker_id, slot } => {
                 write!(f, "BuyJoker: {joker_id:?} at slot {slot}")
             }
+            Self::BuyConsumable {
+                consumable_id,
+                slot,
+            } => {
+                write!(f, "BuyConsumable: {consumable_id:?} at slot {slot}")
+            }
+            Self::UseConsumable {
+                slot,
+                target_description,
+            } => {
+                write!(
+                    f,
+                    "UseConsumable: slot {slot} with target {target_description}"
+                )
+            }
+            Self::SellConsumable { slot } => {
+                write!(f, "SellConsumable: slot {slot}")
+            }
             Self::BuyPack { pack_type } => {
                 write!(f, "BuyPack: {pack_type}")
+            }
+            Self::BuyVoucher { voucher_id } => {
+                write!(f, "BuyVoucher: {voucher_id:?}")
             }
             Self::OpenPack { pack_id } => {
                 write!(f, "OpenPack: {pack_id}")
@@ -203,10 +239,7 @@ impl fmt::Display for Action {
             Self::DeactivateMultiSelect() => {
                 write!(f, "DeactivateMultiSelect")
             }
-            // Consumable actions
-            Self::UseConsumable { consumable_slot } => {
-                write!(f, "UseConsumable: slot {consumable_slot}")
-            }
+            // Planet card actions
             Self::UsePlanetCard {
                 planet_card_id,
                 hand_rank_id,
@@ -215,6 +248,14 @@ impl fmt::Display for Action {
                     f,
                     "UsePlanetCard: card {planet_card_id} on hand {hand_rank_id}"
                 )
+            }
+
+            // Skip tags system
+            Self::SkipBlind(blind) => {
+                write!(f, "SkipBlind: {blind}")
+            }
+            Self::SelectSkipTag(tag_id) => {
+                write!(f, "SelectSkipTag: {tag_id}")
             }
         }
     }

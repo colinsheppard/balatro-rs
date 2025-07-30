@@ -153,7 +153,10 @@ fn test_planet_card_action_integration() {
     let mut game = Game::new(Config::default());
 
     // Test UseConsumable action (basic validation)
-    let consumable_action = Action::UseConsumable { consumable_slot: 0 };
+    let consumable_action = Action::UseConsumable {
+        slot: 0,
+        target_description: "none".to_string(),
+    };
     // This should return InvalidAction since no consumables are in slots
     assert!(game.handle_action(consumable_action).is_err());
 
