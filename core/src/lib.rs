@@ -49,6 +49,30 @@ pub mod static_joker_factory;
 pub mod target_context;
 pub mod vouchers;
 
+/// Initialize all core library systems
+///
+/// This function should be called once during application startup to ensure
+/// all factory systems, registries, and global state are properly initialized.
+///
+/// # Errors
+///
+/// Returns an error if any initialization step fails. The application should
+/// not continue if initialization fails as it indicates fundamental system issues.
+pub fn initialize() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // Initialize joker registry - this triggers lazy initialization of the global registry
+    // which now includes all static jokers from StaticJokerFactory
+    let _ = joker_registry::registry::all_definitions()
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+    // Initialize tarot factory with all available cards
+    consumables::tarot::initialize_tarot_factory()
+        .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)?;
+
+    // Future: Initialize other factory systems (planet cards, spectral cards, etc.)
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::action::Action;
@@ -58,6 +82,9 @@ mod tests {
     #[test]
     // Test executing a full game using the gen_actions api
     fn test_game_gen_actions() {
+        // Initialize all systems before running game tests
+        crate::initialize().expect("Failed to initialize core systems");
+
         let mut g = Game::default();
 
         g.start();
@@ -88,6 +115,9 @@ mod tests {
     #[test]
     // Test executing a full game using the gen_action_space (vector) api
     fn test_game_action_space() {
+        // Initialize all systems before running game tests
+        crate::initialize().expect("Failed to initialize core systems");
+
         let mut g = Game::default();
 
         g.start();

@@ -1,4 +1,5 @@
 use crate::card::Card;
+use crate::consumables::ConsumableId;
 use crate::joker::JokerId;
 use crate::shop::packs::PackType;
 use crate::stage::Blind;
@@ -38,12 +39,37 @@ pub enum Action {
     Play(),
     Discard(),
     CashOut(f64),
-    BuyJoker { joker_id: JokerId, slot: usize },
-    BuyVoucher { voucher_id: VoucherId },
-    BuyPack { pack_type: PackType },
-    OpenPack { pack_id: usize },
-    SelectFromPack { pack_id: usize, option_index: usize },
-    SkipPack { pack_id: usize },
+    BuyJoker {
+        joker_id: JokerId,
+        slot: usize,
+    },
+    BuyConsumable {
+        consumable_id: ConsumableId,
+        slot: usize,
+    },
+    UseConsumable {
+        slot: usize,
+        target_description: String,
+    },
+    SellConsumable {
+        slot: usize,
+    },
+    BuyVoucher {
+        voucher_id: VoucherId,
+    },
+    BuyPack {
+        pack_type: PackType,
+    },
+    OpenPack {
+        pack_id: usize,
+    },
+    SelectFromPack {
+        pack_id: usize,
+        option_index: usize,
+    },
+    SkipPack {
+        pack_id: usize,
+    },
     RerollShop(),
     NextRound(),
     SelectBlind(Blind),
@@ -55,7 +81,10 @@ pub enum Action {
     ToggleCardSelection(Card), // Toggle selection state of a card
     SelectAllCards(),          // Select all available cards
     DeselectAllCards(),        // Clear all card selections
-    RangeSelectCards { start: Card, end: Card }, // Select range of cards
+    RangeSelectCards {
+        start: Card,
+        end: Card,
+    }, // Select range of cards
 
     // Multi-select actions for jokers
     SelectJoker(JokerId),          // Select a joker
@@ -99,6 +128,24 @@ impl fmt::Display for Action {
             }
             Self::BuyJoker { joker_id, slot } => {
                 write!(f, "BuyJoker: {joker_id:?} at slot {slot}")
+            }
+            Self::BuyConsumable {
+                consumable_id,
+                slot,
+            } => {
+                write!(f, "BuyConsumable: {consumable_id:?} at slot {slot}")
+            }
+            Self::UseConsumable {
+                slot,
+                target_description,
+            } => {
+                write!(
+                    f,
+                    "UseConsumable: slot {slot} with target {target_description}"
+                )
+            }
+            Self::SellConsumable { slot } => {
+                write!(f, "SellConsumable: slot {slot}")
             }
             Self::BuyPack { pack_type } => {
                 write!(f, "BuyPack: {pack_type}")

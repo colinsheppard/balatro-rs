@@ -119,6 +119,17 @@ pub enum TarotRarity {
     Legendary,
 }
 
+/// Metadata about a tarot card type for factory management
+#[derive(Debug, Clone)]
+pub struct TarotCardMetadata {
+    pub name: &'static str,
+    pub description: &'static str,
+    pub rarity: TarotRarity,
+    pub target_type: TargetType,
+    pub effect_category: ConsumableEffect,
+    pub implemented: bool,
+}
+
 /// Factory for creating tarot card instances
 #[derive(Debug)]
 pub struct TarotFactory;
@@ -158,12 +169,52 @@ impl TarotFactory {
     pub fn is_tarot_card(&self, id: ConsumableId) -> bool {
         matches!(id.consumable_type(), ConsumableType::Tarot)
     }
+
+    /// Get all available tarot card IDs (for shop generation)
+    pub fn available_cards(&self) -> Result<Vec<ConsumableId>, TarotError> {
+        Ok(self.all_tarot_ids())
+    }
+
+    /// Get metadata for a specific tarot card (stub implementation)
+    pub fn get_metadata(&self, id: ConsumableId) -> Result<Option<TarotCardMetadata>, TarotError> {
+        if self.is_tarot_card(id) {
+            // Create a tarot card instance to get its metadata
+            match self.create_tarot(id) {
+                Ok(card) => Ok(Some(TarotCardMetadata {
+                    name: card.arcana_name(),
+                    description: card.flavor_text(),
+                    rarity: card.rarity(),
+                    target_type: card.get_target_type(),
+                    effect_category: card.get_effect_category(),
+                    implemented: true,
+                })),
+                Err(_) => Ok(None),
+            }
+        } else {
+            Ok(None)
+        }
+    }
 }
 
 impl Default for TarotFactory {
     fn default() -> Self {
         Self::new()
     }
+}
+
+/// Global tarot factory instance for centralized access
+static GLOBAL_TAROT_FACTORY: std::sync::OnceLock<TarotFactory> = std::sync::OnceLock::new();
+
+/// Get the global tarot factory instance
+pub fn get_tarot_factory() -> &'static TarotFactory {
+    GLOBAL_TAROT_FACTORY.get_or_init(TarotFactory::new)
+}
+
+/// Initialize the global tarot factory with all available tarot cards
+pub fn initialize_tarot_factory() -> Result<(), TarotError> {
+    let _factory = get_tarot_factory();
+    // The factory is automatically initialized when first accessed
+    Ok(())
 }
 
 // Major Arcana implementations start here
