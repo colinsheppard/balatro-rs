@@ -1709,7 +1709,7 @@ impl<'de> Deserialize<'de> for ConsumableSlots {
 }
 
 // Re-export submodules when they are implemented
-pub mod planet;
+// pub mod planet;
 pub mod tarot;
 // pub mod spectral;
 
