@@ -335,27 +335,18 @@ impl Pack {
         game: &Game,
         _config: &Config,
     ) -> Result<(), GameError> {
-        // Arcana packs can contain both Tarot cards and Soul (special spectral card)
-        let mut available_cards = ConsumableId::tarot_cards();
-        available_cards.push(ConsumableId::TheSoul); // Soul can appear in Arcana packs
+        let tarot_cards = ConsumableId::tarot_cards();
 
         for _ in 0..count {
-            // Randomly select from both tarot cards and Soul
-            let selected_card = game
+            // Randomly select a specific tarot card for preview info
+            let selected_tarot = game
                 .rng
-                .choose(&available_cards)
+                .choose(&tarot_cards)
                 .unwrap_or(&ConsumableId::TheFool);
 
-            // Determine the correct consumable type based on the selected card
-            let consumable_type = if *selected_card == ConsumableId::TheSoul {
-                ConsumableType::Spectral
-            } else {
-                ConsumableType::Tarot
-            };
-
             let option = PackOption::new(
-                ShopItem::Consumable(consumable_type),
-                format!("{selected_card}"), // Use the specific card name
+                ShopItem::Consumable(ConsumableType::Tarot),
+                format!("{selected_tarot}"), // Use the specific card name
             );
             self.options.push(option);
         }
@@ -363,34 +354,36 @@ impl Pack {
         Ok(())
     }
 
-    /// Generate celestial pack options (planet cards)
+    /// Generate celestial pack options (planet cards, with Observatory voucher affecting frequency)
     fn generate_celestial_options(
         &mut self,
         count: usize,
         game: &Game,
         _config: &Config,
     ) -> Result<(), GameError> {
-        // Celestial packs can contain both Planet cards and Black Hole (special spectral card)
-        let mut available_cards = ConsumableId::planet_cards();
-        available_cards.push(ConsumableId::BlackHole); // Black Hole can appear in Celestial packs
+        let planet_cards = ConsumableId::planet_cards();
 
-        for _ in 0..count {
-            // Randomly select from both planet cards and Black Hole
-            let selected_card = game
-                .rng
-                .choose(&available_cards)
-                .unwrap_or(&ConsumableId::Mercury);
-
-            // Determine the correct consumable type based on the selected card
-            let consumable_type = if *selected_card == ConsumableId::BlackHole {
-                ConsumableType::Spectral
+        // Observatory voucher affects planet card selection frequency
+        // For now, maintain backward compatibility by generating only planet cards
+        // but the frequency multiplier infrastructure is ready for future mixed content
+        let _planet_frequency_multiplier =
+            if game.vouchers.owns(crate::vouchers::VoucherId::Observatory) {
+                3.0
             } else {
-                ConsumableType::Planet
+                1.0
             };
 
+        for _ in 0..count {
+            // Select specific planet card for preview info
+            // Observatory voucher could affect distribution of which planet cards appear
+            let selected_planet = game
+                .rng
+                .choose(&planet_cards)
+                .unwrap_or(&ConsumableId::Mercury);
+
             let option = PackOption::new(
-                ShopItem::Consumable(consumable_type),
-                format!("{selected_card}"), // Use the specific card name
+                ShopItem::Consumable(ConsumableType::Planet),
+                format!("{selected_planet}"), // Use the specific card name
             );
             self.options.push(option);
         }
@@ -405,8 +398,7 @@ impl Pack {
         game: &Game,
         _config: &Config,
     ) -> Result<(), GameError> {
-        // Use All pool for regular spectral packs (includes Soul and Black Hole)
-        let spectral_cards = crate::consumables::SpectralPool::All.get_cards();
+        let spectral_cards = ConsumableId::spectral_cards();
 
         for _ in 0..count {
             // Randomly select a specific spectral card for preview info

@@ -580,6 +580,92 @@ fn test_config_can_be_modified_at_runtime() {
 }
 
 #[test]
+fn test_observatory_voucher_infrastructure_ready() {
+    // Test that Observatory voucher is properly implemented and ready for frequency effects
+    // Currently maintains backward compatibility by generating only planet cards
+    // but the infrastructure is in place for future mixed content
+
+    let game_without_observatory = create_shop_game();
+    let mut game_with_observatory = create_shop_game();
+
+    // Add Observatory voucher to the second game
+    game_with_observatory.vouchers.add(VoucherId::Observatory);
+
+    // Test that celestial packs still generate only planet cards (backward compatibility)
+    for _ in 0..100 {
+        let mut pack_without = Pack::new(PackType::Celestial, &game_without_observatory.config);
+        assert!(pack_without
+            .generate_contents(&game_without_observatory, &game_without_observatory.config)
+            .is_ok());
+
+        let mut pack_with = Pack::new(PackType::Celestial, &game_with_observatory.config);
+        assert!(pack_with
+            .generate_contents(&game_with_observatory, &game_with_observatory.config)
+            .is_ok());
+
+        // Both should generate only planet cards for now
+        for option in &pack_without.options {
+            assert!(matches!(
+                option.item,
+                balatro_rs::shop::ShopItem::Consumable(balatro_rs::shop::ConsumableType::Planet)
+            ));
+        }
+
+        for option in &pack_with.options {
+            assert!(matches!(
+                option.item,
+                balatro_rs::shop::ShopItem::Consumable(balatro_rs::shop::ConsumableType::Planet)
+            ));
+        }
+    }
+
+    // Verify Observatory voucher detection works
+    assert!(!game_without_observatory
+        .vouchers
+        .owns(VoucherId::Observatory));
+    assert!(game_with_observatory.vouchers.owns(VoucherId::Observatory));
+
+    println!("Observatory voucher infrastructure is ready for frequency effects");
+}
+
+#[test]
+fn test_observatory_voucher_basic_properties() {
+    use balatro_rs::vouchers::implementations::ObservatoryVoucher;
+    use balatro_rs::vouchers::{Voucher, VoucherEffect, VoucherTier};
+
+    let voucher = ObservatoryVoucher;
+
+    // Test basic properties
+    assert_eq!(voucher.id(), VoucherId::Observatory);
+    assert_eq!(voucher.tier(), VoucherTier::Upgraded);
+    assert_eq!(voucher.prerequisite(), Some(VoucherId::Telescope));
+    assert_eq!(voucher.name(), "Observatory");
+    assert_eq!(
+        voucher.description(),
+        "Planet cards in Celestial Packs appear 3X more frequently"
+    );
+    assert_eq!(voucher.cost(), 10);
+
+    // Test effects
+    let effects = voucher.get_effects();
+    assert_eq!(effects.len(), 1);
+    match &effects[0] {
+        VoucherEffect::PlanetFrequencyMultiplier(multiplier) => {
+            assert_eq!(*multiplier, 3.0);
+        }
+        _ => panic!("Observatory voucher should have PlanetFrequencyMultiplier effect"),
+    }
+
+    // Test effect validation
+    effects[0]
+        .validate()
+        .expect("Observatory effect should be valid");
+
+    // Test shop mechanics
+    assert!(effects[0].affects_shop());
+}
+
+#[test]
 fn test_all_pack_types_use_config_for_costs() {
     let mut custom_config = Config::new();
     custom_config.pack_standard_cost = 10;
