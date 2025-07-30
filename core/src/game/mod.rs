@@ -1934,6 +1934,10 @@ impl Game {
             // Skip tag system actions
             Action::SkipBlind(blind) => self.handle_skip_blind(blind),
             Action::SelectSkipTag(tag_id) => self.handle_select_skip_tag(tag_id),
+            Action::UsePlanetCard { .. } => {
+                // TODO: Implement planet card usage when planet card system is ready
+                Err(GameError::InvalidAction)
+            }
         }
     }
 
