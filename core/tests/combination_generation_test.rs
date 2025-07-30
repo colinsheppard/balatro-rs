@@ -1,6 +1,4 @@
-// This test is currently disabled
-#![cfg(false)] // Always false, effectively disabling the file
-               // EMERGENCY DISABLE: CardTarget API mismatch and Vec indexing errors - tracked for post-emergency fix
+// Re-enabled after fixing CardTarget data structure access issue
 
 use balatro_rs::config::Config;
 use balatro_rs::consumables::{Target, TargetType};
@@ -18,7 +16,6 @@ fn create_game_with_cards(_card_count: usize) -> Game {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_single_card_target_generation() {
     // Test generation of single card targets
     // Note: This test demonstrates the structure but may need adjustment
@@ -36,7 +33,6 @@ fn test_single_card_target_generation() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_multi_card_combination_logic() {
     // Test the mathematical correctness of combination generation
     // We'll test this by checking the expected number of combinations
@@ -66,7 +62,6 @@ fn test_multi_card_combination_logic() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_combination_edge_cases() {
     let game = create_game_with_cards(3);
 
@@ -85,10 +80,10 @@ fn test_combination_edge_cases() {
     let _targets = Target::get_available_targets(TargetType::Cards(3), &game);
     // Should return one combination: all cards
     // Note: Actual behavior depends on game implementation
+    let _ = targets; // Suppress unused variable warning
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_performance_limits() {
     let game = create_game_with_cards(10);
 
@@ -106,16 +101,15 @@ fn test_performance_limits() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_combination_content_correctness() {
     // Test that generated combinations contain valid card indices
     let game = create_game_with_cards(4);
-    let targets = Target::get_available_targets(TargetType::Cards(2), &game);
+    let _targets = Target::get_available_targets(TargetType::Cards(2), &game);
 
-    for target in targets {
-        if let Target::Cards(card_target) = target {
+    for target in _targets {
+        if let Target::Cards(indices) = target {
             // Verify all indices are valid
-            for &index in &card_target.indices {
+            for &index in &indices.indices {
                 assert!(
                     index < 4,
                     "Card index {index} should be less than hand size"
@@ -124,15 +118,15 @@ fn test_combination_content_correctness() {
 
             // Verify we have exactly 2 cards
             assert_eq!(
-                card_target.indices.len(),
+                indices.indices.len(),
                 2,
                 "Should have exactly 2 card indices"
             );
 
             // Verify indices are sorted and unique
-            for i in 1..card_target.indices.len() {
+            for i in 1..indices.indices.len() {
                 assert!(
-                    card_target.indices[i] > card_target.indices[i - 1],
+                    indices.indices[i] > indices.indices[i - 1],
                     "Indices should be sorted and unique"
                 );
             }
@@ -143,7 +137,6 @@ fn test_combination_content_correctness() {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_mathematical_combination_counts() {
     // Test that we generate the correct number of combinations
     // This tests the mathematical correctness of our algorithm
@@ -232,7 +225,6 @@ fn binomial_coefficient(n: usize, k: usize) -> usize {
 }
 
 #[test]
-#[ignore = "EMERGENCY DISABLE: CardTarget iteration issues - tracked for post-emergency fix"]
 fn test_binomial_coefficient_helper() {
     // Test our helper function for calculating expected combinations
     assert_eq!(binomial_coefficient(4, 2), 6);

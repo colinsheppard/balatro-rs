@@ -1,7 +1,8 @@
 use crate::card::{Suit, Value};
 use crate::joker::{Joker, JokerId, JokerRarity};
+use crate::joker_json_parameters::JsonParameterResolver;
 use crate::rank::HandRank;
-use crate::static_joker::{StaticCondition, StaticJoker};
+use crate::static_joker::{FrameworkStaticJoker, StaticCondition};
 
 /// Factory functions for creating static jokers using the framework
 pub struct StaticJokerFactory;
@@ -10,7 +11,7 @@ impl StaticJokerFactory {
     /// Create the basic Joker (+4 Mult)
     pub fn create_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(JokerId::Joker, "Joker", "+4 Mult")
+            FrameworkStaticJoker::builder(JokerId::Joker, "Joker", "+4 Mult")
                 .rarity(JokerRarity::Common)
                 .cost(2)
                 .mult(4)
@@ -23,7 +24,7 @@ impl StaticJokerFactory {
     /// Create Greedy Joker (Diamond cards give +3 Mult when scored)
     pub fn create_greedy_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::GreedyJoker,
                 "Greedy Joker",
                 "Played cards with Diamond suit give +3 Mult when scored",
@@ -41,7 +42,7 @@ impl StaticJokerFactory {
     /// Create Lusty Joker (Heart cards give +3 Mult when scored)
     pub fn create_lusty_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::LustyJoker,
                 "Lusty Joker",
                 "Played cards with Heart suit give +3 Mult when scored",
@@ -59,7 +60,7 @@ impl StaticJokerFactory {
     /// Create Wrathful Joker (Spade cards give +3 Mult when scored)
     pub fn create_wrathful_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::WrathfulJoker,
                 "Wrathful Joker",
                 "Played cards with Spade suit give +3 Mult when scored",
@@ -77,7 +78,7 @@ impl StaticJokerFactory {
     /// Create Gluttonous Joker (Club cards give +3 Mult when scored)
     pub fn create_gluttonous_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::GluttonousJoker,
                 "Gluttonous Joker",
                 "Played cards with Club suit give +3 Mult when scored",
@@ -95,7 +96,7 @@ impl StaticJokerFactory {
     /// Create Jolly Joker (+8 Mult if played hand contains Pair)
     pub fn create_jolly_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::JollyJoker,
                 "Jolly Joker",
                 "+8 Mult if played hand contains Pair",
@@ -113,7 +114,7 @@ impl StaticJokerFactory {
     /// Create Zany Joker (+12 Mult if played hand contains Three of a Kind)
     pub fn create_zany_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::ZanyJoker,
                 "Zany Joker",
                 "+12 Mult if played hand contains Three of a Kind",
@@ -131,7 +132,7 @@ impl StaticJokerFactory {
     /// Create Mad Joker (+10 Mult if played hand contains Two Pair)
     pub fn create_mad_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::MadJoker,
                 "Mad Joker",
                 "+10 Mult if played hand contains Two Pair",
@@ -149,7 +150,7 @@ impl StaticJokerFactory {
     /// Create Crazy Joker (+12 Mult if played hand contains Straight)
     pub fn create_crazy_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::CrazyJoker,
                 "Crazy Joker",
                 "+12 Mult if played hand contains Straight",
@@ -167,7 +168,7 @@ impl StaticJokerFactory {
     /// Create Droll Joker (+10 Mult if played hand contains Flush)
     pub fn create_droll_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::DrollJoker,
                 "Droll Joker",
                 "+10 Mult if played hand contains Flush",
@@ -185,7 +186,7 @@ impl StaticJokerFactory {
     /// Create Sly Joker (+50 Chips if played hand contains Pair)
     pub fn create_sly_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::SlyJoker,
                 "Sly Joker",
                 "+50 Chips if played hand contains Pair",
@@ -203,7 +204,7 @@ impl StaticJokerFactory {
     /// Create Wily Joker (+100 Chips if played hand contains Three of a Kind)
     pub fn create_wily_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::WilyJoker,
                 "Wily Joker",
                 "+100 Chips if played hand contains Three of a Kind",
@@ -221,7 +222,7 @@ impl StaticJokerFactory {
     /// Create Clever Joker (+80 Chips if played hand contains Two Pair)
     pub fn create_clever_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::CleverJoker,
                 "Clever Joker",
                 "+80 Chips if played hand contains Two Pair",
@@ -239,7 +240,7 @@ impl StaticJokerFactory {
     /// Create Devious Joker (+100 Chips if played hand contains Straight)
     pub fn create_devious_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::DeviousJoker,
                 "Devious Joker",
                 "+100 Chips if played hand contains Straight",
@@ -257,7 +258,7 @@ impl StaticJokerFactory {
     /// Create Crafty Joker (+80 Chips if played hand contains Flush)
     pub fn create_crafty_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::CraftyJoker,
                 "Crafty Joker",
                 "+80 Chips if played hand contains Flush",
@@ -275,7 +276,7 @@ impl StaticJokerFactory {
     /// Create Even Steven (Even cards (2, 4, 6, 8, 10) give +4 Mult when scored)
     pub fn create_even_steven() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::EvenSteven,
                 "Even Steven",
                 "Played cards with even rank (2, 4, 6, 8, 10) give +4 Mult when scored",
@@ -299,7 +300,7 @@ impl StaticJokerFactory {
     /// Create Odd Todd (Odd cards (3, 5, 7, 9, A) give +31 Chips when scored)
     pub fn create_odd_todd() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::OddTodd,
                 "Odd Todd",
                 "Played cards with odd rank (3, 5, 7, 9, A) give +31 Chips when scored",
@@ -323,7 +324,7 @@ impl StaticJokerFactory {
     /// Create Scholar (Aces give +20 Chips and +4 Mult when scored)
     pub fn create_scholar() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::Scholar,
                 "Scholar",
                 "Played Aces give +20 Chips and +4 Mult when scored",
@@ -342,7 +343,7 @@ impl StaticJokerFactory {
     /// Create Red Card (Red cards give +3 Mult when scored)
     pub fn create_red_card() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::RedCard,
                 "Red Card",
                 "Red cards (Hearts and Diamonds) give +3 Mult when scored",
@@ -363,7 +364,7 @@ impl StaticJokerFactory {
     /// Create Blue Joker (Black cards give +3 Mult when scored)
     pub fn create_blue_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::BlueJoker,
                 "Blue Joker",
                 "Black cards (Clubs and Spades) give +3 Mult when scored",
@@ -384,7 +385,7 @@ impl StaticJokerFactory {
     /// Create Faceless Joker (Face cards give +5 Mult when scored)
     pub fn create_faceless_joker() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::FacelessJoker,
                 "Faceless Joker",
                 "Face cards (Jack, Queen, King) give +5 Mult when scored",
@@ -408,7 +409,7 @@ impl StaticJokerFactory {
     /// Create Walkie (+10 Chips and +4 Mult if hand contains Straight)
     pub fn create_walkie() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::Walkie,
                 "Walkie",
                 "+10 Chips and +4 Mult if played hand contains a Straight",
@@ -426,28 +427,59 @@ impl StaticJokerFactory {
 
     // Note: Runner is implemented as RunnerJoker in joker_impl.rs, not as a static joker
 
-    /// Create Half Joker (+20 Mult if played hand has 4 or fewer cards)
+    /// Create Half Joker (configurable Mult if played hand has configurable or fewer cards)
+    /// Uses parameter resolution from joker.json: #1# = mult value, #2# = card count
     pub fn create_half_joker() -> Box<dyn Joker> {
+        // Load parameters from joker.json, fallback to original hardcoded values if fails
+        let (mult_value, card_limit) = Self::load_half_joker_parameters();
+
+        // Use a static description since the builder requires &'static str
+        let description = if mult_value == 20 && card_limit == 4 {
+            "+20 Mult if played hand has 4 or fewer cards"
+        } else {
+            // Use a generic description for non-default parameters
+            "Configurable Mult if played hand has limited cards"
+        };
+
         Box::new(
-            StaticJoker::builder(
-                JokerId::HalfJoker,
-                "Half Joker",
-                "+20 Mult if played hand has 4 or fewer cards",
-            )
-            .rarity(JokerRarity::Common)
-            .cost(3)
-            .mult(20)
-            .condition(StaticCondition::HandSizeAtMost(4))
-            .per_hand()
-            .build()
-            .expect("Valid joker configuration"),
+            FrameworkStaticJoker::builder(JokerId::HalfJoker, "Half Joker", description)
+                .rarity(JokerRarity::Common)
+                .cost(3)
+                .mult(mult_value)
+                .condition(StaticCondition::HandSizeAtMost(card_limit))
+                .per_hand()
+                .build()
+                .expect("Valid joker configuration"),
         )
+    }
+
+    /// Load Half Joker parameters from joker.json, with fallback to original hardcoded values
+    fn load_half_joker_parameters() -> (i32, usize) {
+        match JsonParameterResolver::new() {
+            Ok(resolver) => {
+                match resolver.get_parameters_by_id(JokerId::HalfJoker) {
+                    Ok(params) => {
+                        let mult = params.first().unwrap_or(20); // #1# = mult value
+                        let cards = params.second().unwrap_or(4) as usize; // #2# = card count
+                        (mult, cards)
+                    }
+                    Err(_) => {
+                        // Fallback to original hardcoded values
+                        (20, 4)
+                    }
+                }
+            }
+            Err(_) => {
+                // Fallback to original hardcoded values
+                (20, 4)
+            }
+        }
     }
 
     /// Create Banner (+30 Chips for each remaining discard)
     pub fn create_banner() -> Box<dyn Joker> {
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::Banner,
                 "Banner",
                 "+30 Chips for each remaining discard",
@@ -469,7 +501,7 @@ impl StaticJokerFactory {
     pub fn create_abstract_joker() -> Box<dyn Joker> {
         // PLACEHOLDER: Currently provides self mult multiplier - DO NOT USE IN PRODUCTION
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::AbstractJoker,
                 "Abstract Joker",
                 "All Jokers give X0.25 more Mult",
@@ -491,7 +523,7 @@ impl StaticJokerFactory {
     pub fn create_steel_joker() -> Box<dyn Joker> {
         // PLACEHOLDER: Currently provides no mult multiplier - DO NOT USE IN PRODUCTION
         Box::new(
-            StaticJoker::builder(
+            FrameworkStaticJoker::builder(
                 JokerId::SteelJoker,
                 "Steel Joker",
                 "This Joker gains X0.25 Mult for each Steel Card in your full deck",
@@ -508,8 +540,8 @@ impl StaticJokerFactory {
 
     /// Test-only methods that return concrete types for internal testing
     #[cfg(test)]
-    pub fn create_greedy_joker_concrete() -> StaticJoker {
-        StaticJoker::builder(
+    pub fn create_greedy_joker_concrete() -> FrameworkStaticJoker {
+        FrameworkStaticJoker::builder(
             JokerId::GreedyJoker,
             "Greedy Joker",
             "Played cards with Diamond suit give +3 Mult when scored",
@@ -525,8 +557,8 @@ impl StaticJokerFactory {
 
     /// Test-only methods that return concrete types for internal testing
     #[cfg(test)]
-    pub fn create_lusty_joker_concrete() -> StaticJoker {
-        StaticJoker::builder(
+    pub fn create_lusty_joker_concrete() -> FrameworkStaticJoker {
+        FrameworkStaticJoker::builder(
             JokerId::LustyJoker,
             "Lusty Joker",
             "Played cards with Heart suit give +3 Mult when scored",
@@ -542,8 +574,8 @@ impl StaticJokerFactory {
 
     /// Test-only methods that return concrete types for internal testing
     #[cfg(test)]
-    pub fn create_wrathful_joker_concrete() -> StaticJoker {
-        StaticJoker::builder(
+    pub fn create_wrathful_joker_concrete() -> FrameworkStaticJoker {
+        FrameworkStaticJoker::builder(
             JokerId::WrathfulJoker,
             "Wrathful Joker",
             "Played cards with Spade suit give +3 Mult when scored",
@@ -559,8 +591,8 @@ impl StaticJokerFactory {
 
     /// Test-only methods that return concrete types for internal testing
     #[cfg(test)]
-    pub fn create_gluttonous_joker_concrete() -> StaticJoker {
-        StaticJoker::builder(
+    pub fn create_gluttonous_joker_concrete() -> FrameworkStaticJoker {
+        FrameworkStaticJoker::builder(
             JokerId::GluttonousJoker,
             "Gluttonous Joker",
             "Played cards with Club suit give +3 Mult when scored",

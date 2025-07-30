@@ -1,8 +1,10 @@
 use crate::card::Card;
+use crate::consumables::ConsumableId;
 use crate::joker::JokerId;
 use crate::shop::packs::PackType;
-use crate::skip_tags::TagId;
+use crate::skip_tags::SkipTagId;
 use crate::stage::Blind;
+use crate::vouchers::VoucherId;
 #[cfg(feature = "python")]
 use pyo3::pyclass;
 use std::fmt;
@@ -38,11 +40,37 @@ pub enum Action {
     Play(),
     Discard(),
     CashOut(f64),
-    BuyJoker { joker_id: JokerId, slot: usize },
-    BuyPack { pack_type: PackType },
-    OpenPack { pack_id: usize },
-    SelectFromPack { pack_id: usize, option_index: usize },
-    SkipPack { pack_id: usize },
+    BuyJoker {
+        joker_id: JokerId,
+        slot: usize,
+    },
+    BuyConsumable {
+        consumable_id: ConsumableId,
+        slot: usize,
+    },
+    UseConsumable {
+        slot: usize,
+        target_description: String,
+    },
+    SellConsumable {
+        slot: usize,
+    },
+    BuyVoucher {
+        voucher_id: VoucherId,
+    },
+    BuyPack {
+        pack_type: PackType,
+    },
+    OpenPack {
+        pack_id: usize,
+    },
+    SelectFromPack {
+        pack_id: usize,
+        option_index: usize,
+    },
+    SkipPack {
+        pack_id: usize,
+    },
     RerollShop(),
     NextRound(),
     SelectBlind(Blind),
@@ -54,7 +82,10 @@ pub enum Action {
     ToggleCardSelection(Card), // Toggle selection state of a card
     SelectAllCards(),          // Select all available cards
     DeselectAllCards(),        // Clear all card selections
-    RangeSelectCards { start: Card, end: Card }, // Select range of cards
+    RangeSelectCards {
+        start: Card,
+        end: Card,
+    }, // Select range of cards
 
     // Multi-select actions for jokers
     SelectJoker(JokerId),          // Select a joker
@@ -72,9 +103,9 @@ pub enum Action {
     ActivateMultiSelect(),   // Enter multi-select mode
     DeactivateMultiSelect(), // Exit multi-select mode and clear selections
 
-    // Skip Tag System Actions
-    SkipBlind(Blind),     // Skip the current blind
-    SelectSkipTag(TagId), // Select a tag from available options
+    // Skip tags system
+    SkipBlind(Blind),         // Skip a blind and potentially get tags
+    SelectSkipTag(SkipTagId), // Select a skip tag for activation
 }
 
 impl fmt::Display for Action {
@@ -99,8 +130,29 @@ impl fmt::Display for Action {
             Self::BuyJoker { joker_id, slot } => {
                 write!(f, "BuyJoker: {joker_id:?} at slot {slot}")
             }
+            Self::BuyConsumable {
+                consumable_id,
+                slot,
+            } => {
+                write!(f, "BuyConsumable: {consumable_id:?} at slot {slot}")
+            }
+            Self::UseConsumable {
+                slot,
+                target_description,
+            } => {
+                write!(
+                    f,
+                    "UseConsumable: slot {slot} with target {target_description}"
+                )
+            }
+            Self::SellConsumable { slot } => {
+                write!(f, "SellConsumable: slot {slot}")
+            }
             Self::BuyPack { pack_type } => {
                 write!(f, "BuyPack: {pack_type}")
+            }
+            Self::BuyVoucher { voucher_id } => {
+                write!(f, "BuyVoucher: {voucher_id:?}")
             }
             Self::OpenPack { pack_id } => {
                 write!(f, "OpenPack: {pack_id}")
@@ -183,7 +235,7 @@ impl fmt::Display for Action {
                 write!(f, "DeactivateMultiSelect")
             }
 
-            // Skip Tag System Actions
+            // Skip tags system
             Self::SkipBlind(blind) => {
                 write!(f, "SkipBlind: {blind}")
             }
