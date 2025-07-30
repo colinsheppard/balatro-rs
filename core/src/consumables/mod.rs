@@ -40,7 +40,7 @@ pub enum CardCollection {
 }
 
 /// Error types for consumable operations
-#[derive(Error, Debug, Clone)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum ConsumableError {
     #[error("Invalid target: {0}")]
     InvalidTarget(String),
@@ -75,7 +75,7 @@ impl fmt::Display for CardCollection {
 }
 
 /// Error types for target validation
-#[derive(Debug, Error, Clone)]
+#[derive(Debug, Error, Clone, PartialEq)]
 pub enum TargetValidationError {
     #[error("Card index {index} out of bounds (hand size: {hand_size})")]
     CardIndexOutOfBounds { index: usize, hand_size: usize },
@@ -310,6 +310,8 @@ pub enum TargetType {
 
 /// Specific target for consumable application
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+// Note: Python bindings disabled for now due to complex enum structure
+// #[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum Target {
     /// No target required
     None,
@@ -802,7 +804,10 @@ impl fmt::Display for ConsumableType {
 
 /// Identifier for all consumable cards in the game
 /// This will be extended as consumable implementations are added
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, EnumIter, PartialOrd, Ord,
+)]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub enum ConsumableId {
     // Tarot Cards
     /// The Fool - Creates last Joker used this round if possible
@@ -815,6 +820,18 @@ pub enum ConsumableId {
     TheEmperor,
     /// The Hierophant - Enhances 2 selected cards to Bonus Cards
     TheHierophant,
+    /// The Empress - Enhances 2 selected cards to Mult Cards
+    TheEmpress,
+    /// The Lovers - Enhances 1 selected card to Wild Card
+    TheLovers,
+    /// The Chariot - Enhances 1 selected card to Steel Card
+    TheChariot,
+    /// Strength - Increases rank of up to 2 selected cards by 1
+    Strength,
+    /// The Hermit - Gain $20 money
+    TheHermit,
+    /// Wheel of Fortune - 1 in 4 chance to add Foil, Holographic, or Polychrome edition
+    WheelOfFortune,
 
     // Planet Cards
     /// Mercury - Levels up Pair
@@ -837,7 +854,7 @@ pub enum ConsumableId {
     Incantation,
     /// Immolate - Destroys 5 random cards in hand, gain $20
     Immolate,
-    /// Ankh - Create copy of random Joker, destroy all other Jokers  
+    /// Ankh - Create copy of random Joker, destroy all other Jokers
     Ankh,
     /// Deja Vu - Add Red Seal to 1 selected card
     DejaVu,
@@ -872,6 +889,12 @@ impl fmt::Display for ConsumableId {
             ConsumableId::TheHighPriestess => write!(f, "The High Priestess"),
             ConsumableId::TheEmperor => write!(f, "The Emperor"),
             ConsumableId::TheHierophant => write!(f, "The Hierophant"),
+            ConsumableId::TheEmpress => write!(f, "The Empress"),
+            ConsumableId::TheLovers => write!(f, "The Lovers"),
+            ConsumableId::TheChariot => write!(f, "The Chariot"),
+            ConsumableId::Strength => write!(f, "Strength"),
+            ConsumableId::TheHermit => write!(f, "The Hermit"),
+            ConsumableId::WheelOfFortune => write!(f, "Wheel of Fortune"),
 
             // Planet Cards
             ConsumableId::Mercury => write!(f, "Mercury"),
@@ -917,6 +940,12 @@ impl ConsumableId {
             | ConsumableId::TheHighPriestess
             | ConsumableId::TheEmperor
             | ConsumableId::TheHierophant
+            | ConsumableId::TheEmpress
+            | ConsumableId::TheLovers
+            | ConsumableId::TheChariot
+            | ConsumableId::Strength
+            | ConsumableId::TheHermit
+            | ConsumableId::WheelOfFortune
             | ConsumableId::TarotPlaceholder => ConsumableType::Tarot,
 
             // Planet Cards
@@ -950,8 +979,14 @@ impl ConsumableId {
             ConsumableId::TheFool,
             ConsumableId::TheMagician,
             ConsumableId::TheHighPriestess,
+            ConsumableId::TheEmpress,
             ConsumableId::TheEmperor,
             ConsumableId::TheHierophant,
+            ConsumableId::TheLovers,
+            ConsumableId::TheChariot,
+            ConsumableId::Strength,
+            ConsumableId::TheHermit,
+            ConsumableId::WheelOfFortune,
         ]
     }
 
@@ -982,6 +1017,97 @@ impl ConsumableId {
             ConsumableId::TheSoul,
             ConsumableId::BlackHole,
         ]
+    }
+}
+
+/// Spectral card pool management for special restriction rules
+///
+/// Soul and Black Hole have special properties that distinguish them from
+/// regular spectral cards, requiring different generation rules for various
+/// sources like joker effects, deck restrictions, and pack distributions.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum SpectralPool {
+    /// Regular spectral cards (16 cards) - excludes Soul and Black Hole
+    /// Used by joker effects (Sixth Sense, Seance) and Ghost Deck purchases
+    Regular,
+    /// Special spectral cards (2 cards) - only Soul and Black Hole
+    /// Used for identifying restricted cards
+    Special,
+    /// All spectral cards (18 cards) - complete set including special cards
+    /// Used by most other spectral generation sources
+    All,
+}
+
+impl SpectralPool {
+    /// Get spectral cards for this pool type
+    pub fn get_cards(&self) -> Vec<ConsumableId> {
+        match self {
+            SpectralPool::Regular => vec![
+                ConsumableId::Familiar,
+                ConsumableId::Grim,
+                ConsumableId::Incantation,
+                ConsumableId::Immolate,
+                ConsumableId::Ankh,
+                ConsumableId::DejaVu,
+                ConsumableId::Hex,
+                ConsumableId::Trance,
+                ConsumableId::Medium,
+                ConsumableId::Cryptid,
+                // Additional regular spectral cards would go here
+                // when more are implemented (total 16 in full game)
+            ],
+            SpectralPool::Special => vec![ConsumableId::TheSoul, ConsumableId::BlackHole],
+            SpectralPool::All => {
+                let mut all_cards = Self::Regular.get_cards();
+                all_cards.extend(Self::Special.get_cards());
+                all_cards
+            }
+        }
+    }
+
+    /// Check if a specific spectral card belongs to this pool
+    pub fn contains(&self, card: ConsumableId) -> bool {
+        self.get_cards().contains(&card)
+    }
+
+    /// Check if a spectral card is considered "special" (Soul or Black Hole)
+    pub fn is_special_card(card: ConsumableId) -> bool {
+        matches!(card, ConsumableId::TheSoul | ConsumableId::BlackHole)
+    }
+
+    /// Check if a spectral card is considered "regular" (not special)
+    pub fn is_regular_card(card: ConsumableId) -> bool {
+        card.consumable_type() == ConsumableType::Spectral && !Self::is_special_card(card)
+    }
+
+    /// Get the pool type that contains a specific card
+    pub fn pool_containing(card: ConsumableId) -> Option<SpectralPool> {
+        if Self::is_special_card(card) {
+            Some(SpectralPool::Special)
+        } else if Self::is_regular_card(card) {
+            Some(SpectralPool::Regular)
+        } else {
+            None
+        }
+    }
+
+    /// Get description of what this pool represents
+    pub fn description(&self) -> &'static str {
+        match self {
+            SpectralPool::Regular => "Regular spectral cards (excludes Soul and Black Hole)",
+            SpectralPool::Special => "Special spectral cards (Soul and Black Hole only)",
+            SpectralPool::All => "All spectral cards (complete set)",
+        }
+    }
+}
+
+impl fmt::Display for SpectralPool {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SpectralPool::Regular => write!(f, "Regular"),
+            SpectralPool::Special => write!(f, "Special"),
+            SpectralPool::All => write!(f, "All"),
+        }
     }
 }
 
@@ -1548,9 +1674,12 @@ impl<'de> Deserialize<'de> for ConsumableSlots {
 }
 
 // Re-export submodules when they are implemented
-// pub mod tarot;
+pub mod tarot;
 // pub mod planet;
 pub mod spectral;
+
+// Re-export key tarot types for convenience
+pub use tarot::{CardEnhancement, TarotCard, TarotEffect, TarotError, TarotFactory, TarotRarity};
 
 // Test module
 #[cfg(test)]
