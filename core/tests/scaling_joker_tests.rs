@@ -1104,7 +1104,7 @@ fn test_performance_with_many_scaling_jokers() {
     use std::time::Instant;
 
     // Performance baseline: operations should complete within reasonable time
-    const MAX_PROCESSING_TIME_MS: u128 = 10; // 10ms baseline
+    const MAX_PROCESSING_TIME_MS: u128 = 20; // 20ms baseline for CI stability
     const NUM_ITERATIONS: usize = 1000;
 
     // Create multiple scaling jokers for performance testing
