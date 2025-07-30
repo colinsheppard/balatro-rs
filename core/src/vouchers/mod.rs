@@ -100,6 +100,14 @@ pub enum VoucherEffect {
     ShopEnhancementsEnabled,
     /// Multiplies Tarot card appearance frequency
     TarotFrequencyMultiplier(f64),
+    /// Provides percentage discount on all shop items
+    ShopDiscountPercent(f64),
+    /// Multiplies polychrome card appearance frequency
+    PolychromeFrequencyMultiplier(f64),
+    /// Reduces reroll cost by specified amount
+    RerollCostReduction(usize),
+    /// Increases consumable slots
+    ConsumableSlotIncrease(usize),
     /// No effect (flavor voucher)
     NoEffect,
 }
@@ -114,7 +122,6 @@ impl VoucherEffect {
     }
 
     /// Check if this effect affects shop mechanics
-    /// Check if this effect affects shop mechanics
     pub fn affects_shop(&self) -> bool {
         matches!(
             self,
@@ -124,6 +131,9 @@ impl VoucherEffect {
                 | VoucherEffect::JokerSlotDecrease(_)
                 | VoucherEffect::ShopPlayingCardsEnabled
                 | VoucherEffect::ShopEnhancementsEnabled
+                | VoucherEffect::ShopDiscountPercent(_)
+                | VoucherEffect::RerollCostReduction(_)
+                | VoucherEffect::ConsumableSlotIncrease(_)
         )
     }
 
@@ -265,6 +275,30 @@ impl VoucherEffect {
                     return Err(VoucherError::InvalidScaling {
                         multiplier: *multiplier,
                     });
+                }
+            }
+            VoucherEffect::ShopDiscountPercent(discount) => {
+                if !discount.is_finite() || *discount <= 0.0 || *discount > 100.0 {
+                    return Err(VoucherError::InvalidScaling {
+                        multiplier: *discount,
+                    });
+                }
+            }
+            VoucherEffect::PolychromeFrequencyMultiplier(multiplier) => {
+                if !multiplier.is_finite() || *multiplier <= 0.0 || *multiplier > 10.0 {
+                    return Err(VoucherError::InvalidScaling {
+                        multiplier: *multiplier,
+                    });
+                }
+            }
+            VoucherEffect::RerollCostReduction(amount) => {
+                if *amount > 10 {
+                    return Err(VoucherError::ExcessiveMoneyGain { amount: *amount });
+                }
+            }
+            VoucherEffect::ConsumableSlotIncrease(amount) => {
+                if *amount > 10 {
+                    return Err(VoucherError::ExcessiveJokerSlots { amount: *amount });
                 }
             }
             VoucherEffect::ShopPlayingCardsEnabled => {}
@@ -470,6 +504,22 @@ impl GameState {
                 // Tarot frequency affects shop/pack generation, not game state directly
                 // This would be handled by the shop system
             }
+            VoucherEffect::ShopDiscountPercent(_discount) => {
+                // Shop discount affects item pricing, not game state directly
+                // This would be handled by the shop system
+            }
+            VoucherEffect::PolychromeFrequencyMultiplier(_multiplier) => {
+                // Polychrome frequency affects card generation, not game state directly
+                // This would be handled by the card generation system
+            }
+            VoucherEffect::RerollCostReduction(_amount) => {
+                // Reroll cost reduction affects shop reroll pricing, not game state directly
+                // This would be handled by the shop system
+            }
+            VoucherEffect::ConsumableSlotIncrease(_amount) => {
+                // Consumable slots affect inventory capacity, not current game state
+                // This would be handled by the inventory system
+            }
             VoucherEffect::ShopPlayingCardsEnabled => {
                 // Shop playing cards enable affects shop generation, not game state directly
                 // This would be handled by the shop system
@@ -618,16 +668,10 @@ pub enum VoucherId {
     RerollSurplus,
     /// Crystal Ball voucher - +1 consumable slot
     CrystalBall,
-    /// Telescope voucher - Celestial packs have 1 more planet card
-    Telescope,
     /// Liquidation voucher - All items 25% off, rerolls 25% off
     Liquidation,
     /// Reroll Glut voucher - Rerolls cost $2 less
     RerollGlut,
-    /// Omen Globe voucher - Spectral packs may contain Planet cards
-    OmenGlobe,
-    /// Observatory voucher - Planet cards in shop give x1.5 mult
-    Observatory,
 
     // Gameplay vouchers from Issue #18
     /// Grabber voucher - +1 hand size permanently
@@ -673,11 +717,8 @@ impl fmt::Display for VoucherId {
             VoucherId::Hone => write!(f, "Hone"),
             VoucherId::RerollSurplus => write!(f, "Reroll Surplus"),
             VoucherId::CrystalBall => write!(f, "Crystal Ball"),
-            VoucherId::Telescope => write!(f, "Telescope"),
             VoucherId::Liquidation => write!(f, "Liquidation"),
             VoucherId::RerollGlut => write!(f, "Reroll Glut"),
-            VoucherId::OmenGlobe => write!(f, "Omen Globe"),
-            VoucherId::Observatory => write!(f, "Observatory"),
             VoucherId::Grabber => write!(f, "Grabber"),
             VoucherId::NachoTong => write!(f, "Nacho Tong"),
             VoucherId::Wasteful => write!(f, "Wasteful"),
@@ -718,11 +759,8 @@ impl VoucherId {
             VoucherId::Hone => vec![],
             VoucherId::RerollSurplus => vec![],
             VoucherId::CrystalBall => vec![],
-            VoucherId::Telescope => vec![],
             VoucherId::Liquidation => vec![],
             VoucherId::RerollGlut => vec![VoucherId::RerollSurplus],
-            VoucherId::OmenGlobe => vec![],
-            VoucherId::Observatory => vec![],
 
             // Upgraded versions require base versions
             VoucherId::OverstockPlus => vec![VoucherId::Overstock],
@@ -759,11 +797,8 @@ impl VoucherId {
             VoucherId::Hone => 10,
             VoucherId::RerollSurplus => 10,
             VoucherId::CrystalBall => 10,
-            VoucherId::Telescope => 10,
             VoucherId::Liquidation => 10,
             VoucherId::RerollGlut => 10,
-            VoucherId::OmenGlobe => 10,
-            VoucherId::Observatory => 10,
             VoucherId::VoucherPlaceholder => 10,
 
             // Gameplay vouchers from Issue #18
