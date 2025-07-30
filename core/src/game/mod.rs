@@ -207,6 +207,9 @@ pub struct Game {
     // hand type tracking for this game run
     pub hand_type_counts: HashMap<HandRank, u32>,
 
+    // hand level tracking (for planet card effects)
+    pub hand_levels: HashMap<HandRank, u32>,
+
     // Card enhancement tracking for this game run
     /// Count of Stone cards currently in deck (cached for performance)
     pub stone_cards_in_deck: usize,
@@ -346,6 +349,7 @@ impl Game {
             mult: config.base_mult as f64,
             score: config.base_score as f64,
             hand_type_counts: HashMap::new(),
+            hand_levels: HashMap::new(),
 
             // Initialize enhancement tracking (will be calculated after deck is set up)
             stone_cards_in_deck: 0,
@@ -588,6 +592,45 @@ impl Game {
         *self.hand_type_counts.entry(hand_rank).or_insert(0) += 1;
     }
 
+    /// Gets the current level number for a specific hand type.
+    ///
+    /// # Arguments
+    /// * `hand_rank` - The hand rank to get the level for
+    ///
+    /// # Returns
+    /// The current level number of the hand type (defaults to 1 if not leveled up)
+    pub fn get_hand_level_number(&self, hand_rank: HandRank) -> u32 {
+        self.hand_levels.get(&hand_rank).copied().unwrap_or(1)
+    }
+
+    /// Gets the full level information for a specific hand type at its current level.
+    ///
+    /// # Arguments
+    /// * `hand_rank` - The hand rank to get the level info for
+    ///
+    /// # Returns
+    /// Level struct with chips, mult, and level information for the current level
+    pub fn get_hand_level(&self, hand_rank: HandRank) -> crate::rank::Level {
+        let current_level = self.get_hand_level_number(hand_rank);
+        hand_rank.level_at(current_level)
+    }
+
+    /// Levels up a specific hand type (used by Planet cards).
+    ///
+    /// # Arguments
+    /// * `hand_rank` - The hand rank to level up
+    ///
+    /// # Returns
+    /// Ok(()) if successful, Err(ConsumableError) if level up fails
+    pub fn level_up_hand(
+        &mut self,
+        hand_rank: HandRank,
+    ) -> Result<(), crate::consumables::ConsumableError> {
+        let current_level = self.get_hand_level_number(hand_rank);
+        self.hand_levels.insert(hand_rank, current_level + 1);
+        Ok(())
+    }
+
     fn clear_blind(&mut self) {
         self.score = self.config.base_score as f64;
         self.plays = self.config.plays as f64;
@@ -701,9 +744,10 @@ impl Game {
     }
 
     pub fn calc_score(&mut self, hand: MadeHand) -> f64 {
-        // compute chips and mult from hand level
-        self.chips += hand.rank.level().chips as f64;
-        self.mult += hand.rank.level().mult as f64;
+        // compute chips and mult from hand level (considering planet card upgrades)
+        let level_info = self.get_hand_level(hand.rank);
+        self.chips += level_info.chips as f64;
+        self.mult += level_info.mult as f64;
 
         // add chips for each played card
         let card_chips: f64 = hand.hand.cards().iter().map(|c| c.chips() as f64).sum();
@@ -912,9 +956,10 @@ impl Game {
         let _initial_chips = self.chips;
         let _initial_mult = self.mult;
 
-        // Calculate base values from hand level
-        let base_chips = hand.rank.level().chips as f64;
-        let base_mult = hand.rank.level().mult as f64;
+        // Calculate base values from hand level (considering planet card upgrades)
+        let level_info = self.get_hand_level(hand.rank);
+        let base_chips = level_info.chips as f64;
+        let base_mult = level_info.mult as f64;
         self.chips += base_chips;
         self.mult += base_mult;
 
@@ -1992,15 +2037,19 @@ impl Game {
                 Err(GameError::InvalidAction)
             }
 
+            // Planet card usage
+            Action::UsePlanetCard {
+                planet_card_id: _,
+                hand_rank_id: _,
+            } => {
+                // TODO: Implement planet card usage through action system
+                // For now, planet cards use level_up_hand directly
+                Err(GameError::InvalidAction)
+            }
+
             // Skip tag system actions
             Action::SkipBlind(blind) => self.handle_skip_blind(blind),
             Action::SelectSkipTag(tag_id) => self.handle_select_skip_tag(tag_id),
-
-            // Planet card actions - temporary stub for merge compatibility
-            Action::UsePlanetCard { .. } => {
-                // TODO: Implement planet card usage when hand leveling system is ready
-                Ok(())
-            }
         }
     }
 
@@ -2263,25 +2312,6 @@ impl Game {
         self.available = crate::available::Available::default();
         self.blind = None;
     }
-
-    /// Temporary stub for planet card functionality - levels up a poker hand
-    /// TODO: Implement proper hand leveling system when planet cards are fully developed
-    pub fn level_up_hand(
-        &mut self,
-        _hand_rank: crate::rank::HandRank,
-    ) -> Result<(), crate::consumables::ConsumableError> {
-        // Placeholder implementation - just return success for now
-        // In the future, this should increase the hand's level and associated chips/mult
-        Ok(())
-    }
-
-    /// Temporary stub for planet card functionality - gets current level of a poker hand
-    /// TODO: Implement proper hand level tracking system when planet cards are fully developed
-    pub fn get_hand_level(&self, hand_rank: crate::rank::HandRank) -> crate::rank::Level {
-        // Placeholder implementation - return base level for all hands
-        // In the future, this should return the actual level from hand level tracking
-        hand_rank.level()
-    }
 }
 
 impl fmt::Display for Game {
@@ -2487,6 +2517,7 @@ impl Game {
             mult: saveable_state.mult,
             score: saveable_state.score,
             hand_type_counts: saveable_state.hand_type_counts,
+            hand_levels: HashMap::new(), // Initialize with empty levels (default level 1)
 
             // Enhancement tracking (will be calculated after loading)
             stone_cards_in_deck: 0,
