@@ -432,7 +432,10 @@ impl JokerEffect {
     }
 
     /// Add consumables to be created
-    pub fn with_consumables_created(mut self, consumables: Vec<crate::consumables::ConsumableId>) -> Self {
+    pub fn with_consumables_created(
+        mut self,
+        consumables: Vec<crate::consumables::ConsumableId>,
+    ) -> Self {
         self.consumables_created = consumables;
         self
     }

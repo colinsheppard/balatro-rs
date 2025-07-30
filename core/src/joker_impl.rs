@@ -1154,9 +1154,9 @@ impl Joker for VagabondJokerImpl {
                 // Simple pseudo-random selection based on round + money for deterministic behavior
                 let seed = (context.round as usize + context.money as usize) % random_tarots.len();
                 let selected_tarot = random_tarots[seed];
-                
+
                 JokerEffect::new()
-                    .with_mult(14)  // +14 Mult as per specification
+                    .with_mult(14) // +14 Mult as per specification
                     .with_consumable_created(selected_tarot)
                     .with_message("Vagabond created a Tarot card! (+14 Mult)".to_string())
             } else {
