@@ -1119,7 +1119,7 @@ impl Joker for MysteryJoker {
     }
 }
 
-// Vagabond Joker implementation - Create Tarot if hand played with $3 or less
+// Vagabond Joker implementation - Create Tarot if hand played with $4 or less, +14 Mult
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct VagabondJokerImpl;
 
@@ -1133,7 +1133,7 @@ impl Joker for VagabondJokerImpl {
     }
 
     fn description(&self) -> &str {
-        "Create a Tarot card if hand played with $3 or less"
+        "Create a Tarot card if hand played with $4 or less"
     }
 
     fn rarity(&self) -> JokerRarity {
@@ -1145,10 +1145,26 @@ impl Joker for VagabondJokerImpl {
     }
 
     fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
-        // Check if player has $3 or less
-        if context.money <= 3 {
-            // Create a tarot card (simplified - actual implementation would add to shop/consumables)
-            JokerEffect::new().with_message("Vagabond created a Tarot card!".to_string())
+        // Check if player has $4 or less (corrected threshold)
+        if context.money <= 4 {
+            // Create a random tarot card using the game's RNG
+            // Use a simple fallback RNG approach since GameContext doesn't provide direct RNG access
+            let random_tarots = crate::consumables::tarot::TarotFactory::get_implemented_cards();
+            if !random_tarots.is_empty() {
+                // Simple pseudo-random selection based on round + money for deterministic behavior
+                let seed = (context.round as usize + context.money as usize) % random_tarots.len();
+                let selected_tarot = random_tarots[seed];
+                
+                JokerEffect::new()
+                    .with_mult(14)  // +14 Mult as per specification
+                    .with_consumable_created(selected_tarot)
+                    .with_message("Vagabond created a Tarot card! (+14 Mult)".to_string())
+            } else {
+                // Fallback: provide mult bonus even if no tarot cards available
+                JokerEffect::new()
+                    .with_mult(14)
+                    .with_message("Vagabond activates (+14 Mult)".to_string())
+            }
         } else {
             JokerEffect::new()
         }
@@ -1521,7 +1537,7 @@ mod tests {
         assert_eq!(vagabond.name(), "Vagabond");
         assert_eq!(
             vagabond.description(),
-            "Create a Tarot card if hand played with $3 or less"
+            "Create a Tarot card if hand played with $4 or less"
         );
         assert_eq!(vagabond.rarity(), JokerRarity::Uncommon);
         assert_eq!(vagabond.cost(), 7);

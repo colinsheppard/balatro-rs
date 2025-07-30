@@ -3042,6 +3042,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Test message".to_string()),
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3073,6 +3074,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3105,6 +3107,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3134,6 +3137,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3160,6 +3164,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3188,6 +3193,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3216,6 +3222,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3414,6 +3421,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Effect 1".to_string()),
+            consumables_created: vec![],
         };
 
         // Second effect
@@ -3431,6 +3439,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Effect 2".to_string()),
+            consumables_created: vec![],
         };
 
         let result1 = effects.accumulate_effect(&effect1);

@@ -209,6 +209,61 @@ impl TarotFactory {
             Ok(None)
         }
     }
+
+    /// Creates a random tarot card from all implemented cards
+    ///
+    /// Uses the provided RNG to randomly select from all available tarot cards.
+    /// This is commonly used by jokers that create random tarot cards.
+    ///
+    /// # Arguments
+    /// * `rng` - Random number generator for selection
+    ///
+    /// # Returns
+    /// Random `ConsumableId` for a tarot card, or `None` if no cards are implemented
+    pub fn create_random_tarot(rng: &mut crate::rng::GameRng) -> Option<ConsumableId> {
+        let implemented_cards = Self::get_implemented_cards();
+        if implemented_cards.is_empty() {
+            return None;
+        }
+        
+        let index = rng.gen_range(0..implemented_cards.len());
+        implemented_cards.get(index).copied()
+    }
+
+    /// Gets all implemented tarot card IDs
+    ///
+    /// Useful for testing and validation. Returns only the cards
+    /// that are actually implemented and can be created.
+    /// This includes all 22 Major Arcana cards (both Wave 1 and Wave 2).
+    pub fn get_implemented_cards() -> Vec<ConsumableId> {
+        vec![
+            // Wave 1 cards (0-10)
+            ConsumableId::TheFool,
+            ConsumableId::TheMagician,
+            ConsumableId::TheHighPriestess,
+            ConsumableId::TheEmpress,
+            ConsumableId::TheEmperor,
+            ConsumableId::TheHierophant,
+            ConsumableId::TheLovers,
+            ConsumableId::TheChariot,
+            ConsumableId::Strength,
+            ConsumableId::TheHermit,
+            ConsumableId::WheelOfFortune,
+            
+            // Wave 2 cards (11-21)
+            ConsumableId::Justice,
+            ConsumableId::TheHangedMan,
+            ConsumableId::Death,
+            ConsumableId::Temperance,
+            ConsumableId::TheDevil,
+            ConsumableId::TheTower,
+            ConsumableId::TheStar,
+            ConsumableId::TheMoon,
+            ConsumableId::TheSun,
+            ConsumableId::Judgement,
+            ConsumableId::TheWorld,
+        ]
+    }
 }
 
 impl Default for TarotFactory {

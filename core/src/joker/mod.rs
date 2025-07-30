@@ -348,6 +348,13 @@ pub struct JokerEffect {
     ///
     /// Used for jokers with special effects, Easter eggs, or important notifications.
     pub message: Option<String>,
+
+    /// Consumables to create and add to the player's inventory.
+    ///
+    /// Used by jokers that generate Tarot cards, Planet cards, or Spectral cards.
+    /// Each consumable ID in the vector represents a consumable to be created
+    /// and added to the player's consumable slots.
+    pub consumables_created: Vec<crate::consumables::ConsumableId>,
 }
 
 impl Default for JokerEffect {
@@ -421,6 +428,18 @@ impl JokerEffect {
     /// Set custom message
     pub fn with_message(mut self, message: String) -> Self {
         self.message = Some(message);
+        self
+    }
+
+    /// Add consumables to be created
+    pub fn with_consumables_created(mut self, consumables: Vec<crate::consumables::ConsumableId>) -> Self {
+        self.consumables_created = consumables;
+        self
+    }
+
+    /// Add a single consumable to be created
+    pub fn with_consumable_created(mut self, consumable: crate::consumables::ConsumableId) -> Self {
+        self.consumables_created.push(consumable);
         self
     }
 }
