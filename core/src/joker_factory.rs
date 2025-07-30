@@ -2,6 +2,7 @@ use crate::joker::basic_economy_jokers::{
     DelayedGratificationJoker, GiftCardJoker, RocketJoker, ToTheMoonJoker,
 };
 use crate::joker::four_fingers::FourFingersJoker;
+use crate::joker::multiplicative_jokers::AcrobatJoker;
 use crate::joker::retrigger_jokers::*;
 use crate::joker::scaling_additive_mult_jokers::*;
 use crate::joker::scaling_chips_jokers::*;
@@ -67,7 +68,7 @@ impl JokerFactory {
             JokerId::Reserved7 => Some(Box::new(SixShooterJoker)),
             JokerId::LuckyCharm => Some(Box::new(LuckyCardJoker)),
             JokerId::Reserved8 => Some(Box::new(GrimJoker)),
-            JokerId::AcrobatJoker => Some(Box::new(AcrobatJokerImpl)),
+            JokerId::AcrobatJoker => Some(Box::new(AcrobatJoker::new())),
             JokerId::Fortune => Some(Box::new(FortuneTellerJoker::new())),
             JokerId::Reserved4 => Some(Box::new(MysteryJoker)),
             JokerId::VagabondJoker => Some(Box::new(VagabondJokerImpl)),
