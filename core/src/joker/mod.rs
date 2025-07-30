@@ -529,10 +529,10 @@ pub struct GameContext<'a> {
     pub stage: &'a Stage,
     /// Number of hands played this round
     pub hands_played: u32,
-    /// Number of discards used this round
-    pub discards_used: u32,
     /// Number of hands remaining this round (for final hand detection)
     pub hands_remaining: f64,
+    /// Number of discards used this round
+    pub discards_used: u32,
     /// All jokers in play
     pub jokers: &'a [Box<dyn Joker>],
     /// Cards in hand
