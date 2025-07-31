@@ -15,6 +15,9 @@ use crate::joker_factory::JokerFactory;
 use crate::joker_state::JokerStateManager;
 use crate::memory_monitor::MemoryMonitor;
 use crate::rank::HandRank;
+
+// Import debug functionality
+mod debug;
 use crate::scaling_joker::ScalingEvent;
 use crate::shop::Shop;
 use crate::skip_tags::SkipTagId;
@@ -22,6 +25,7 @@ use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::target_context::TargetContext;
 use crate::vouchers::{VoucherCollection, VoucherId};
+use debug::DebugManager;
 
 // Pack management module
 pub mod packs;
@@ -239,13 +243,9 @@ pub struct Game {
     /// Version of the game state for serialization compatibility
     pub state_version: StateVersion,
 
-    /// Debug logging enabled flag
+    /// Debug manager for logging and memory monitoring
     #[cfg_attr(feature = "serde", serde(skip))]
-    pub debug_logging_enabled: bool,
-
-    /// Debug messages buffer
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub debug_messages: Vec<String>,
+    pub debug_manager: DebugManager,
 
     /// Multi-select context for tracking selected items
     #[cfg_attr(feature = "serde", serde(skip, default = "TargetContext::new"))]
@@ -254,10 +254,6 @@ pub struct Game {
     /// Random number generator for secure game randomness
     #[cfg_attr(feature = "serde", serde(skip, default = "default_game_rng"))]
     pub rng: crate::rng::GameRng,
-
-    /// Memory monitor for tracking and controlling memory usage
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub memory_monitor: MemoryMonitor,
 
     /// Active skip tag state for persistent tag effects (unified approach)
     pub active_skip_tags: crate::skip_tags::ActiveSkipTags,
@@ -374,18 +370,14 @@ impl Game {
 
             state_version: StateVersion::current(),
 
-            // Initialize debug logging fields
-            debug_logging_enabled: false,
-            debug_messages: Vec::new(),
+            // Initialize debug manager
+            debug_manager: DebugManager::new(),
 
             // Initialize multi-select context
             target_context: TargetContext::new(),
 
             // Initialize secure RNG
             rng: crate::rng::GameRng::secure(),
-
-            // Initialize memory monitor with default configuration
-            memory_monitor: MemoryMonitor::default(),
 
             // Initialize skip tags system (unified approach)
             active_skip_tags: crate::skip_tags::ActiveSkipTags::new(),
@@ -1069,74 +1061,55 @@ impl Game {
 
     /// Enable debug logging for joker scoring
     pub fn enable_debug_logging(&mut self) {
-        self.debug_logging_enabled = true;
-        self.debug_messages.clear();
+        self.debug_manager.enable_debug_logging();
     }
 
     /// Get current debug messages
     pub fn get_debug_messages(&self) -> &[String] {
-        &self.debug_messages
+        self.debug_manager.get_debug_messages()
     }
 
     /// Add a debug message with automatic memory management
     /// Only compiles in debug builds and tests to eliminate overhead in release
     #[cfg(any(debug_assertions, test))]
     fn add_debug_message(&mut self, message: String) {
-        if self.debug_logging_enabled {
-            self.debug_messages.push(message);
-
-            // Keep memory usage reasonable - remove oldest messages if we exceed limit
-            if self.debug_messages.len() > MAX_DEBUG_MESSAGES {
-                self.debug_messages
-                    .drain(0..self.debug_messages.len() - MAX_DEBUG_MESSAGES);
-            }
-        }
+        self.debug_manager.add_debug_message(message);
     }
 
     /// No-op version for release builds (but not tests)
     #[cfg(not(any(debug_assertions, test)))]
     #[inline]
     fn add_debug_message(&mut self, _message: String) {
-        // No-op in release builds
+        self.debug_manager.add_debug_message(_message);
     }
 
     /// Configure memory monitoring for RL training scenarios
     pub fn enable_rl_memory_monitoring(&mut self) {
-        let config = crate::memory_monitor::MemoryConfig::for_rl_training();
-        self.memory_monitor.update_config(config.clone());
-
-        // Update action history limit to match memory config
-        self.action_history.resize(config.max_action_history);
+        let mut action_history_limit = self.action_history.total_actions();
+        self.debug_manager
+            .enable_rl_memory_monitoring(&mut action_history_limit);
+        self.action_history.resize(action_history_limit);
     }
 
     /// Configure memory monitoring for simulation scenarios
     pub fn enable_simulation_memory_monitoring(&mut self) {
-        let config = crate::memory_monitor::MemoryConfig::for_simulation();
-        self.memory_monitor.update_config(config.clone());
-
-        // Update action history limit to match memory config
-        self.action_history.resize(config.max_action_history);
+        let mut action_history_limit = self.action_history.total_actions();
+        self.debug_manager
+            .enable_simulation_memory_monitoring(&mut action_history_limit);
+        self.action_history.resize(action_history_limit);
     }
 
     /// Get current memory usage statistics
     pub fn get_memory_stats(&mut self) -> Option<crate::memory_monitor::MemoryStats> {
-        if self.memory_monitor.should_check() {
-            // Estimate memory usage
-            let estimated_bytes = self.estimate_memory_usage();
-            let stats = self.memory_monitor.check_memory(
-                estimated_bytes,
-                1, // Number of active snapshots (hard to track, estimate as 1)
-                self.action_history.total_actions(),
-            );
-            Some(stats)
-        } else {
-            self.memory_monitor.last_stats().cloned()
-        }
+        let estimated_bytes = self.estimate_memory_usage();
+        let total_actions = self.action_history.total_actions();
+        self.debug_manager
+            .get_memory_stats(estimated_bytes, total_actions)
     }
 
     /// Generate a memory usage report
     pub fn generate_memory_report(&self) -> String {
-        self.memory_monitor.generate_report()
+        self.debug_manager.generate_memory_report()
     }
 
     /// Estimate current memory usage in bytes
@@ -1163,22 +1136,17 @@ impl Game {
             * (std::mem::size_of::<crate::rank::HandRank>() + std::mem::size_of::<u32>());
 
         // Debug messages
-        total += self
-            .debug_messages
-            .iter()
-            .map(|msg| msg.len())
-            .sum::<usize>();
+        total += self.debug_manager.estimate_debug_memory_usage();
 
         total
     }
 
     /// Check if memory usage exceeds safe limits
     pub fn check_memory_safety(&mut self) -> bool {
-        if let Some(stats) = self.get_memory_stats() {
-            !stats.exceeds_critical(self.memory_monitor.config())
-        } else {
-            true // Assume safe if no stats available
-        }
+        let estimated_bytes = self.estimate_memory_usage();
+        let total_actions = self.action_history.total_actions();
+        self.debug_manager
+            .check_memory_safety(estimated_bytes, total_actions)
     }
 
     /// Configure joker effect cache settings
