@@ -885,13 +885,27 @@ pub enum ConsumableId {
     /// Eris - Levels up Flush Five
     Eris,
 
-    // Spectral Cards
+    // Spectral Cards - Original PR Implementation (Issue #11)
     /// Familiar - Destroys 1 random card, add 3 random Enhanced face cards to deck
     Familiar,
     /// Grim - Destroys 1 random card, add 2 random Enhanced Aces to deck
     Grim,
     /// Incantation - Destroys 1 random card, add 4 random Enhanced numbered cards to deck
     Incantation,
+    /// Talisman - Add Gold Seal to 1 selected card
+    Talisman,
+    /// Aura - Add effect (Foil, Holo, Polychrome) to 1 selected card
+    Aura,
+    /// Wraith - Creates a random Rare Joker, sets money to $0
+    Wraith,
+    /// Sigil - Converts all cards in hand to single random suit
+    Sigil,
+    /// Ouija - Converts all cards in hand to single random rank (-1 hand size)
+    Ouija,
+    /// Ectoplasm - Add negative to a random Joker, -1 hand size
+    Ectoplasm,
+
+    // Spectral Cards - Modern Main Branch Implementation
     /// Immolate - Destroys 5 random cards in hand, gain $20
     Immolate,
     /// Ankh - Create copy of random Joker, destroy all other Jokers
@@ -963,10 +977,18 @@ impl fmt::Display for ConsumableId {
             ConsumableId::Ceres => write!(f, "Ceres"),
             ConsumableId::Eris => write!(f, "Eris"),
 
-            // Spectral Cards
+            // Spectral Cards - Original PR Implementation
             ConsumableId::Familiar => write!(f, "Familiar"),
             ConsumableId::Grim => write!(f, "Grim"),
             ConsumableId::Incantation => write!(f, "Incantation"),
+            ConsumableId::Talisman => write!(f, "Talisman"),
+            ConsumableId::Aura => write!(f, "Aura"),
+            ConsumableId::Wraith => write!(f, "Wraith"),
+            ConsumableId::Sigil => write!(f, "Sigil"),
+            ConsumableId::Ouija => write!(f, "Ouija"),
+            ConsumableId::Ectoplasm => write!(f, "Ectoplasm"),
+
+            // Spectral Cards - Modern Main Branch
             ConsumableId::Immolate => write!(f, "Immolate"),
             ConsumableId::Ankh => write!(f, "Ankh"),
             ConsumableId::DejaVu => write!(f, "Deja Vu"),
@@ -1038,6 +1060,12 @@ impl ConsumableId {
             ConsumableId::Familiar
             | ConsumableId::Grim
             | ConsumableId::Incantation
+            | ConsumableId::Talisman
+            | ConsumableId::Aura
+            | ConsumableId::Wraith
+            | ConsumableId::Sigil
+            | ConsumableId::Ouija
+            | ConsumableId::Ectoplasm
             | ConsumableId::Immolate
             | ConsumableId::Ankh
             | ConsumableId::DejaVu
@@ -1102,9 +1130,17 @@ impl ConsumableId {
     /// Get all Spectral cards
     pub fn spectral_cards() -> Vec<ConsumableId> {
         vec![
+            // Original PR Implementation (Issue #11)
             ConsumableId::Familiar,
             ConsumableId::Grim,
             ConsumableId::Incantation,
+            ConsumableId::Talisman,
+            ConsumableId::Aura,
+            ConsumableId::Wraith,
+            ConsumableId::Sigil,
+            ConsumableId::Ouija,
+            ConsumableId::Ectoplasm,
+            // Modern Main Branch Implementation
             ConsumableId::Immolate,
             ConsumableId::Ankh,
             ConsumableId::DejaVu,
