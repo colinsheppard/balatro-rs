@@ -16,13 +16,16 @@ use crate::joker_state::JokerStateManager;
 use crate::memory_monitor::MemoryMonitor;
 use crate::rank::HandRank;
 use crate::scaling_joker::ScalingEvent;
-use crate::shop::packs::{OpenPackState, Pack};
 use crate::shop::Shop;
 use crate::skip_tags::SkipTagId;
 use crate::stage::{Blind, End, Stage};
 use crate::state_version::StateVersion;
 use crate::target_context::TargetContext;
 use crate::vouchers::{VoucherCollection, VoucherId};
+
+// Pack management module
+pub mod packs;
+pub use packs::PackManager;
 
 // Re-export GameState for external use with qualified name to avoid Python bindings conflict
 pub use crate::vouchers::GameState as VoucherGameState;
@@ -230,12 +233,8 @@ pub struct Game {
     /// Current boss blind state and effects
     pub boss_blind_state: BossBlindState,
 
-    /// Pack system state
-    /// Packs currently in the player's inventory
-    pub pack_inventory: Vec<Pack>,
-
-    /// Currently opened pack that player is choosing from
-    pub open_pack: Option<OpenPackState>,
+    /// Pack system management
+    pub pack_manager: PackManager,
 
     /// Version of the game state for serialization compatibility
     pub state_version: StateVersion,
@@ -371,8 +370,7 @@ impl Game {
             boss_blind_state: BossBlindState::new(),
 
             // Initialize pack system fields
-            pack_inventory: Vec::new(),
-            open_pack: None,
+            pack_manager: PackManager::new(),
 
             state_version: StateVersion::current(),
 
@@ -667,7 +665,8 @@ impl Game {
 
         // Update available packs (if any)
         let pack_ids: Vec<usize> = self
-            .pack_inventory
+            .pack_manager
+            .pack_inventory()
             .iter()
             .enumerate()
             .map(|(i, _)| i)
@@ -1625,28 +1624,14 @@ impl Game {
         self.money -= cost as f64;
 
         // Add pack to inventory
-        self.pack_inventory.push(pack);
+        self.pack_manager.add_pack(pack);
 
         Ok(())
     }
 
     /// Open a pack from inventory
     pub(crate) fn open_pack(&mut self, pack_id: usize) -> Result<(), GameError> {
-        // Check if pack exists in inventory
-        if pack_id >= self.pack_inventory.len() {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Check if another pack is already open
-        if self.open_pack.is_some() {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Remove pack from inventory and open it
-        let pack = self.pack_inventory.remove(pack_id);
-        self.open_pack = Some(OpenPackState::new(pack, pack_id));
-
-        Ok(())
+        self.pack_manager.open_pack(pack_id)
     }
 
     /// Select an option from the currently opened pack
@@ -1655,16 +1640,8 @@ impl Game {
         pack_id: usize,
         option_index: usize,
     ) -> Result<(), GameError> {
-        // Check if a pack is open
-        let open_pack_state = self.open_pack.take().ok_or(GameError::InvalidAction)?;
-
-        // Verify pack ID matches
-        if open_pack_state.pack_id != pack_id {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Select the option
-        let selected_item = open_pack_state.pack.select_option(option_index)?;
+        // Get the selected item from PackManager
+        let selected_item = self.pack_manager.select_from_pack(pack_id, option_index)?;
 
         // Process the selected item based on its type
         self.process_pack_item(selected_item)?;
@@ -1674,21 +1651,7 @@ impl Game {
 
     /// Skip the currently opened pack
     pub(crate) fn skip_pack(&mut self, pack_id: usize) -> Result<(), GameError> {
-        // Check if a pack is open
-        let open_pack_state = self.open_pack.take().ok_or(GameError::InvalidAction)?;
-
-        // Verify pack ID matches
-        if open_pack_state.pack_id != pack_id {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Check if pack can be skipped
-        if !open_pack_state.pack.can_skip {
-            return Err(GameError::InvalidAction);
-        }
-
-        // Pack is simply consumed (no further action needed)
-        Ok(())
+        self.pack_manager.skip_pack(pack_id)
     }
 
     /// Process an item selected from a pack
