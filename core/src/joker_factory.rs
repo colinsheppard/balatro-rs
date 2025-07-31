@@ -226,7 +226,6 @@ impl JokerFactory {
             JokerRarity::Rare => vec![
                 // RNG-based jokers (Issue #442)
                 AcrobatJoker,
-                FortuneTeller,
                 // Special mechanic jokers
                 Blueprint,
                 // Scaling mult jokers
@@ -302,7 +301,6 @@ impl JokerFactory {
             Reserved5,     // RideTheBus
             Reserved6,     // RedCard (pack skipping)
             RedCard,       // Red Card (direct mapping)
-            FortuneTeller, // Fortune Teller
             // Scaling chips jokers
             Castle,
             Wee,
@@ -535,7 +533,6 @@ mod tests {
 
         let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
         // Rare jokers
-        assert!(rare_jokers.contains(&JokerId::FortuneTeller)); // FortuneTeller
         assert!(rare_jokers.contains(&JokerId::Castle));
         assert!(rare_jokers.contains(&JokerId::Wee));
         assert!(rare_jokers.contains(&JokerId::Stuntman));
