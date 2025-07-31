@@ -96,7 +96,6 @@ impl JokerFactory {
             JokerId::GreenJoker => Some(Box::new(GreenJoker::new())),
             JokerId::Reserved5 => Some(Box::new(RideTheBusJoker::new())), // RideTheBus
             JokerId::Reserved6 => Some(Box::new(RedCardJoker::new())),    // RedCard (pack skipping)
-            JokerId::RedCard => Some(Box::new(RedCardJoker::new())),      // RedCard (pack skipping)
 
             // Scaling chips jokers
             JokerId::Castle => Some(Box::new(CastleJoker::new())),
@@ -177,8 +176,8 @@ impl JokerFactory {
                 Banner,
                 AbstractJoker,
                 // RNG-based jokers (Issue #442)
-                Reserved7,  // SixShooterJoker
-                LuckyCharm, // LuckyCardJoker
+                Reserved7,     // SixShooterJoker
+                LuckyCharm,    // LuckyCardJoker
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
@@ -186,7 +185,6 @@ impl JokerFactory {
                 GreenJoker,
                 Reserved5, // RideTheBus
                 Reserved6, // RedCard (pack skipping)
-                RedCard,   // Red Card (direct mapping)
                 // Scaling chips jokers
                 OddTodd,
                 Arrowhead,
@@ -212,7 +210,6 @@ impl JokerFactory {
                 FourFingers,
                 // Scaling additive mult jokers
                 Trousers, // Spare Trousers
-                RedCard,  // RedCard (pack skipping)
                 // Scaling chips jokers
                 Hiker,
                 // Scaling xmult jokers
@@ -302,7 +299,6 @@ impl JokerFactory {
             GreenJoker,
             Reserved5,     // RideTheBus
             Reserved6,     // RedCard (pack skipping)
-            RedCard,       // Red Card (direct mapping)
             FortuneTeller, // Fortune Teller
             // Scaling chips jokers
             Castle,
@@ -440,7 +436,7 @@ mod tests {
 
         let red_card = JokerFactory::create(JokerId::Reserved6);
         assert!(red_card.is_some());
-        assert_eq!(red_card.unwrap().id(), JokerId::Reserved6); // RedCardJoker now uses Reserved6 ID
+        assert_eq!(red_card.unwrap().id(), JokerId::Reserved6);
 
         let fortune_teller = JokerFactory::create(JokerId::FortuneTeller);
         assert!(fortune_teller.is_some());
@@ -530,6 +526,8 @@ mod tests {
         assert!(uncommon_jokers.contains(&JokerId::Reserved)); // Throwback
         assert!(uncommon_jokers.contains(&JokerId::Ceremonial)); // Ceremonial Dagger
 
+        let common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
+        
         let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
         // Rare scaling jokers
         assert!(rare_jokers.contains(&JokerId::FortuneTeller)); // Fortune Teller
