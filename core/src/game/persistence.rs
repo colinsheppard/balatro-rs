@@ -29,9 +29,9 @@ use crate::state_version::StateVersion;
 use crate::vouchers::VoucherCollection;
 
 // Additional imports needed for load functionality
+use super::{DebugManager, PackManager};
 use crate::joker_effect_processor::JokerEffectProcessor;
 use crate::target_context::TargetContext;
-use super::{PackManager, DebugManager};
 
 /// Current save format version
 const SAVE_VERSION: u32 = 1;

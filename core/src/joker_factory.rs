@@ -73,7 +73,7 @@ impl JokerFactory {
             JokerId::Reserved8 => Some(Box::new(GrimJoker)),
             JokerId::AcrobatJoker => Some(Box::new(AcrobatJoker::new())),
             JokerId::Fortune => Some(Box::new(FortuneTellerJoker::new())),
-            JokerId::Reserved4 => Some(Box::new(MysteryJoker)),
+            JokerId::MysteryJoker => Some(Box::new(MysteryJoker)),
             JokerId::VagabondJoker => Some(Box::new(VagabondJokerImpl)),
             JokerId::Reserved9 => Some(Box::new(ChaoticJoker)),
 
@@ -177,8 +177,8 @@ impl JokerFactory {
                 Banner,
                 AbstractJoker,
                 // RNG-based jokers (Issue #442)
-                Reserved7,     // SixShooterJoker
-                LuckyCharm,    // LuckyCardJoker
+                Reserved7,  // SixShooterJoker
+                LuckyCharm, // LuckyCardJoker
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
@@ -187,6 +187,7 @@ impl JokerFactory {
                 Reserved5, // RideTheBus
                 Reserved6, // RedCard (pack skipping)
                 RedCard,   // Red Card (direct mapping)
+                Fortune,   // Fortune Teller
                 // Scaling chips jokers
                 OddTodd,
                 Arrowhead,
@@ -226,11 +227,10 @@ impl JokerFactory {
             JokerRarity::Rare => vec![
                 // RNG-based jokers (Issue #442)
                 AcrobatJoker,
-                Reserved4, // Mystery Joker
+                MysteryJoker,
                 // Special mechanic jokers
                 Blueprint,
                 // Scaling mult jokers
-                Fortune, // Fortune Teller
                 // Scaling chips jokers
                 Castle,
                 Wee,
@@ -287,7 +287,7 @@ impl JokerFactory {
             LuckyCharm, // LuckyCardJoker
             Reserved8,  // GrimJoker
             AcrobatJoker,
-            Reserved4, // MysteryJoker
+            MysteryJoker,
             VagabondJoker,
             Reserved9, // ChaoticJoker
             // Special mechanic jokers using new trait system
@@ -300,10 +300,10 @@ impl JokerFactory {
             // Scaling additive mult jokers
             Trousers, // Spare Trousers
             GreenJoker,
-            Reserved5,     // RideTheBus
-            Reserved6,     // RedCard (pack skipping)
-            RedCard,       // Red Card (direct mapping)
-            Fortune, // Fortune Teller
+            Reserved5, // RideTheBus
+            Reserved6, // RedCard (pack skipping)
+            RedCard,   // Red Card (direct mapping)
+            Fortune,   // Fortune Teller
             // Scaling chips jokers
             Castle,
             Wee,
@@ -533,10 +533,10 @@ mod tests {
         let common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
         // Fortune Teller moved to Common
         assert!(common_jokers.contains(&JokerId::Fortune)); // Fortune Teller
-        
+
         let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
-        // Rare scaling jokers
-        assert!(rare_jokers.contains(&JokerId::Fortune)); // Fortune Teller
+        // Rare jokers
+        assert!(rare_jokers.contains(&JokerId::MysteryJoker)); // MysteryJoker
         assert!(rare_jokers.contains(&JokerId::Castle));
         assert!(rare_jokers.contains(&JokerId::Wee));
         assert!(rare_jokers.contains(&JokerId::Stuntman));
