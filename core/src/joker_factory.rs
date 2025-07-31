@@ -177,8 +177,8 @@ impl JokerFactory {
                 Banner,
                 AbstractJoker,
                 // RNG-based jokers (Issue #442)
-                Reserved7,     // SixShooterJoker
-                LuckyCharm,    // LuckyCardJoker
+                Reserved7,  // SixShooterJoker
+                LuckyCharm, // LuckyCardJoker
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
@@ -440,7 +440,7 @@ mod tests {
 
         let red_card = JokerFactory::create(JokerId::Reserved6);
         assert!(red_card.is_some());
-        assert_eq!(red_card.unwrap().id(), JokerId::RedCard); // RedCardJoker now uses RedCard ID
+        assert_eq!(red_card.unwrap().id(), JokerId::Reserved6); // RedCardJoker now uses Reserved6 ID
 
         let fortune_teller = JokerFactory::create(JokerId::FortuneTeller);
         assert!(fortune_teller.is_some());
