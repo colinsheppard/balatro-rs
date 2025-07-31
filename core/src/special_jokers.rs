@@ -516,7 +516,7 @@ impl JokerStateTrait for FourofaKindJoker {}
 
 impl Joker for FourofaKindJoker {
     fn id(&self) -> JokerId {
-        JokerId::Reserved4 // Placeholder, would need to add to enum
+        JokerId::Reserved10 // Using unique ID to avoid conflict with MysteryJoker
     }
 
     fn name(&self) -> &str {

@@ -730,59 +730,6 @@ impl Joker for AcrobatJokerImpl {
     }
 }
 
-// Mystery Joker implementation - random effect each hand
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
-pub struct MysteryJoker;
-
-impl Joker for MysteryJoker {
-    fn id(&self) -> JokerId {
-        JokerId::Reserved4 // Use Reserved4 to avoid conflict with Fortune Teller
-    }
-
-    fn name(&self) -> &str {
-        "Mystery Joker"
-    }
-
-    fn description(&self) -> &str {
-        "Random effect each hand"
-    }
-
-    fn rarity(&self) -> JokerRarity {
-        JokerRarity::Rare
-    }
-
-    fn cost(&self) -> usize {
-        10
-    }
-
-    fn on_hand_played(&self, context: &mut GameContext, _hand: &SelectHand) -> JokerEffect {
-        // Generate random effect - choose from several possibilities
-        let effect_type = context.rng.gen_range(0..6);
-
-        match effect_type {
-            0 => JokerEffect::new()
-                .with_mult(15)
-                .with_message("Mystery effect: +15 Mult!".to_string()),
-            1 => JokerEffect::new()
-                .with_chips(100)
-                .with_message("Mystery effect: +100 Chips!".to_string()),
-            2 => JokerEffect::new()
-                .with_money(5)
-                .with_message("Mystery effect: +$5!".to_string()),
-            3 => JokerEffect::new()
-                .with_mult_multiplier(2.0)
-                .with_message("Mystery effect: X2 Mult!".to_string()),
-            4 => JokerEffect::new()
-                .with_retrigger(1)
-                .with_message("Mystery effect: Retrigger!".to_string()),
-            _ => JokerEffect::new()
-                .with_chips(50)
-                .with_mult(10)
-                .with_message("Mystery effect: Balanced bonus!".to_string()),
-        }
-    }
-}
-
 // Vagabond Joker implementation - Create Tarot if hand played with low money
 // Threshold is configurable for proper game balance
 const VAGABOND_MONEY_THRESHOLD: i32 = 4;
@@ -1276,16 +1223,6 @@ mod tests {
     }
 
     #[test]
-    fn test_mystery_joker_basic_properties() {
-        let mystery = MysteryJoker;
-        assert_eq!(mystery.id(), JokerId::Reserved4);
-        assert_eq!(mystery.name(), "Mystery Joker");
-        assert_eq!(mystery.description(), "Random effect each hand");
-        assert_eq!(mystery.rarity(), JokerRarity::Rare);
-        assert_eq!(mystery.cost(), 10);
-    }
-
-    #[test]
     fn test_vagabond_joker_basic_properties() {
         let vagabond = VagabondJokerImpl;
         assert_eq!(vagabond.id(), JokerId::VagabondJoker);
@@ -1504,10 +1441,10 @@ mod tests {
             "AcrobatJoker should be creatable from factory"
         );
 
-        let mystery = JokerFactory::create(JokerId::Reserved4);
+        let fortune_teller = JokerFactory::create(JokerId::FortuneTeller);
         assert!(
-            mystery.is_some(),
-            "MysteryJoker should be creatable from factory"
+            fortune_teller.is_some(),
+            "FortuneTeller should be creatable from factory"
         );
 
         let vagabond = JokerFactory::create(JokerId::VagabondJoker);
@@ -1555,8 +1492,8 @@ mod tests {
             "AcrobatJoker should be in Rare rarity"
         );
         assert!(
-            rare_jokers.contains(&JokerId::FortuneTeller),
-            "Fortune Teller (JokerId::FortuneTeller) should be in Rare rarity"
+            common_jokers.contains(&JokerId::FortuneTeller),
+            "Fortune Teller should be in Common rarity"
         );
 
         let legendary_jokers = JokerFactory::get_by_rarity(JokerRarity::Legendary);
@@ -1592,8 +1529,8 @@ mod tests {
             "AcrobatJoker should be in implemented list"
         );
         assert!(
-            all_implemented.contains(&JokerId::Reserved4),
-            "MysteryJoker should be in implemented list"
+            all_implemented.contains(&JokerId::FortuneTeller),
+            "FortuneTeller should be in implemented list"
         );
         assert!(
             all_implemented.contains(&JokerId::VagabondJoker),
