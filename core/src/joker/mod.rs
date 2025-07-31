@@ -140,6 +140,7 @@ pub enum JokerId {
     SmilingMask,
     FaceMask,
     Fortune,
+    FortuneTeller,
     MysteryJoker,
     Juggler,
     Drunkard,

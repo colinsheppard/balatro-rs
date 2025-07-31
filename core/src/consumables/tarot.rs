@@ -155,7 +155,7 @@ impl TarotFactory {
             ConsumableId::Strength => Ok(Box::new(StrengthCard::new())),
             ConsumableId::TheHermit => Ok(Box::new(TheHermit::new())),
             ConsumableId::WheelOfFortune => Ok(Box::new(WheelOfFortune::new())),
-            
+
             // Wave 2 Tarot Cards (Major Arcana XI-XXI)
             ConsumableId::Justice => Ok(Box::new(Justice::new())),
             ConsumableId::TheHangedMan => Ok(Box::new(TheHangedMan::new())),
@@ -168,7 +168,7 @@ impl TarotFactory {
             ConsumableId::TheSun => Ok(Box::new(TheSun::new())),
             ConsumableId::Judgement => Ok(Box::new(Judgement::new())),
             ConsumableId::TheWorld => Ok(Box::new(TheWorld::new())),
-            
+
             _ => Err(TarotError::ConsumableCreationFailed {
                 reason: format!("Unknown tarot card ID: {id:?}"),
             }),
@@ -1435,7 +1435,7 @@ impl TarotCard for TheHangedMan {
 
         let effect = TarotEffect {
             cards_removed: card_target.indices.clone(),
-            description: format!("Destroyed {} card(s)", count),
+            description: format!("Destroyed {count} card(s)"),
             ..Default::default()
         };
 
@@ -1540,7 +1540,7 @@ impl TarotCard for Death {
         };
 
         // TODO: Implement actual card copying logic when proper game state mutation API is available
-        
+
         Ok(effect)
     }
 }
@@ -1625,10 +1625,10 @@ impl TarotCard for Temperance {
     fn activate(&self, game: &mut Game, _target: Target) -> Result<TarotEffect, TarotError> {
         // Calculate total sell value of all jokers
         let total_value = game.jokers.len() as i32 * 2; // Assuming $2 sell value per joker
-        
+
         let effect = TarotEffect {
             money_change: total_value,
-            description: format!("Gained ${} from joker values", total_value),
+            description: format!("Gained ${total_value} from joker values"),
             ..Default::default()
         };
 
@@ -1943,7 +1943,7 @@ impl TarotCard for TheStar {
         }
 
         let effect = TarotEffect {
-            description: format!("Converted {} card(s) to Diamonds", count),
+            description: format!("Converted {count} card(s) to Diamonds"),
             ..Default::default()
         };
 
@@ -2045,7 +2045,7 @@ impl TarotCard for TheMoon {
         }
 
         let effect = TarotEffect {
-            description: format!("Converted {} card(s) to Clubs", count),
+            description: format!("Converted {count} card(s) to Clubs"),
             ..Default::default()
         };
 
@@ -2147,7 +2147,7 @@ impl TarotCard for TheSun {
         }
 
         let effect = TarotEffect {
-            description: format!("Converted {} card(s) to Hearts", count),
+            description: format!("Converted {count} card(s) to Hearts"),
             ..Default::default()
         };
 
@@ -2353,7 +2353,7 @@ impl TarotCard for TheWorld {
         }
 
         let effect = TarotEffect {
-            description: format!("Converted {} card(s) to Spades", count),
+            description: format!("Converted {count} card(s) to Spades"),
             ..Default::default()
         };
 

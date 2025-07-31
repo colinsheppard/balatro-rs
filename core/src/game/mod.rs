@@ -13,7 +13,6 @@ use crate::joker::{GameContext, Joker, JokerId, Jokers, OldJoker as OldJokerTrai
 use crate::joker_effect_processor::JokerEffectProcessor;
 use crate::joker_factory::JokerFactory;
 use crate::joker_state::JokerStateManager;
-use crate::memory_monitor::MemoryMonitor;
 use crate::rank::HandRank;
 
 // Import debug functionality
@@ -42,10 +41,6 @@ use std::sync::Arc;
 
 // Submodules
 pub mod persistence;
-
-/// Maximum debug messages to keep in memory (for practical memory management)
-#[cfg(any(debug_assertions, test))]
-const MAX_DEBUG_MESSAGES: usize = 10000;
 
 /// Score breakdown for debugging and analysis
 #[derive(Debug, Clone)]

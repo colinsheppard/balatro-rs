@@ -37,23 +37,6 @@ impl Deck {
         self.cards.clone()
     }
 
-    /// Get mutable reference to a card by index for consumable effects
-    pub(crate) fn get_card_mut(&mut self, index: usize) -> Option<&mut Card> {
-        self.cards.get_mut(index)
-    }
-
-    /// Remove cards by indices for consumable effects (like card destruction)
-    /// Indices must be sorted in descending order to avoid index shifting issues
-    pub(crate) fn remove_cards_by_indices(&mut self, mut indices: Vec<usize>) {
-        // Sort indices in descending order to remove from the end first
-        indices.sort_by(|a, b| b.cmp(a));
-        for index in indices {
-            if index < self.cards.len() {
-                self.cards.remove(index);
-            }
-        }
-    }
-
     // // Loops through cards, assigning index to each equal to index in deck
     // pub(crate) fn index_cards(&mut self) {
     //     let mut i = 0;

@@ -176,8 +176,8 @@ impl JokerFactory {
                 Banner,
                 AbstractJoker,
                 // RNG-based jokers (Issue #442)
-                Reserved7,     // SixShooterJoker
-                LuckyCharm,    // LuckyCardJoker
+                Reserved7,  // SixShooterJoker
+                LuckyCharm, // LuckyCardJoker
                 // Special mechanic jokers
                 Erosion,
                 Photograph,
@@ -526,8 +526,6 @@ mod tests {
         assert!(uncommon_jokers.contains(&JokerId::Reserved)); // Throwback
         assert!(uncommon_jokers.contains(&JokerId::Ceremonial)); // Ceremonial Dagger
 
-        let common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
-        
         let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
         // Rare scaling jokers
         assert!(rare_jokers.contains(&JokerId::FortuneTeller)); // Fortune Teller

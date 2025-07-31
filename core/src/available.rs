@@ -95,23 +95,6 @@ impl Available {
     pub(crate) fn cards_and_selected(&self) -> Vec<(Card, bool)> {
         self.cards.clone()
     }
-
-    /// Get mutable reference to a card by index for consumable effects
-    pub(crate) fn get_card_mut(&mut self, index: usize) -> Option<&mut Card> {
-        self.cards.get_mut(index).map(|(card, _)| card)
-    }
-
-    /// Remove cards by indices for consumable effects (like card destruction)
-    /// Indices must be sorted in descending order to avoid index shifting issues
-    pub(crate) fn remove_cards_by_indices(&mut self, mut indices: Vec<usize>) {
-        // Sort indices in descending order to remove from the end first
-        indices.sort_by(|a, b| b.cmp(a));
-        for index in indices {
-            if index < self.cards.len() {
-                self.cards.remove(index);
-            }
-        }
-    }
 }
 
 #[cfg(test)]
