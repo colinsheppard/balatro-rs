@@ -1740,6 +1740,10 @@ impl Game {
 
         // Handle boss blind progression (same as normal blind completion)
         if blind == Blind::Boss {
+            // Process investment tag payouts before progression
+            let investment_reward = self.handle_boss_blind_defeat();
+            self.money += investment_reward as f64;
+
             if let Some(ante_next) = self.ante_current.next(self.ante_end) {
                 self.ante_current = ante_next;
             } else {
@@ -1799,6 +1803,10 @@ impl Game {
 
         // passed boss blind, either win or progress ante
         if blind == Blind::Boss {
+            // Process investment tag payouts before progression
+            let investment_reward = self.handle_boss_blind_defeat();
+            self.money += investment_reward as f64;
+
             if let Some(ante_next) = self.ante_current.next(self.ante_end) {
                 self.ante_current = ante_next;
             } else {
@@ -1984,6 +1992,9 @@ impl Game {
 
         // First, call the original skip_blind method to set up the basic skip mechanics
         self.skip_blind(blind)?;
+
+        // Increment the blinds_skipped counter for economic tags
+        self.active_skip_tags.blinds_skipped += 1;
 
         // Generate potential skip tags based on rarity weights
         let registry = global_registry();
