@@ -12,9 +12,11 @@ use std::hint::black_box;
 fn benchmark_tarot_creation(c: &mut Criterion) {
     c.bench_function("tarot_factory_creation", |b| {
         b.iter(|| {
-            let cards = TarotFactory::get_implemented_cards();
+            let factory = TarotFactory::new();
+            let cards = ConsumableId::tarot_cards();
             for card_id in black_box(cards) {
-                let _card = TarotFactory::create(card_id);
+                // Unwrap is acceptable in benchmarks for performance measurement
+                let _card = factory.create_tarot(card_id).unwrap();
             }
         })
     });
@@ -40,8 +42,10 @@ fn benchmark_individual_creation(c: &mut Criterion) {
 
     for (name, id) in cards {
         group.bench_function(name, |b| {
+            let factory = TarotFactory::new();
             b.iter(|| {
-                let _card = TarotFactory::create(black_box(id));
+                // Unwrap is acceptable in benchmarks for performance measurement
+                let _card = factory.create_tarot(black_box(id)).unwrap();
             })
         });
     }
