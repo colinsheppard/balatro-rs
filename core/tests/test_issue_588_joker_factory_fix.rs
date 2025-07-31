@@ -34,7 +34,7 @@ fn test_red_card_joker_correctly_created() {
     assert_eq!(joker.id(), JokerId::Reserved6);
     assert_eq!(joker.name(), "Red Card");
     assert_eq!(joker.description(), "+3 Mult per pack skipped");
-    assert_eq!(joker.rarity(), JokerRarity::Uncommon);
+    assert_eq!(joker.rarity(), JokerRarity::Common);
 
     // Verify it's not the static joker that gives "+3 Mult when red cards are scored"
     assert_ne!(
@@ -114,9 +114,6 @@ fn test_jokers_in_rarity_lists() {
     // FortuneTeller should be in Common (based on the implementation)
     let common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
     assert!(common_jokers.contains(&JokerId::FortuneTeller));
-
-    // Get rare jokers for other tests
-    let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
     assert!(common_jokers.contains(&JokerId::Reserved6));
 
     // Steel Joker should be in Uncommon
