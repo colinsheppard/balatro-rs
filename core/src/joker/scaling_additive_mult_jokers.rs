@@ -201,8 +201,8 @@ impl FortuneTellerJoker {
             id: JokerId::FortuneTeller,
             name: "Fortune Teller".to_string(),
             description: "+1 Mult per Tarot card used".to_string(),
-            rarity: JokerRarity::Rare,
-            cost: 8,
+            rarity: JokerRarity::Common,
+            cost: 3,
             // Removed: tarots_used initialization (dual state eliminated)
         }
     }
@@ -988,8 +988,8 @@ mod tests {
         // Test identity
         assert_eq!(joker.joker_type(), "fortune_teller");
         assert_eq!(JokerIdentity::name(&joker), "Fortune Teller");
-        assert_eq!(joker.base_cost(), 8);
-        assert_eq!(joker.rarity, JokerRarity::Rare);
+        assert_eq!(joker.base_cost(), 3);
+        assert_eq!(joker.rarity, JokerRarity::Common);
     }
 
     #[test]
