@@ -194,6 +194,8 @@ impl JokerFactory {
                 // Scaling xmult jokers (none in common)
                 // Retrigger jokers
                 Hanging, // HangingChadJoker
+                // Scaling mult jokers moved to Common
+                Fortune, // Fortune Teller
             ],
             JokerRarity::Uncommon => vec![
                 // Money-based conditional jokers
@@ -523,12 +525,12 @@ mod tests {
         assert!(uncommon_jokers.contains(&JokerId::Reserved)); // Throwback
         assert!(uncommon_jokers.contains(&JokerId::Ceremonial)); // Ceremonial Dagger
 
-        let _common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
+        let common_jokers = JokerFactory::get_by_rarity(JokerRarity::Common);
         // Fortune Teller moved to Common
-        // FortuneTeller is in get_all_implemented but not assigned to a specific rarity
+        assert!(common_jokers.contains(&JokerId::Fortune)); // Fortune Teller
 
         let rare_jokers = JokerFactory::get_by_rarity(JokerRarity::Rare);
-        // Rare jokers
+        // Rare scaling jokers
         assert!(rare_jokers.contains(&JokerId::Castle));
         assert!(rare_jokers.contains(&JokerId::Wee));
         assert!(rare_jokers.contains(&JokerId::Stuntman));
