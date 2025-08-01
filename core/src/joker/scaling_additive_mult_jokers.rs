@@ -206,6 +206,17 @@ impl FortuneTellerJoker {
             // Removed: tarots_used initialization (dual state eliminated)
         }
     }
+
+    /// Create a Fortune Teller joker with the Fortune ID (for compatibility)
+    pub fn new_with_fortune_id() -> Self {
+        Self {
+            id: JokerId::Fortune,
+            name: "Fortune Teller".to_string(),
+            description: "+1 Mult per Tarot card used".to_string(),
+            rarity: JokerRarity::Rare,
+            cost: 8,
+        }
+    }
 }
 
 impl JokerIdentity for FortuneTellerJoker {
