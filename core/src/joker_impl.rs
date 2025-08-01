@@ -1780,6 +1780,10 @@ mod tests {
             common_jokers.contains(&JokerId::LuckyCharm),
             "LuckyCardJoker should be in Common rarity"
         );
+        assert!(
+            common_jokers.contains(&JokerId::Fortune),
+            "Fortune Teller (JokerId::Fortune) should be in Common rarity"
+        );
 
         let uncommon_jokers = JokerFactory::get_by_rarity(JokerRarity::Uncommon);
         assert!(
@@ -1799,10 +1803,6 @@ mod tests {
         assert!(
             rare_jokers.contains(&JokerId::AcrobatJoker),
             "AcrobatJoker should be in Rare rarity"
-        );
-        assert!(
-            rare_jokers.contains(&JokerId::Fortune),
-            "Fortune Teller (JokerId::Fortune) should be in Rare rarity"
         );
 
         let legendary_jokers = JokerFactory::get_by_rarity(JokerRarity::Legendary);
