@@ -649,6 +649,7 @@ impl JokerEffectProcessor {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Should use proper test deck composition
             steel_cards_in_deck: 0, // TEST: Should use proper test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &test_rng,
         };
 
@@ -2210,6 +2211,7 @@ mod tests {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Should use proper test deck composition
             steel_cards_in_deck: 0, // TEST: Should use proper test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &crate::rng::GameRng::secure(),
         };
 
@@ -2479,6 +2481,7 @@ mod tests {
                 cards_in_deck: 52,
                 stone_cards_in_deck: 0,
                 steel_cards_in_deck: 0,
+                enhanced_cards_in_deck: 0,
                 rng,
             }
         };
@@ -2557,6 +2560,7 @@ mod tests {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Should use proper test deck composition
             steel_cards_in_deck: 0, // TEST: Should use proper test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &crate::rng::GameRng::secure(),
         };
 
@@ -2948,6 +2952,7 @@ mod tests {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Should use proper test deck composition
             steel_cards_in_deck: 0, // TEST: Should use proper test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &crate::rng::GameRng::secure(),
         };
 
@@ -2995,6 +3000,7 @@ mod tests {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Should use proper test deck composition
             steel_cards_in_deck: 0, // TEST: Should use proper test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &crate::rng::GameRng::secure(),
         };
 

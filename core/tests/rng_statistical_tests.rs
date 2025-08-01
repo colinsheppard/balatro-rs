@@ -435,6 +435,7 @@ fn test_lucky_card_joker_probability() {
             cards_in_deck: 52,
             stone_cards_in_deck: 0, // TEST: Using standard test deck composition
             steel_cards_in_deck: 0, // TEST: Using standard test deck composition
+            enhanced_cards_in_deck: 0,
             rng: &rng,
         };
 
@@ -516,6 +517,7 @@ fn test_rng_jokers_deterministic_behavior() {
                 cards_in_deck: 52,
                 stone_cards_in_deck: 0,
                 steel_cards_in_deck: 0,
+                enhanced_cards_in_deck: 0,
                 rng: &rng1,
             };
 
@@ -553,6 +555,7 @@ fn test_rng_jokers_deterministic_behavior() {
                 cards_in_deck: 52,
                 stone_cards_in_deck: 0,
                 steel_cards_in_deck: 0,
+                enhanced_cards_in_deck: 0,
                 rng: &rng2,
             };
 

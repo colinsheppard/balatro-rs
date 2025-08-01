@@ -57,6 +57,7 @@ impl TestData {
             cards_in_deck: 52,
             stone_cards_in_deck: 0,
             steel_cards_in_deck: 0,
+            enhanced_cards_in_deck: 0,
             rng: &self.rng,
         }
     }
@@ -1157,6 +1158,7 @@ fn test_performance_with_many_scaling_jokers() {
         cards_in_deck: 52,
         stone_cards_in_deck: 0,
         steel_cards_in_deck: 0,
+        enhanced_cards_in_deck: 0,
         rng,
     };
 
