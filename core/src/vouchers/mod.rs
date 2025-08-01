@@ -38,6 +38,8 @@ pub enum VoucherError {
     ExcessivePackOptions { amount: usize },
     #[error("Invalid blind score reduction: {multiplier} (must be finite, positive, and ≤ 1.0)")]
     InvalidBlindReduction { multiplier: f64 },
+    #[error("Invalid shop discount: {multiplier} (must be finite, positive, and ≤ 1.0)")]
+    InvalidShopDiscount { multiplier: f64 },
     #[error("Too many starting cards: {count} (max: 52)")]
     ExcessiveStartingCards { count: usize },
     #[error("Shop slot increase too large: {amount} (max: 20)")]
@@ -315,7 +317,7 @@ impl VoucherEffect {
             }
             VoucherEffect::ShopDiscountMultiplier(multiplier) => {
                 if !multiplier.is_finite() || *multiplier <= 0.0 || *multiplier > 1.0 {
-                    return Err(VoucherError::InvalidBlindReduction {
+                    return Err(VoucherError::InvalidShopDiscount {
                         multiplier: *multiplier,
                     });
                 }
@@ -948,3 +950,101 @@ pub use VoucherId::*;
 
 // Re-export individual voucher implementations
 pub use implementations::*;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_shop_discount_multiplier_validation_valid_values() {
+        // Valid values should pass validation
+        let valid_effects = vec![
+            VoucherEffect::ShopDiscountMultiplier(0.5),
+            VoucherEffect::ShopDiscountMultiplier(0.1),
+            VoucherEffect::ShopDiscountMultiplier(1.0),
+            VoucherEffect::ShopDiscountMultiplier(0.01),
+            VoucherEffect::ShopDiscountMultiplier(0.99),
+        ];
+
+        for effect in valid_effects {
+            assert!(effect.validate().is_ok(), "Effect {:?} should be valid", effect);
+        }
+    }
+
+    #[test]
+    fn test_shop_discount_multiplier_validation_invalid_values() {
+        // Invalid values should return InvalidShopDiscount error
+        let invalid_effects = vec![
+            VoucherEffect::ShopDiscountMultiplier(0.0),     // Zero - invalid
+            VoucherEffect::ShopDiscountMultiplier(-0.5),    // Negative - invalid
+            VoucherEffect::ShopDiscountMultiplier(1.5),     // > 1.0 - invalid
+            VoucherEffect::ShopDiscountMultiplier(2.0),     // > 1.0 - invalid
+            VoucherEffect::ShopDiscountMultiplier(f64::INFINITY), // Not finite - invalid
+            VoucherEffect::ShopDiscountMultiplier(f64::NEG_INFINITY), // Not finite - invalid
+            VoucherEffect::ShopDiscountMultiplier(f64::NAN), // Not finite - invalid
+        ];
+
+        for effect in invalid_effects {
+            let result = effect.validate();
+            assert!(result.is_err(), "Effect {:?} should be invalid", effect);
+
+            // Verify it returns the correct error type
+            if let Err(VoucherError::InvalidShopDiscount { multiplier }) = result {
+                // Check that the multiplier is included in the error
+                match effect {
+                    VoucherEffect::ShopDiscountMultiplier(value) => {
+                        assert!((multiplier - value).abs() < f64::EPSILON ||
+                               (multiplier.is_nan() && value.is_nan()),
+                               "Error multiplier should match effect value");
+                    }
+                    _ => unreachable!(),
+                }
+            } else {
+                panic!(
+                    "Effect {:?} should return InvalidShopDiscount error, got {:?}",
+                    effect, result
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_shop_discount_multiplier_error_message() {
+        let effect = VoucherEffect::ShopDiscountMultiplier(1.5);
+        let error = effect.validate().unwrap_err();
+
+        let error_message = error.to_string();
+        assert!(
+            error_message.contains("Invalid shop discount"),
+            "Error message should mention 'Invalid shop discount', got: {}",
+            error_message
+        );
+        assert!(
+            error_message.contains("1.5"),
+            "Error message should include the invalid value, got: {}",
+            error_message
+        );
+        assert!(
+            error_message.contains("must be finite, positive, and ≤ 1.0"),
+            "Error message should include validation constraints, got: {}",
+            error_message
+        );
+    }
+
+    #[test]
+    fn test_blind_reduction_still_uses_correct_error() {
+        // Verify that blind reduction validation still uses the correct error type
+        let invalid_blind_effect = VoucherEffect::BlindScoreReduction(1.5);
+        let result = invalid_blind_effect.validate();
+
+        assert!(result.is_err());
+        if let Err(VoucherError::InvalidBlindReduction { .. }) = result {
+            // This is correct
+        } else {
+            panic!(
+                "BlindScoreReduction should return InvalidBlindReduction error, got {:?}",
+                result
+            );
+        }
+    }
+}
