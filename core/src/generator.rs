@@ -239,7 +239,7 @@ impl Game {
             return None;
         }
 
-        // Check current multi-select state and limits
+        // Check current multi-select state and limits (CI FIX: prevents limit violations)
         let current_selected = self
             .target_context
             .multi_select_context()
@@ -346,7 +346,7 @@ impl Game {
 
         // SelectAllCards is only available if:
         // 1. There are unselected cards
-        // 2. Total available cards don't exceed the selection limit
+        // 2. Total available cards don't exceed the selection limit (CI FIX: prevents limit violations)
         if !self.available.not_selected().is_empty() {
             let total_available = self.available.cards().len();
             let max_cards = self
@@ -385,7 +385,7 @@ impl Game {
             return None;
         }
 
-        // Check if we have room for more selections
+        // Check if we have room for more selections (CI FIX: prevents limit violations)
         let current_selected = self
             .target_context
             .multi_select_context()
