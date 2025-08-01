@@ -670,6 +670,186 @@ impl Game {
         self.available.select_card(card)
     }
 
+    /// Select multiple cards using the multi-select system
+    pub(crate) fn select_cards(&mut self, cards: Vec<Card>) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // Activate multi-select mode if not already active
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Validate all cards exist in available cards
+        let available_cards = self.available.cards();
+        for card in &cards {
+            if !available_cards.iter().any(|c| c.id == card.id) {
+                return Err(GameError::NoCardMatch);
+            }
+        }
+
+        // Convert cards to IDs for multi-select context
+        let card_ids: Vec<usize> = cards.iter().map(|card| card.id).collect();
+
+        // Use multi-select context to select cards
+        self.target_context
+            .multi_select_context_mut()
+            .select_cards(card_ids)
+            .map_err(|_| GameError::InvalidSelectCard)?;
+
+        Ok(())
+    }
+
+    /// Deselect a single card using the multi-select system
+    pub(crate) fn deselect_card(&mut self, card: Card) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // Validate card exists in available cards
+        let available_cards = self.available.cards();
+        if !available_cards.iter().any(|c| c.id == card.id) {
+            return Err(GameError::NoCardMatch);
+        }
+
+        // Use multi-select context to deselect card
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        self.target_context
+            .multi_select_context_mut()
+            .deselect_card(card.id)
+            .map_err(|_| GameError::InvalidSelectCard)?;
+
+        Ok(())
+    }
+
+    /// Deselect multiple cards using the multi-select system
+    pub(crate) fn deselect_cards(&mut self, cards: Vec<Card>) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // Validate all cards exist in available cards
+        let available_cards = self.available.cards();
+        for card in &cards {
+            if !available_cards.iter().any(|c| c.id == card.id) {
+                return Err(GameError::NoCardMatch);
+            }
+        }
+
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Deselect each card individually
+        for card in cards {
+            self.target_context
+                .multi_select_context_mut()
+                .deselect_card(card.id)
+                .map_err(|_| GameError::InvalidSelectCard)?;
+        }
+
+        Ok(())
+    }
+
+    /// Toggle card selection using the multi-select system
+    pub(crate) fn toggle_card_selection(&mut self, card: Card) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // Validate card exists in available cards
+        let available_cards = self.available.cards();
+        if !available_cards.iter().any(|c| c.id == card.id) {
+            return Err(GameError::NoCardMatch);
+        }
+
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Toggle card selection
+        self.target_context
+            .multi_select_context_mut()
+            .toggle_card(card.id)
+            .map_err(|_| GameError::InvalidSelectCard)?;
+
+        Ok(())
+    }
+
+    /// Select all available cards using the multi-select system
+    pub(crate) fn select_all_cards(&mut self) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Get all available card IDs
+        let available_cards = self.available.cards();
+        let card_ids: Vec<usize> = available_cards.iter().map(|card| card.id).collect();
+
+        // Clear any existing selections and select all cards
+        self.target_context.multi_select_context_mut().clear_cards();
+        self.target_context
+            .multi_select_context_mut()
+            .select_cards(card_ids)
+            .map_err(|_| GameError::InvalidSelectCard)?;
+
+        Ok(())
+    }
+
+    /// Deselect all cards using the multi-select system
+    pub(crate) fn deselect_all_cards(&mut self) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Clear all card selections
+        self.target_context.multi_select_context_mut().clear_cards();
+
+        Ok(())
+    }
+
+    /// Select a range of cards using the multi-select system
+    pub(crate) fn range_select_cards(&mut self, start: Card, end: Card) -> Result<(), GameError> {
+        // Ensure target context is synchronized with current game state
+        self.sync_target_context();
+
+        // Validate both cards exist in available cards
+        let available_cards = self.available.cards();
+        if !available_cards.iter().any(|c| c.id == start.id) {
+            return Err(GameError::NoCardMatch);
+        }
+        if !available_cards.iter().any(|c| c.id == end.id) {
+            return Err(GameError::NoCardMatch);
+        }
+
+        // If multi-select is not active, activate it first
+        if !self.target_context.is_multi_select_active() {
+            self.target_context.activate_multi_select();
+        }
+
+        // Get available card IDs in order
+        let available_card_ids: Vec<usize> = available_cards.iter().map(|card| card.id).collect();
+
+        // Use multi-select context to perform range selection
+        self.target_context
+            .multi_select_context_mut()
+            .range_select_cards(start.id, end.id, &available_card_ids)
+            .map_err(|_| GameError::InvalidSelectCard)?;
+
+        Ok(())
+    }
+
     pub(crate) fn move_card(
         &mut self,
         direction: MoveDirection,
@@ -1879,34 +2059,34 @@ impl Game {
             },
 
             // Multi-select actions - placeholder implementations for now
-            Action::SelectCards(_) => {
-                // TODO: Implement multi-card selection
-                Err(GameError::InvalidAction)
-            }
-            Action::DeselectCard(_) => {
-                // TODO: Implement card deselection
-                Err(GameError::InvalidAction)
-            }
-            Action::DeselectCards(_) => {
-                // TODO: Implement multi-card deselection
-                Err(GameError::InvalidAction)
-            }
-            Action::ToggleCardSelection(_) => {
-                // TODO: Implement card selection toggle
-                Err(GameError::InvalidAction)
-            }
-            Action::SelectAllCards() => {
-                // TODO: Implement select all cards
-                Err(GameError::InvalidAction)
-            }
-            Action::DeselectAllCards() => {
-                // TODO: Implement deselect all cards
-                Err(GameError::InvalidAction)
-            }
-            Action::RangeSelectCards { start: _, end: _ } => {
-                // TODO: Implement range selection
-                Err(GameError::InvalidAction)
-            }
+            Action::SelectCards(cards) => match self.stage.is_blind() {
+                true => self.select_cards(cards),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::DeselectCard(card) => match self.stage.is_blind() {
+                true => self.deselect_card(card),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::DeselectCards(cards) => match self.stage.is_blind() {
+                true => self.deselect_cards(cards),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::ToggleCardSelection(card) => match self.stage.is_blind() {
+                true => self.toggle_card_selection(card),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::SelectAllCards() => match self.stage.is_blind() {
+                true => self.select_all_cards(),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::DeselectAllCards() => match self.stage.is_blind() {
+                true => self.deselect_all_cards(),
+                false => Err(GameError::InvalidAction),
+            },
+            Action::RangeSelectCards { start, end } => match self.stage.is_blind() {
+                true => self.range_select_cards(start, end),
+                false => Err(GameError::InvalidAction),
+            },
             Action::SelectJoker(_) => {
                 // TODO: Implement joker selection
                 Err(GameError::InvalidAction)
