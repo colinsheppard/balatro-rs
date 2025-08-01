@@ -967,7 +967,10 @@ mod tests {
         ];
 
         for effect in valid_effects {
-            assert!(effect.validate().is_ok(), "Effect {:?} should be valid", effect);
+            assert!(
+                effect.validate().is_ok(),
+                "Effect {effect:?} should be valid"
+            );
         }
     }
 
@@ -975,10 +978,10 @@ mod tests {
     fn test_shop_discount_multiplier_validation_invalid_values() {
         // Invalid values should return InvalidShopDiscount error
         let invalid_effects = vec![
-            VoucherEffect::ShopDiscountMultiplier(0.0),     // Zero - invalid
-            VoucherEffect::ShopDiscountMultiplier(-0.5),    // Negative - invalid
-            VoucherEffect::ShopDiscountMultiplier(1.5),     // > 1.0 - invalid
-            VoucherEffect::ShopDiscountMultiplier(2.0),     // > 1.0 - invalid
+            VoucherEffect::ShopDiscountMultiplier(0.0), // Zero - invalid
+            VoucherEffect::ShopDiscountMultiplier(-0.5), // Negative - invalid
+            VoucherEffect::ShopDiscountMultiplier(1.5), // > 1.0 - invalid
+            VoucherEffect::ShopDiscountMultiplier(2.0), // > 1.0 - invalid
             VoucherEffect::ShopDiscountMultiplier(f64::INFINITY), // Not finite - invalid
             VoucherEffect::ShopDiscountMultiplier(f64::NEG_INFINITY), // Not finite - invalid
             VoucherEffect::ShopDiscountMultiplier(f64::NAN), // Not finite - invalid
@@ -986,24 +989,29 @@ mod tests {
 
         for effect in invalid_effects {
             let result = effect.validate();
-            assert!(result.is_err(), "Effect {:?} should be invalid", effect);
+            assert!(result.is_err(), "Effect {effect:?} should be invalid");
 
             // Verify it returns the correct error type
             if let Err(VoucherError::InvalidShopDiscount { multiplier }) = result {
                 // Check that the multiplier is included in the error
                 match effect {
                     VoucherEffect::ShopDiscountMultiplier(value) => {
-                        assert!((multiplier - value).abs() < f64::EPSILON ||
-                               (multiplier.is_nan() && value.is_nan()),
-                               "Error multiplier should match effect value");
+                        let matches = (multiplier - value).abs() < f64::EPSILON
+                            || (multiplier.is_nan() && value.is_nan())
+                            || (multiplier.is_infinite()
+                                && value.is_infinite()
+                                && multiplier.signum() == value.signum());
+                        if !matches {
+                            panic!(
+                                "Error multiplier should match effect value. Effect: {:?}, Error multiplier: {}, Expected: {}, multiplier.is_nan(): {}, value.is_nan(): {}, diff: {}",
+                                effect, multiplier, value, multiplier.is_nan(), value.is_nan(), (multiplier - value).abs()
+                            );
+                        }
                     }
                     _ => unreachable!(),
                 }
             } else {
-                panic!(
-                    "Effect {:?} should return InvalidShopDiscount error, got {:?}",
-                    effect, result
-                );
+                panic!("Effect {effect:?} should return InvalidShopDiscount error, got {result:?}");
             }
         }
     }
@@ -1016,18 +1024,15 @@ mod tests {
         let error_message = error.to_string();
         assert!(
             error_message.contains("Invalid shop discount"),
-            "Error message should mention 'Invalid shop discount', got: {}",
-            error_message
+            "Error message should mention 'Invalid shop discount', got: {error_message}"
         );
         assert!(
             error_message.contains("1.5"),
-            "Error message should include the invalid value, got: {}",
-            error_message
+            "Error message should include the invalid value, got: {error_message}"
         );
         assert!(
             error_message.contains("must be finite, positive, and ≤ 1.0"),
-            "Error message should include validation constraints, got: {}",
-            error_message
+            "Error message should include validation constraints, got: {error_message}"
         );
     }
 
@@ -1041,10 +1046,7 @@ mod tests {
         if let Err(VoucherError::InvalidBlindReduction { .. }) = result {
             // This is correct
         } else {
-            panic!(
-                "BlindScoreReduction should return InvalidBlindReduction error, got {:?}",
-                result
-            );
+            panic!("BlindScoreReduction should return InvalidBlindReduction error, got {result:?}");
         }
     }
 }
