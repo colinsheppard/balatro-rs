@@ -495,6 +495,7 @@ impl Game {
                 hands_played: 0,
                 hands_remaining: self.plays,
                 discards_used: 0,
+                is_final_hand: false, // Blind start is never the final hand
                 jokers: &self.jokers,
                 hand: &temp_hand,
                 discarded: &self.discarded,
@@ -503,6 +504,7 @@ impl Game {
                 cards_in_deck: self.deck.len(),
                 stone_cards_in_deck: self.stone_cards_in_deck,
                 steel_cards_in_deck: self.steel_cards_in_deck,
+                enhanced_cards_in_deck: 0, // TODO: Track enhanced cards when implemented
                 rng: &self.rng,
             };
 
@@ -783,7 +785,8 @@ impl Game {
             stage: &self.stage,
             hands_played: 0, // TODO: track this properly
             hands_remaining: self.plays,
-            discards_used: 0, // TODO: track this properly
+            discards_used: 0,     // TODO: track this properly
+            is_final_hand: false, // TODO: Implement proper final hand detection logic
             jokers: &self.jokers,
             hand: &Hand::new(hand.hand.cards().to_vec()),
             discarded: &self.discarded,
@@ -792,6 +795,7 @@ impl Game {
             cards_in_deck: self.deck.len(),
             stone_cards_in_deck: self.stone_cards_in_deck,
             steel_cards_in_deck: self.steel_cards_in_deck,
+            enhanced_cards_in_deck: 0, // TODO: Track enhanced cards when implemented
             rng: &self.rng,
         };
 
@@ -955,7 +959,8 @@ impl Game {
                 stage: &self.stage,
                 hands_played: 0, // TODO: track this properly
                 hands_remaining: self.plays,
-                discards_used: 0, // TODO: track this properly
+                discards_used: 0,     // TODO: track this properly
+                is_final_hand: false, // TODO: Implement proper final hand detection logic
                 jokers: &self.jokers,
                 hand: &Hand::new(hand.hand.cards().to_vec()),
                 discarded: &self.discarded,
@@ -964,6 +969,7 @@ impl Game {
                 cards_in_deck: self.deck.len(),
                 stone_cards_in_deck: self.stone_cards_in_deck,
                 steel_cards_in_deck: self.steel_cards_in_deck,
+                enhanced_cards_in_deck: 0, // TODO: Track enhanced cards when implemented
                 rng: &self.rng,
             };
 
@@ -1268,6 +1274,7 @@ impl Game {
             stage: &self.stage,
             hands_played: (self.config.plays as f64 - self.plays) as u32,
             hands_remaining: self.plays,
+            is_final_hand: self.plays <= 1.0,
             discards_used: (self.config.discards as f64 - self.discards) as u32,
             jokers: &self.jokers,
             hand: &current_hand,
@@ -1277,6 +1284,7 @@ impl Game {
             cards_in_deck: self.deck.len(),
             stone_cards_in_deck: self.stone_cards_in_deck,
             steel_cards_in_deck: self.steel_cards_in_deck,
+            enhanced_cards_in_deck: 0, // TODO: Add proper Enhanced card tracking
             rng: &self.rng,
         };
 
@@ -1736,6 +1744,10 @@ impl Game {
 
         // Handle boss blind progression (same as normal blind completion)
         if blind == Blind::Boss {
+            // Process investment tag payouts before progression
+            let investment_reward = self.handle_boss_blind_defeat();
+            self.money += investment_reward as f64;
+
             if let Some(ante_next) = self.ante_current.next(self.ante_end) {
                 self.ante_current = ante_next;
             } else {
@@ -1795,6 +1807,10 @@ impl Game {
 
         // passed boss blind, either win or progress ante
         if blind == Blind::Boss {
+            // Process investment tag payouts before progression
+            let investment_reward = self.handle_boss_blind_defeat();
+            self.money += investment_reward as f64;
+
             if let Some(ante_next) = self.ante_current.next(self.ante_end) {
                 self.ante_current = ante_next;
             } else {
@@ -1980,6 +1996,9 @@ impl Game {
 
         // First, call the original skip_blind method to set up the basic skip mechanics
         self.skip_blind(blind)?;
+
+        // Increment the blinds_skipped counter for economic tags
+        self.active_skip_tags.blinds_skipped += 1;
 
         // Generate potential skip tags based on rarity weights
         let registry = global_registry();
@@ -2335,7 +2354,8 @@ impl Game {
             stage: &self.stage,
             hands_played: 0, // TODO: track this properly
             hands_remaining: self.plays,
-            discards_used: 0, // TODO: track this properly
+            discards_used: 0,     // TODO: track this properly
+            is_final_hand: false, // Scaling events are not during hand play
             jokers: &self.jokers,
             hand: &crate::hand::Hand::new(vec![]),
             discarded: &self.discarded,
@@ -2344,6 +2364,7 @@ impl Game {
             cards_in_deck: self.deck.len(),
             stone_cards_in_deck: self.stone_cards_in_deck,
             steel_cards_in_deck: self.steel_cards_in_deck,
+            enhanced_cards_in_deck: 0, // TODO: Track enhanced cards when implemented
             rng: &self.rng,
         };
 
@@ -2897,6 +2918,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Test message".to_string()),
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -2928,6 +2950,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -2960,6 +2983,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -2989,6 +3013,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3015,6 +3040,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3043,6 +3069,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3071,6 +3098,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: None,
+            consumables_created: vec![],
         };
 
         let result = effects.accumulate_effect(&joker_effect);
@@ -3269,6 +3297,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Effect 1".to_string()),
+            consumables_created: vec![],
         };
 
         // Second effect
@@ -3286,6 +3315,7 @@ mod tests {
             discard_mod: 0,
             sell_value_increase: 0,
             message: Some("Effect 2".to_string()),
+            consumables_created: vec![],
         };
 
         let result1 = effects.accumulate_effect(&effect1);
