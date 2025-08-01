@@ -691,11 +691,29 @@ impl Game {
         // Convert cards to IDs for multi-select context
         let card_ids: Vec<usize> = cards.iter().map(|card| card.id).collect();
 
-        // Use multi-select context to select cards
-        self.target_context
-            .multi_select_context_mut()
-            .select_cards(card_ids)
-            .map_err(|_| GameError::InvalidSelectCard)?;
+        // Check if this would exceed the limit and truncate if necessary
+        let limits = self.target_context.multi_select_context().limits().clone();
+        let current_selection_count = self
+            .target_context
+            .multi_select_context()
+            .selected_cards()
+            .len();
+        let available_slots = limits.cards_max.saturating_sub(current_selection_count);
+
+        let cards_to_select = if card_ids.len() > available_slots {
+            // Truncate to fit the limit - select first N cards that fit
+            card_ids.into_iter().take(available_slots).collect()
+        } else {
+            card_ids
+        };
+
+        // Use multi-select context to select cards (up to the limit)
+        if !cards_to_select.is_empty() {
+            self.target_context
+                .multi_select_context_mut()
+                .select_cards(cards_to_select)
+                .map_err(|_| GameError::InvalidSelectCard)?;
+        }
 
         Ok(())
     }
@@ -717,10 +735,18 @@ impl Game {
             self.target_context.activate_multi_select();
         }
 
-        self.target_context
+        // Try to deselect the card - it's OK if the card wasn't selected
+        match self
+            .target_context
             .multi_select_context_mut()
             .deselect_card(card.id)
-            .map_err(|_| GameError::InvalidSelectCard)?;
+        {
+            Ok(_) => {}
+            Err(crate::multi_select::MultiSelectError::NotSelected) => {
+                // This is fine - trying to deselect an unselected card should succeed gracefully
+            }
+            Err(_) => return Err(GameError::InvalidSelectCard),
+        }
 
         Ok(())
     }
@@ -793,14 +819,28 @@ impl Game {
         let available_cards = self.available.cards();
         let card_ids: Vec<usize> = available_cards.iter().map(|card| card.id).collect();
 
-        // Clear any existing selections and select all cards
-        self.target_context.multi_select_context_mut().clear_cards();
+        // Store original limits and set temporary limits for select all
+        let original_limits = self.target_context.multi_select_context().limits().clone();
+        let mut temp_limits = original_limits.clone();
+        temp_limits.cards_max = card_ids.len().max(temp_limits.cards_max); // Ensure we can select all cards
         self.target_context
             .multi_select_context_mut()
-            .select_cards(card_ids)
-            .map_err(|_| GameError::InvalidSelectCard)?;
+            .set_limits(temp_limits);
 
-        Ok(())
+        // Clear any existing selections and select all cards
+        self.target_context.multi_select_context_mut().clear_cards();
+        let result = self
+            .target_context
+            .multi_select_context_mut()
+            .select_cards(card_ids)
+            .map_err(|_| GameError::InvalidSelectCard);
+
+        // Restore original limits
+        self.target_context
+            .multi_select_context_mut()
+            .set_limits(original_limits);
+
+        result
     }
 
     /// Deselect all cards using the multi-select system

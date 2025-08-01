@@ -20,18 +20,10 @@ fn create_test_game_with_cards() -> Game {
         ..Default::default()
     };
 
-    // Add some test cards to available
-    let _test_cards = [
-        Card::new(Value::Ace, Suit::Heart),
-        Card::new(Value::King, Suit::Diamond),
-        Card::new(Value::Queen, Suit::Club),
-        Card::new(Value::Jack, Suit::Spade),
-        Card::new(Value::Ten, Suit::Heart),
-    ];
+    // Initialize the game to populate deck and deal cards, then set back to Blind stage
+    game.start(); // This sets stage to PreBlind and deals cards
+    game.stage = Stage::Blind(balatro_rs::stage::Blind::Small); // Set back to Blind for multi-select
 
-    // Add cards through proper game initialization
-    game.start(); // Initialize the game properly
-                  // For testing, we'll work with whatever cards are available
     game
 }
 
@@ -45,13 +37,23 @@ mod select_cards_tests {
         let mut game = create_test_game_with_cards();
         let cards = game.available.cards();
 
+        println!("Game stage: {:?}", game.stage);
+        println!("Available cards count: {}", cards.len());
+        println!("Available cards: {cards:?}");
+
         // Select first two cards
         let action = Action::SelectCards(vec![cards[0], cards[1]]);
         let result = game.handle_action(action);
 
+        match &result {
+            Ok(_) => println!("Action succeeded"),
+            Err(e) => println!("Action failed with error: {e:?}"),
+        }
+
         assert!(
             result.is_ok(),
-            "SelectCards should succeed with valid cards"
+            "SelectCards should succeed with valid cards - Error: {:?}",
+            result.err()
         );
 
         // Verify multi-select is activated
@@ -163,10 +165,16 @@ mod deselect_card_tests {
         let action = Action::DeselectCard(cards[0]);
         let result = game.handle_action(action);
 
+        match &result {
+            Ok(_) => println!("DeselectCard succeeded"),
+            Err(e) => println!("DeselectCard failed: {e:?}"),
+        }
+
         // Should still succeed but have no effect
         assert!(
             result.is_ok(),
-            "DeselectCard should handle unselected card gracefully"
+            "DeselectCard should handle unselected card gracefully - Error: {:?}",
+            result.err()
         );
     }
 
@@ -352,10 +360,21 @@ mod batch_selection_tests {
         let mut game = create_test_game_with_cards();
         let cards = game.available.cards();
 
+        println!("test_select_all_cards - Available cards: {}", cards.len());
+
         let action = Action::SelectAllCards();
         let result = game.handle_action(action);
 
-        assert!(result.is_ok(), "SelectAllCards should succeed");
+        match &result {
+            Ok(_) => println!("SelectAllCards succeeded"),
+            Err(e) => println!("SelectAllCards failed: {e:?}"),
+        }
+
+        assert!(
+            result.is_ok(),
+            "SelectAllCards should succeed - Error: {:?}",
+            result.err()
+        );
 
         // Verify all cards are selected
         let selected = game.target_context.multi_select_context().selected_cards();
@@ -645,14 +664,22 @@ mod integration_tests {
         let mut game = create_test_game_with_cards();
         let cards = game.available.cards();
 
+        println!("Available cards: {}", cards.len());
+
         // Try to select more cards than available
         let action = Action::SelectCards(cards.clone());
         let result = game.handle_action(action);
 
+        match &result {
+            Ok(_) => println!("SelectCards succeeded"),
+            Err(e) => println!("SelectCards failed: {e:?}"),
+        }
+
         // Should succeed up to the limit
         assert!(
             result.is_ok(),
-            "SelectCards should handle limits gracefully"
+            "SelectCards should handle limits gracefully - Error: {:?}",
+            result.err()
         );
 
         // Verify multi-select context respects its internal limits
@@ -744,48 +771,49 @@ mod edge_case_tests {
 
     #[test]
     fn test_multi_select_performance_with_many_cards() {
-        let mut game = Game {
-            stage: Stage::Blind(balatro_rs::stage::Blind::Small),
-            ..Default::default()
-        };
+        let mut game = create_test_game_with_cards();
 
-        // Add many cards to test performance
-        let mut many_cards = Vec::new();
-        for value_num in 1..=13 {
-            for suit_num in 0..4 {
-                let value = match value_num {
-                    1 => Value::Ace,
-                    11 => Value::Jack,
-                    12 => Value::Queen,
-                    13 => Value::King,
-                    n => Value::from_u8(n).unwrap_or(Value::Ace),
-                };
-                let suit = match suit_num {
-                    0 => Suit::Heart,
-                    1 => Suit::Diamond,
-                    2 => Suit::Club,
-                    _ => Suit::Spade,
-                };
-                many_cards.push(Card::new(value, suit));
-            }
-        }
+        let available_cards = game.available.cards();
+        println!(
+            "Performance test: Available cards count: {}",
+            available_cards.len()
+        );
 
-        // Cannot directly extend available - using existing cardsmany_cards.clone());
-
-        // Test that large selections work efficiently
+        // Test that selections work efficiently with available cards
         let start = std::time::Instant::now();
         let action = Action::SelectAllCards();
         let result = game.handle_action(action);
         let duration = start.elapsed();
 
-        assert!(result.is_ok(), "SelectAllCards should work with many cards");
+        match &result {
+            Ok(_) => println!("SelectAllCards succeeded"),
+            Err(e) => println!("SelectAllCards failed: {e:?}"),
+        }
+
+        assert!(
+            result.is_ok(),
+            "SelectAllCards should work with available cards - Error: {:?}",
+            result.err()
+        );
         assert!(
             duration.as_millis() < 100,
-            "Operation should complete quickly"
+            "Operation should complete quickly (took {}ms)",
+            duration.as_millis()
         );
 
-        // Verify all cards are selected
+        // Verify all available cards are selected
         let selected = game.target_context.multi_select_context().selected_cards();
-        assert_eq!(selected.len(), many_cards.len());
+        println!(
+            "Selected {} cards out of {} available",
+            selected.len(),
+            available_cards.len()
+        );
+        assert_eq!(
+            selected.len(),
+            available_cards.len(),
+            "Should select all {} available cards, but selected {}",
+            available_cards.len(),
+            selected.len()
+        );
     }
 }
