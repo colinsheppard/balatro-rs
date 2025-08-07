@@ -59,6 +59,7 @@ This file tracks recovery operations for three incomplete worktrees after system
 | PR | Title | Reviewer(s) | Status | Completed | Notes |
 |----|-------|-------------|--------|-----------|-------|
 | #770 | Vagabond Joker | linus-style-reviewer, unclebot | ✅ **MERGED** (squash) | 2025-07-30 | Dual approval → successful merge, Issue #617 closed |
+| SKIP-TAGS | Skip Tags Implementation | unclebot-address | ✅ **COMPLETED** | 2025-08-01 | 21 non-functional tags → 100% functional, 54/54 tests passing |
 
 ## Active PR Assignments
 
@@ -67,6 +68,7 @@ This file tracks recovery operations for three incomplete worktrees after system
 | #703 | 684 | linustorbot-address | assigned | 2025-01-29T01:45:00Z | HIGH |
 | #704 | 685 | botdean-address | assigned | 2025-01-29T01:45:00Z | HIGH |
 | #705 | 686 | HOLD | external-dev | 2025-01-29T01:45:00Z | HOLD |
+| SKIP-TAGS | 689,692,694,695 | unclebot-address | ✅ **COMPLETED** | 2025-08-01T02:30:27Z | MEDIUM |
 
 ## Completed Static Joker Migration Work
 
