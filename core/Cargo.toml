@@ -33,6 +33,8 @@ python = ["dep:pyo3"]
 statistical_tests = []  # Enable slow/flaky statistical tests (disabled in CI)
 integration_tests = []  # Enable slow integration tests (disabled in CI)
 disabled-for-emergency = []  # Temporarily disabled tests with API mismatches
+mock = []  # Enable mock testing framework
+proptest = []  # Enable property-based testing
 serde = ["dep:serde", "dep:serde_json", "dep:toml", "dep:regex"]
 colored = ["dep:colored"]
 

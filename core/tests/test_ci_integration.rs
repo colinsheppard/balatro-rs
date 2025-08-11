@@ -86,7 +86,7 @@ mod coverage_exclusions {
         #[test]
         fn test_in_excluded_module() {
             // This module demonstrates coverage exclusion
-            assert!(true);
+            // Check passed
         }
     }
 }
@@ -408,7 +408,7 @@ fn test_full_ci_pipeline() {
     for artifact_dir in artifacts {
         let path = PathBuf::from(artifact_dir);
         // In real CI, these would exist
-        println!("Would check artifact: {:?}", path);
+        println!("Would check artifact: {path:?}");
     }
 }
 
