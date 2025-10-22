@@ -170,6 +170,39 @@ impl LazyGameStateSnapshot {
             .get_or_init(|| self.game_available_cards.clone())
     }
 
+    fn available_cards_with_selection(&self) -> Vec<(Card, bool)> {
+        // Get the cards and their selection state from the game
+        // We need to reconstruct this from the available cards and selected cards
+        let available = self.game_available_cards.clone();
+        let selected_ids: std::collections::HashSet<_> =
+            self.game_selected_cards.iter().map(|c| c.id).collect();
+
+        available
+            .into_iter()
+            .map(|card| {
+                let is_selected = selected_ids.contains(&card.id);
+                (card, is_selected)
+            })
+            .collect()
+    }
+
+    fn available_cards_with_selection_and_display(&self) -> Vec<(Card, bool, String)> {
+        // Get the cards and their selection state from the game
+        // We need to reconstruct this from the available cards and selected cards
+        let available = self.game_available_cards.clone();
+        let selected_ids: std::collections::HashSet<_> =
+            self.game_selected_cards.iter().map(|c| c.id).collect();
+
+        available
+            .into_iter()
+            .map(|card| {
+                let is_selected = selected_ids.contains(&card.id);
+                let display = format!("{}", card); // This will use the colored Display implementation
+                (card, is_selected, display)
+            })
+            .collect()
+    }
+
     fn discarded_cards(&self) -> &Vec<Card> {
         self.discarded_cards_cache
             .get_or_init(|| self.game_discarded_cards.clone())
@@ -222,6 +255,15 @@ impl GameStateSnapshot {
 
     fn available_cards(&self) -> Vec<Card> {
         self.lazy_snapshot.available_cards().clone()
+    }
+
+    fn available_cards_with_selection(&self) -> Vec<(Card, bool)> {
+        self.lazy_snapshot.available_cards_with_selection()
+    }
+
+    fn available_cards_with_selection_and_display(&self) -> Vec<(Card, bool, String)> {
+        self.lazy_snapshot
+            .available_cards_with_selection_and_display()
     }
 
     fn discarded_cards(&self) -> Vec<Card> {
@@ -1110,6 +1152,14 @@ impl GameState {
     #[getter]
     fn available(&self) -> Vec<Card> {
         self.snapshot.available_cards()
+    }
+    #[getter]
+    fn available_with_selection(&self) -> Vec<(Card, bool)> {
+        self.snapshot.available_cards_with_selection()
+    }
+    #[getter]
+    fn available_with_selection_and_display(&self) -> Vec<(Card, bool, String)> {
+        self.snapshot.available_cards_with_selection_and_display()
     }
     #[getter]
     fn discarded(&self) -> Vec<Card> {

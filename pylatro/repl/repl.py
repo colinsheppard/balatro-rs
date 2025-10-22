@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import dis
 import json
 import sys
 from dataclasses import dataclass
@@ -65,36 +66,53 @@ def _print_header(engine: pylatro.GameEngine) -> None:
     for line in GameSummary.from_engine(engine).lines():
         print(line)
     print()
+
+    # Show hand in GUI style if we're in a blind
+    state = engine.state
+    stage_str = str(state.stage)
+    if "Blind" in stage_str and len(state.available) > 0:
+        _describe_hand(engine)
+
     _list_actions(engine)
 
 
-def _format_card(engine: pylatro.GameEngine, card_index: int) -> str:
-    """Format a card using the same method as action names to get colors."""
-    try:
-        # Find the action that corresponds to this card
-        space = engine.gen_action_space()
-        for i, valid in enumerate(space):
-            if valid:
-                action_name = engine.get_action_name(i)
-                if action_name.startswith("SelectCard:"):
-                    # Extract the card part after "SelectCard: "
-                    card_part = action_name.split(": ", 1)[1]
-                    # Check if this is the card we want by comparing with the card at card_index
-                    if i == card_index:
-                        return card_part
-        # Fallback to basic string representation
-        return str(engine.state.available[card_index])
-    except Exception:
-        return str(engine.state.available[card_index])
-
-
 def _describe_hand(engine: pylatro.GameEngine) -> None:
+    """Display the hand in a readable format with selected cards positioned above their original positions."""
     state = engine.state
-    print("Hand:")
-    for idx, card in enumerate(state.available):
-        formatted_card = _format_card(engine, idx)
-        print(f"  [{idx}] {formatted_card}")
+
+    # Get cards with their selection state and colored display directly from the game state
+    cards_data = state.available_with_selection_and_display
+
+    # Build the display rows with proper positioning
+    top_row = []  # Selected cards positioned above their original slots
+    bottom_row = []  # Unselected cards in their original positions
+    select_index_row = []  # Unselected cards in their original positions
+
+    # Initialize both rows with empty strings for all card positions
+    for index, (card, is_selected, display) in enumerate(cards_data):
+
+        if is_selected:
+            # Selected card goes to top row, positioned above its original slot
+            top_row.append(display)
+            bottom_row.append("  ")  # Empty space in bottom row
+            select_index_row.append("  ")
+        else:
+            # Unselected card stays in bottom row
+            top_row.append("  ")  # Empty space in top row
+            bottom_row.append(display)
+            select_index_row.append(f"{index:2d}")
+
+
+    # Display the cards with proper spacing
+    top_line = "  ".join([card for card in top_row if card])
+    bottom_line = "  ".join([card for card in bottom_row if card])
+    select_helper_line= "  ".join([card for card in select_index_row if card])
+
+    print(f"selected:    {top_line}")
+    print(f"unselected:  {bottom_line}")
+    print(f"to select:   {select_helper_line}")
     print()
+
 
 
 def _describe_jokers(engine: pylatro.GameEngine) -> None:
