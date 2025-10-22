@@ -65,13 +65,35 @@ def _print_header(engine: pylatro.GameEngine) -> None:
     for line in GameSummary.from_engine(engine).lines():
         print(line)
     print()
+    _list_actions(engine)
+
+
+def _format_card(engine: pylatro.GameEngine, card_index: int) -> str:
+    """Format a card using the same method as action names to get colors."""
+    try:
+        # Find the action that corresponds to this card
+        space = engine.gen_action_space()
+        for i, valid in enumerate(space):
+            if valid:
+                action_name = engine.get_action_name(i)
+                if action_name.startswith("SelectCard:"):
+                    # Extract the card part after "SelectCard: "
+                    card_part = action_name.split(": ", 1)[1]
+                    # Check if this is the card we want by comparing with the card at card_index
+                    if i == card_index:
+                        return card_part
+        # Fallback to basic string representation
+        return str(engine.state.available[card_index])
+    except Exception:
+        return str(engine.state.available[card_index])
 
 
 def _describe_hand(engine: pylatro.GameEngine) -> None:
     state = engine.state
     print("Hand:")
     for idx, card in enumerate(state.available):
-        print(f"  [{idx}] {card}")
+        formatted_card = _format_card(engine, idx)
+        print(f"  [{idx}] {formatted_card}")
     print()
 
 
@@ -185,12 +207,12 @@ def run(args: Optional[List[str]] = None) -> None:
         if cmd == "help":
             print(
                 "Commands:\n"
+                "  <number>       Execute action by index (e.g., '78')\n"
                 "  help          Show this message\n"
                 "  state         Display core game summary\n"
                 "  hand          List current hand cards\n"
                 "  jokers        Show current jokers\n"
                 "  actions       List available actions\n"
-                "  play <index>  Execute action by index\n"
                 "  restart       Restart game with same config\n"
                 "  quit/exit     Leave the REPL\n"
             )
@@ -207,19 +229,21 @@ def run(args: Optional[List[str]] = None) -> None:
         if cmd == "actions":
             _list_actions(engine)
             continue
-        if cmd == "play":
-            if not argument:
-                print("Usage: play <index>")
-                continue
-            _handle_play(engine, argument)
-            if not engine.is_over:
-                _print_header(engine)
-            continue
         if cmd == "restart":
             engine = pylatro.GameEngine(config)
             print("Game restarted.\n")
             _print_header(engine)
             continue
+
+        # Try to parse as action index
+        try:
+            action_index = int(cmd)
+            _handle_play(engine, cmd)
+            if not engine.is_over:
+                _print_header(engine)
+            continue
+        except ValueError:
+            pass  # Not a number, continue to error message
 
         print(f"Unknown command: {cmd}. Type 'help' for options.")
 
