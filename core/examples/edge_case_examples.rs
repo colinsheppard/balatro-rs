@@ -222,7 +222,7 @@ impl Joker for PerfectionistJoker {
         // In a real implementation, this would validate hand size and contents
 
         // Demonstrate validation pattern with available context
-        let is_perfect_conditions = context.ante >= 3 && context.round % 5 == 0;
+        let is_perfect_conditions = context.ante >= 3 && context.round.is_multiple_of(5);
 
         if is_perfect_conditions {
             JokerEffect::new()

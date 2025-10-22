@@ -2,8 +2,8 @@ impl std::convert::From<DeveloperPackError> for DeveloperGameError {
     fn from(err: DeveloperPackError) -> DeveloperGameError {
         match err {
             DeveloperPackError::InsufficientFunds { .. } => DeveloperGameError::InvalidBalance,
-            DeveloperPackError::PackNotFound { .. } 
-             < /dev/null |  DeveloperPackError::NoPackOpen 
+            DeveloperPackError::PackNotFound { .. }
+             < /dev/null |  DeveloperPackError::NoPackOpen
             | DeveloperPackError::NoPackToSkip => DeveloperGameError::NoCardMatch,
             DeveloperPackError::InvalidPackId { .. }
             | DeveloperPackError::InvalidOptionIndex { .. }

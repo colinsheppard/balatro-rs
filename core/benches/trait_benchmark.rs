@@ -368,7 +368,7 @@ impl TestGameData {
         }
     }
 
-    fn create_context(&self) -> GameContext {
+    fn create_context(&self) -> GameContext<'_> {
         GameContext {
             chips: 100,
             mult: 4,

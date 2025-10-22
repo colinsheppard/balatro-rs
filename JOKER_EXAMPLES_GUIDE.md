@@ -10,7 +10,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 1. `joker_comprehensive_guide.rs`
 
-**Purpose**: Complete overview of the joker system  
+**Purpose**: Complete overview of the joker system
 **Run with**: `cargo run --example joker_comprehensive_guide`
 
 **Content**:
@@ -29,7 +29,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 2. `new_joker_api.rs`
 
-**Purpose**: Simple introduction to the new trait system  
+**Purpose**: Simple introduction to the new trait system
 **Run with**: `cargo run --example new_joker_api`
 
 **Content**:
@@ -45,7 +45,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 3. `trait_composition_examples.rs`
 
-**Purpose**: Advanced joker implementations using multiple traits  
+**Purpose**: Advanced joker implementations using multiple traits
 **Run with**: `cargo run --example trait_composition_examples`
 
 **Content**:
@@ -63,7 +63,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 4. `edge_case_examples.rs`
 
-**Purpose**: Defensive programming and error handling patterns  
+**Purpose**: Defensive programming and error handling patterns
 **Run with**: `cargo run --example edge_case_examples`
 
 **Content**:
@@ -82,7 +82,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 5. `performance_examples.rs`
 
-**Purpose**: Performance optimization patterns and comparisons  
+**Purpose**: Performance optimization patterns and comparisons
 **Run with**: `cargo run --example performance_examples`
 
 **Content**:
@@ -101,7 +101,7 @@ The joker examples demonstrate various implementation patterns, performance opti
 
 ### 6. `test_harness.rs`
 
-**Purpose**: Comprehensive testing framework for joker validation  
+**Purpose**: Comprehensive testing framework for joker validation
 **Run with**: `cargo run --example test_harness`
 
 **Content**:

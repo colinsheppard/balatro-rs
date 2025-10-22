@@ -9,7 +9,7 @@ As part of the unified joker trait system migration (Epic #150), the Python bind
 | Version | Status | Description |
 |---------|--------|-------------|
 | **Current** | Deprecation Warnings | Old API shows warnings but continues to work |
-| **Next Major** | Legacy Support | Old API available with warnings (6+ months) |  
+| **Next Major** | Legacy Support | Old API available with warnings (6+ months) |
 | **Future Major** | Removal | Old API removed (12+ months from now) |
 
 **Current Status**: We are in the **Deprecation Warnings** phase. Your existing code will continue to work but will show deprecation warnings.
@@ -109,7 +109,7 @@ for joker_id in state.joker_ids:
     joker_info = game.get_joker_info(joker_id)
     cost = game.get_joker_cost(joker_id)
     can_buy = game.can_buy_joker(joker_id)  # Checks money AND slots
-    
+
     print(f"{joker_info.name}: ${cost} (Can buy: {can_buy})")
 ```
 
@@ -252,7 +252,7 @@ def old_function():
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("always")
         jokers = state.jokers
-        
+
         if w:
             print(f"Migration needed: {len(w)} deprecated APIs used")
 ```
@@ -265,17 +265,17 @@ def old_function():
 def test_api_equivalence(game):
     """Ensure old and new APIs return equivalent data"""
     state = game.state
-    
+
     # Suppress warnings for comparison
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         old_jokers = state.jokers
-    
+
     new_joker_ids = state.joker_ids
-    
+
     # Should have same count
     assert len(old_jokers) == len(new_joker_ids)
-    
+
     # Should have equivalent information
     for old_joker, new_id in zip(old_jokers, new_joker_ids):
         new_info = game.get_joker_info(new_id)

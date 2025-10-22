@@ -99,13 +99,13 @@ mod toml_schema_integration_tests {
         // 1. Schema version validation
         let invalid_version = r#"
             schema_version = "2.0.0"
-            
+
             [[jokers]]
             id = "test"
             name = "Test"
             description = "Test joker"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -121,23 +121,23 @@ mod toml_schema_integration_tests {
         // 2. Duplicate ID validation
         let duplicate_ids = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "test"
             name = "Test 1"
             description = "Test joker 1"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
-            
+
             [[jokers]]
             id = "test"
             name = "Test 2"
             description = "Test joker 2"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 2
@@ -153,14 +153,14 @@ mod toml_schema_integration_tests {
         // 3. Range validation
         let invalid_range = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "test"
             name = "Test"
             description = "Test joker"
             rarity = "common"
             cost = 2000
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -180,13 +180,13 @@ mod toml_schema_integration_tests {
 
         let original_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "test_joker"
             name = "Test Joker"
             description = "+4 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -194,23 +194,23 @@ mod toml_schema_integration_tests {
 
         let modified_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "test_joker"
             name = "Test Joker"
             description = "+5 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 5
-            
+
             [[jokers]]
             id = "new_joker"
             name = "New Joker"
             description = "+2 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 2
@@ -235,33 +235,33 @@ mod toml_schema_integration_tests {
 
         let complex_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "ice_cream"
             name = "Ice Cream"
             description = "+100 Chips, -5 Chips per hand played"
             rarity = "common"
             cost = 3
-            
+
             [jokers.effect]
             type = "dynamic"
-            
+
             [jokers.effect.base_effect]
             type = "add_score"
             chips = 100
-            
+
             [[jokers.effect.state_modifiers]]
             state_field = "hands_played"
             multiplier = -5.0
-            
+
             [jokers.state]
             persistent = true
-            
+
             [jokers.state.fields]
             hands_played = 0
-            
+
             [jokers.behavior]
-            
+
             [jokers.behavior.on_hand_played]
             type = "modify_state"
             field = "hands_played"
@@ -312,17 +312,17 @@ mod toml_schema_integration_tests {
 
         let composite_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "even_steven"
             name = "Even Steven"
             description = "Played cards with even rank give +4 Mult when scored"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "conditional"
             per_card = true
-            
+
             [jokers.effect.condition]
             type = "any"
             conditions = [
@@ -332,7 +332,7 @@ mod toml_schema_integration_tests {
                 { type = "rank_scored", rank = "eight" },
                 { type = "rank_scored", rank = "ten" }
             ]
-            
+
             [jokers.effect.action]
             type = "add_score"
             mult = 4
@@ -364,18 +364,18 @@ mod toml_schema_integration_tests {
 
         let special_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "four_fingers"
             name = "Four Fingers"
             description = "All Flushes and Straights can be made with 4 cards"
             rarity = "uncommon"
             cost = 7
-            
+
             [jokers.effect]
             type = "special"
             special_type = "hand_type_modifier"
-            
+
             [jokers.effect.parameters]
             flush_requirement = 4
             straight_requirement = 4
@@ -420,7 +420,7 @@ mod toml_schema_integration_tests {
         // Test malformed TOML
         let malformed_toml = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]
             id = "malformed"
             # Missing closing bracket
@@ -433,7 +433,7 @@ mod toml_schema_integration_tests {
         // Test missing required fields
         let missing_fields = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "test"
             # Missing name, description, rarity, effect
@@ -446,13 +446,13 @@ mod toml_schema_integration_tests {
         // Test empty ID
         let empty_id = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = ""
             name = "Test"
             description = "Test joker"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -481,7 +481,7 @@ mod toml_schema_integration_tests {
                 name = "Test Joker {}"
                 description = "+{} Mult"
                 rarity = "common"
-                
+
                 [jokers.effect]
                 type = "scoring"
                 mult = {}

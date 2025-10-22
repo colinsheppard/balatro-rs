@@ -293,6 +293,7 @@ mod blue_joker_tests {
     fn test_blue_joker_empty_deck() {
         // ARRANGE: No cards remaining in deck
         let joker = create_blue_joker();
+
         let mut context = create_test_context_with_deck(10, 2, 0);
         let hand = SelectHand::new(vec![]);
 

@@ -247,7 +247,7 @@ impl MultiSelectContext {
         self.selected_cards.contains(&card_id)
     }
 
-    /// Check if a joker is selected  
+    /// Check if a joker is selected
     pub fn is_joker_selected(&self, joker_id: JokerId) -> bool {
         self.selected_jokers.contains(&joker_id)
     }

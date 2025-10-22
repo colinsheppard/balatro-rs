@@ -300,7 +300,7 @@ mod tests {
         let json_content = r#"
         {
             "j_half": {
-                "name": "Half Joker", 
+                "name": "Half Joker",
                 "text": ["{C:red}+#1#{} Mult if played hand contains {C:attention}#2#{} or fewer cards"]
             }
         }

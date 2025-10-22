@@ -468,14 +468,14 @@ mod tests {
     fn test_basic_scoring_joker_schema() {
         let toml_str = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker"
             description = "+4 Mult"
             rarity = "common"
             cost = 2
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -490,22 +490,22 @@ mod tests {
     fn test_conditional_joker_schema() {
         let toml_str = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "greedy_joker"
             name = "Greedy Joker"
             description = "+3 Mult per Diamond"
             rarity = "common"
             per_card = true
-            
+
             [jokers.effect]
             type = "conditional"
             per_card = true
-            
+
             [jokers.effect.condition]
             type = "suit_scored"
             suit = "diamonds"
-            
+
             [jokers.effect.action]
             type = "add_score"
             mult = 3
@@ -520,32 +520,32 @@ mod tests {
     fn test_dynamic_joker_schema() {
         let toml_str = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "ice_cream"
             name = "Ice Cream"
             description = "+100 Chips, -5 Chips per hand played"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "dynamic"
-            
+
             [jokers.effect.base_effect]
             type = "add_score"
             chips = 100
-            
+
             [[jokers.effect.state_modifiers]]
             state_field = "hands_played"
             multiplier = -5.0
-            
+
             [jokers.state]
             persistent = true
-            
+
             [jokers.state.fields]
             hands_played = 0
-            
+
             [jokers.behavior]
-            
+
             [jokers.behavior.on_hand_played]
             type = "modify_state"
             field = "hands_played"

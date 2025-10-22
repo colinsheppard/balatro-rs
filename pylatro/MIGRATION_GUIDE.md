@@ -19,7 +19,7 @@ state = engine.state  # Get GameState
 
 # These methods were available on GameState but are now deprecated:
 actions = state.gen_actions()           # DEPRECATED: Shows warning
-space = state.gen_action_space()        # DEPRECATED: Shows warning  
+space = state.gen_action_space()        # DEPRECATED: Shows warning
 name = state.get_action_name(0)         # DEPRECATED: Shows warning
 is_over = state.is_over                 # DEPRECATED: Shows warning
 
@@ -58,7 +58,7 @@ Change function parameters from `GameState` to `GameEngine`:
 def action_loop(game: pylatro.GameState):
     pass
 
-# NEW  
+# NEW
 def action_loop(game: pylatro.GameEngine):
     pass
 ```
@@ -77,7 +77,7 @@ def action_loop(game: pylatro.GameState):
 # NEW
 def action_loop(game: pylatro.GameEngine):
     if game.is_over:
-        return  
+        return
     actions = game.gen_actions()
     game.handle_action(actions[0])
 ```
@@ -109,7 +109,7 @@ def run_game_loop(game_state: pylatro.GameState):
             game_state.handle_action(actions[0])
     return game_state.score
 
-# NEW - function takes GameEngine  
+# NEW - function takes GameEngine
 def run_game_loop(game_engine: pylatro.GameEngine):
     while not game_engine.is_over:
         actions = game_engine.gen_actions()
@@ -170,7 +170,7 @@ The backwards compatibility layer ensures existing code continues to work:
 
 ### What Still Works (with warnings)
 - `GameState.gen_actions()` - Shows deprecation warning but works
-- `GameState.gen_action_space()` - Shows deprecation warning but works  
+- `GameState.gen_action_space()` - Shows deprecation warning but works
 - `GameState.get_action_name()` - Shows deprecation warning but works
 - `GameState.is_over` - Shows deprecation warning but works
 
@@ -378,12 +378,12 @@ def validate_score(score):
 ```python
 def test_fractional_values():
     engine = pylatro.GameEngine()
-    
+
     # Test fractional values are preserved
     engine.chips = 1000.25
     engine.mult = 2.5
     engine.money = 100.75
-    
+
     state = engine.state
     assert state.chips == 1000.25
     assert state.mult == 2.5
@@ -391,11 +391,11 @@ def test_fractional_values():
 
 def test_large_numbers():
     engine = pylatro.GameEngine()
-    
+
     # Test large number support
     large_score = 5e12
     engine.score = large_score
-    
+
     state = engine.state
     assert state.score == large_score
 ```
@@ -406,14 +406,14 @@ import math
 
 def test_arithmetic_precision():
     engine = pylatro.GameEngine()
-    
+
     # Set up known values
     engine.chips = 1000.0
     engine.mult = 2.5
-    
+
     # Calculate expected score
     expected = 1000.0 * 2.5  # 2500.0
-    
+
     # Compare with small epsilon
     state = engine.state
     calculated = state.chips * state.mult

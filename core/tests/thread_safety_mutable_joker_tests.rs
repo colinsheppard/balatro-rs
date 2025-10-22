@@ -169,7 +169,7 @@ fn test_concurrent_joker_access() {
 
             // Simulate some condition
             let count = self.process_count.load(Ordering::SeqCst);
-            if count % 2 == 0 {
+            if count.is_multiple_of(2) {
                 self.success_count.fetch_add(1, Ordering::SeqCst);
                 true
             } else {

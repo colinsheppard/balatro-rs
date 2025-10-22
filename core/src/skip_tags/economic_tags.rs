@@ -1,7 +1,7 @@
 //! Economic Skip Tags
 //!
 //! Implementation of the 5 economic category skip tags:
-//! - Economy: Doubles your money (max +$40), $0 if negative balance  
+//! - Economy: Doubles your money (max +$40), $0 if negative balance
 //! - Investment: Gives $25 after defeating the next Boss Blind (stackable)
 //! - Garbage: Gains $1 for each unused discard this run (retroactive)
 //! - Speed: Gives $5 for each Blind skipped this run (minimum $5)

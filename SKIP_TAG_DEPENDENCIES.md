@@ -20,10 +20,10 @@
 
 ### Phase 1: Infrastructure (Sequential - Critical Path)
 ```
-SKIP-001 (Trait System) 
+SKIP-001 (Trait System)
     ↓ BLOCKS
 SKIP-002 (Skip Action)
-    ↓ BLOCKS  
+    ↓ BLOCKS
 SKIP-003 (Tag Selection)
     ↓ ENABLES
 Phase 2 (All tag implementations)
@@ -68,7 +68,7 @@ Phase 2 Complete (SKIP-004, SKIP-005, SKIP-006)
 
 ### Existing Systems (Required)
 - **Pack System**: SKIP-004 (reward tags) needs PackType enum and pack factory
-- **Shop System**: SKIP-006 (shop tags) needs shop generation and modifier system  
+- **Shop System**: SKIP-006 (shop tags) needs shop generation and modifier system
 - **Economic System**: SKIP-005 (economic tags) needs money and statistics tracking
 - **Boss Blind System**: SKIP-007 (utility tags) needs boss blind reroll mechanism
 - **Save System**: SKIP-008 (integration) needs save/load compatibility
@@ -88,7 +88,7 @@ Phase 2 Complete (SKIP-004, SKIP-005, SKIP-006)
 ### Phase 1: Sequential Infrastructure (Critical Path - 32 hours)
 **Timeline**: Days 1-4 (assuming 8h/day single agent)
 
-1. **Day 1**: SKIP-001 (Trait Definition) 
+1. **Day 1**: SKIP-001 (Trait Definition)
    - Agent: `address` (high-priority infrastructure)
    - Blocks: ALL other skip tag work
    - Deliverable: Complete trait system and registry
@@ -138,7 +138,7 @@ Phase 2 Complete (SKIP-004, SKIP-005, SKIP-006)
 2. **Performance Requirements**: Tag selection must be <1ms
 3. **Save Compatibility**: Must maintain backward compatibility
 
-### Project Risks  
+### Project Risks
 1. **Critical Path Bottleneck**: Phase 1 blocks everything (32 hours)
 2. **Agent Coordination**: Phase 2 requires 3 parallel agents
 3. **Integration Complexity**: Phase 3 has complex cross-system dependencies

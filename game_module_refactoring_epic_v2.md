@@ -6,7 +6,7 @@ The balatro-rs game module has grown from the originally planned 1928 lines to *
 
 **Key Metrics:**
 - **Current State**: 4036-line `mod.rs` with 131 functions
-- **Target State**: 8 submodules averaging 350-400 lines each  
+- **Target State**: 8 submodules averaging 350-400 lines each
 - **Estimated Effort**: 32 story points across 4 sprints
 - **Risk Level**: Medium-High (performance preservation critical)
 
@@ -22,7 +22,7 @@ The balatro-rs game module has grown from the originally planned 1928 lines to *
 
 **Growth Analysis - Why the Module Doubled:**
 1. **Joker System Expansion**: Complex effect processing with caching (~300 lines)
-2. **Debug/Memory Monitoring**: RL-optimized debugging infrastructure (~165 lines)  
+2. **Debug/Memory Monitoring**: RL-optimized debugging infrastructure (~165 lines)
 3. **Enhanced Scoring**: Detailed breakdowns and analysis (~334 lines)
 4. **Persistence Layer**: Advanced save/load with versioning (~126 lines)
 5. **Shop System**: Extended purchase logic and inventory (~200 lines)
@@ -42,7 +42,7 @@ graph TB
     subgraph "Current State"
         A[game/mod.rs<br/>4036 lines<br/>131 functions]
     end
-    
+
     subgraph "Target Architecture"
         B[game/mod.rs<br/>Coordinator<br/>~300 lines]
         C[game/scoring.rs<br/>Score Logic<br/>~400 lines]
@@ -54,7 +54,7 @@ graph TB
         I[game/persistence.rs<br/>Save/Load<br/>~250 lines]
         J[game/packs.rs<br/>Booster Packs<br/>~180 lines]
     end
-    
+
     A --> B
     A --> C
     A --> D
@@ -64,7 +64,7 @@ graph TB
     A --> H
     A --> I
     A --> J
-    
+
     B --> C
     B --> D
     B --> E
@@ -80,7 +80,7 @@ graph TB
 **Responsibility**: Central game orchestration and public API
 **Extracted Functions**:
 - `new()`, `start()`, `start_blind()`, `is_over()`, `result()`
-- `handle_action()`, `handle_action_index()` 
+- `handle_action()`, `handle_action_index()`
 - Main Game struct definition and core lifecycle
 
 **Key Interfaces**:
@@ -111,7 +111,7 @@ pub struct Game {
 - Zero-copy access to game state during scoring
 
 #### 3. **game/jokers.rs** - Joker Management (~380 lines)
-**Responsibility**: Joker lifecycle, state management, and effect processing  
+**Responsibility**: Joker lifecycle, state management, and effect processing
 **Extracted Functions**:
 - `get_joker_at_slot()`, `remove_joker()`, `sell_joker()`
 - `validate_joker_state()`, `cleanup_joker_state()`
@@ -166,22 +166,22 @@ graph LR
         B[persistence.rs]
         C[packs.rs]
     end
-    
+
     subgraph "Phase 2: Foundation Modules"
         D[cards.rs]
         E[shop.rs]
     end
-    
+
     subgraph "Phase 3: Core Logic Modules"
         F[jokers.rs]
         G[scoring.rs]
     end
-    
+
     subgraph "Phase 4: Orchestration"
         H[flow.rs]
         I[mod.rs<br/>Coordinator]
     end
-    
+
     A --> H
     B --> H
     C --> E
@@ -196,7 +196,7 @@ graph LR
 ## Implementation Roadmap
 
 ### Sprint 1: Foundation Extraction (8 points)
-**Duration**: 2 weeks  
+**Duration**: 2 weeks
 **Goal**: Extract independent modules with minimal dependencies
 
 **Issues**:
@@ -205,7 +205,7 @@ graph LR
    - Create clean interface for main game module
    - Maintain backward compatibility for existing debug calls
 
-2. **Extract Persistence Module** (2 points)  
+2. **Extract Persistence Module** (2 points)
    - Move save/load functionality and scaling events
    - Preserve serialization format compatibility
    - Test round-trip save/load operations
@@ -252,14 +252,14 @@ graph LR
 - Memory usage remains constant or improves
 - All game loop tests pass
 
-### Sprint 3: Core Logic Extraction (10 points) 
+### Sprint 3: Core Logic Extraction (10 points)
 **Duration**: 2 weeks
 **Goal**: Extract joker and scoring systems (highest risk)
 
 **Issues**:
 1. **Extract Jokers Module** (4 points)
    - Move joker management and state validation
-   - Preserve joker effect caching system performance  
+   - Preserve joker effect caching system performance
    - Maintain compatibility with existing joker implementations
    - **Risk**: Complex state management and effect processing
 
@@ -282,7 +282,7 @@ graph LR
 - Score breakdown functionality preserved
 
 ### Sprint 4: Flow Integration and Polish (6 points)
-**Duration**: 2 weeks  
+**Duration**: 2 weeks
 **Goal**: Complete flow extraction and final integration
 
 **Issues**:
@@ -322,7 +322,7 @@ graph LR
 
 **Rollback Trigger**: Any performance regression >5% in scoring benchmarks
 
-#### 2. **Joker Effect Caching System Disruption** (High Impact, Low Probability)  
+#### 2. **Joker Effect Caching System Disruption** (High Impact, Low Probability)
 **Risk**: Complex caching system may not work across module boundaries
 **Mitigation**:
 - Extract joker system as single unit with internal caching
@@ -333,7 +333,7 @@ graph LR
 **Rollback Trigger**: Cache hit rate drops >10% or cache functionality breaks
 
 #### 3. **Circular Dependencies Between Modules** (Medium Impact, Medium Probability)
-**Risk**: Scoring ↔ Jokers ↔ Game State circular dependencies  
+**Risk**: Scoring ↔ Jokers ↔ Game State circular dependencies
 **Mitigation**:
 - Use dependency injection patterns
 - Create clear interface hierarchies (Scoring depends on Jokers, not vice versa)
@@ -365,7 +365,7 @@ graph LR
 **Module-Level Rollback Plan**:
 1. **Detection**: Automated performance and functionality testing in CI
 2. **Triggers**: >5% performance regression, test failures, circular dependencies
-3. **Procedure**: 
+3. **Procedure**:
    - Revert extracted module changes
    - Move extracted functions back to main mod.rs
    - Update module re-export statements
@@ -381,7 +381,7 @@ graph LR
 - **Joker Cache Hit Rate**: Maintain >90% of original hit rate
 - **Game Loop Latency**: <1ms average per action
 
-### Quality Metrics  
+### Quality Metrics
 - **Module Size**: All modules <400 lines
 - **Test Coverage**: Maintain >95% line coverage
 - **Documentation**: 100% public API documented
@@ -411,7 +411,7 @@ graph LR
 
 ### Component Boundaries
 - **game/mod.rs**: Game coordinator and public API (300 lines)
-- **game/scoring.rs**: Score calculation and joker effects (400 lines) 
+- **game/scoring.rs**: Score calculation and joker effects (400 lines)
 - **game/jokers.rs**: Joker management and state (380 lines)
 - **game/flow.rs**: Game state transitions (350 lines)
 - **game/cards.rs**: Card and deck operations (320 lines)
@@ -433,7 +433,7 @@ graph LR
 - **Rollback Capability**: Automated detection with emergency procedures
 
 ### Validation Status
-✓ Requirements Analysis Complete  
+✓ Requirements Analysis Complete
 ✓ Architecture Diagrams Created
 ✓ Security Considerations Addressed (save/load compatibility)
 ✓ Performance Analysis Completed

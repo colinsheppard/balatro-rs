@@ -68,9 +68,9 @@ print_status "Installing pre-commit framework..."
 if ! command -v pre-commit &> /dev/null; then
     print_status "Installing pre-commit..."
     if command -v pip3 &> /dev/null; then
-        pip3 install --user pre-commit
+        pip3 install pre-commit
     elif command -v pip &> /dev/null; then
-        pip install --user pre-commit
+        pip install pre-commit
     else
         print_error "Neither pip nor pip3 found. Please install pip first."
         exit 1

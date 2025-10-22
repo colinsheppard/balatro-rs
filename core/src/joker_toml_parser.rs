@@ -382,14 +382,14 @@ mod tests {
     fn test_parse_basic_joker() {
         let toml_str = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker"
             description = "+4 Mult"
             rarity = "common"
             cost = 2
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -408,23 +408,23 @@ mod tests {
     fn test_validation_duplicate_ids() {
         let toml_str = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker 1"
             description = "+4 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker 2"
             description = "+2 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 2
@@ -444,13 +444,13 @@ mod tests {
     fn test_hot_reload_detection() {
         let original = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker"
             description = "+4 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 4
@@ -458,13 +458,13 @@ mod tests {
 
         let modified = r#"
             schema_version = "1.0.0"
-            
+
             [[jokers]]
             id = "joker"
             name = "Joker"
             description = "+5 Mult"
             rarity = "common"
-            
+
             [jokers.effect]
             type = "scoring"
             mult = 5

@@ -72,12 +72,12 @@ def deprecated_action_loop_demo():
     config.ante_end = 1
     game = pylatro.GameEngine(config)
     state = game.state  # Get GameState from GameEngine
-    
+
     # These methods are deprecated but still work with warnings:
     # actions = state.gen_actions()  # DEPRECATED: Shows warning
-    # is_over = state.is_over        # DEPRECATED: Shows warning  
+    # is_over = state.is_over        # DEPRECATED: Shows warning
     # name = state.get_action_name(0) # DEPRECATED: Shows warning
-    
+
     # These methods are deprecated and will fail:
     # state.handle_action(action)     # DEPRECATED: Fails with error
     # state.handle_action_index(0)    # DEPRECATED: Fails with error

@@ -6,7 +6,7 @@ This project implements a secure Random Number Generator (RNG) system with crypt
 
 ### RNG Security Features
 
-1. **Cryptographically Secure RNG**: 
+1. **Cryptographically Secure RNG**:
    - Uses ChaCha20Rng for `RngMode::Secure`
    - Provides unpredictable random values suitable for security operations
    - Default mode for production environments

@@ -11,7 +11,7 @@ fi
 for issue in "$@"; do
     echo "=== Issue #$issue ==="
     gh issue view "$issue" --json title,state,body,labels 2>/dev/null | jq -r '
-        "Title: " + .title + 
+        "Title: " + .title +
         "\nState: " + .state +
         "\nLabels: " + (.labels | map(.name) | join(", ")) +
         "\n\nDescription:\n" + (.body | split("\n") | .[0:10] | join("\n"))

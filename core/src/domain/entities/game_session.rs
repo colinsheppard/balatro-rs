@@ -250,7 +250,7 @@ impl GameSession {
         self.updated_at = current_timestamp();
 
         // Create snapshot every 10 actions for efficient replay
-        if self.history.actions.len() % 10 == 0 {
+        if self.history.actions.len().is_multiple_of(10) {
             self.history.create_snapshot(&self.game)?;
         }
 

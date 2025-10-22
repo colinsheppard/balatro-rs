@@ -370,7 +370,7 @@ impl HalfJoker {
     pub fn new() -> Self {
         // Load parameters from joker.json, fallback to original hardcoded values if fails
         let (mult_value, card_limit, description) = Self::load_parameters();
-        
+
         Self {
             id: JokerId::HalfJoker,
             name: "Half Joker".to_string(),
@@ -730,7 +730,7 @@ mod tests {
         assert_eq!(result.mult_added, 8.0); // 2 aces * 4 mult
     }
 
-    #[test] 
+    #[test]
     fn test_half_joker() {
         let mut half_joker = HalfJoker::new();
 

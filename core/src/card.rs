@@ -205,11 +205,11 @@ impl Card {
     }
 
     pub fn is_even(&self) -> bool {
-        self.value != Value::Ace && !self.is_face() && self.value as u16 % 2 == 0
+        self.value != Value::Ace && !self.is_face() && (self.value as u16).is_multiple_of(2)
     }
 
     pub fn is_odd(&self) -> bool {
-        self.value == Value::Ace || !self.is_face() && self.value as u16 % 2 != 0
+        self.value == Value::Ace || !self.is_face() && !(self.value as u16).is_multiple_of(2)
     }
 
     pub fn chips(&self) -> usize {

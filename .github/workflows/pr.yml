@@ -31,17 +31,17 @@ jobs:
       image: rust:slim
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install dependencies
         run: |
           apt-get update
           apt-get install -y pkg-config libssl-dev python3 python3-dev
-      
+
       - name: Install rustfmt and clippy
         run: |
           rustup component add rustfmt
           rustup component add clippy
-      
+
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -51,7 +51,7 @@ jobs:
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-registry-
-      
+
       - name: Cache cargo build
         uses: actions/cache@v4
         with:
@@ -60,13 +60,13 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-build-pr-${{ hashFiles('**/Cargo.lock') }}-
             ${{ runner.os }}-cargo-build-pr-
-      
+
       - name: Check formatting
         run: cargo fmt --all -- --check
-      
+
       - name: Run clippy
         run: cargo clippy --all -- -D warnings
-      
+
       - name: Run tests
         run: |
           # Run all tests with verbose output and capture results
@@ -74,22 +74,22 @@ jobs:
           cargo test --all --verbose > test_output.log 2>&1
           TEST_EXIT_CODE=$?
           set -e
-          
+
           # Save the exit code for later use
           echo $TEST_EXIT_CODE > test_exit_code.txt
-          
+
           # Display the output (for GitHub Actions logs)
           cat test_output.log
-          
+
           # Exit with the original test exit code
           exit $TEST_EXIT_CODE
-      
+
       - name: Check that all workspace members build
         run: |
           cargo build -p balatro-rs
           cargo build -p balatro-cli
           # Skip pylatro in quick check as it requires Python setup
-          
+
       - name: Generate test summary
         if: always()
         run: |
@@ -99,7 +99,7 @@ jobs:
           echo "- Test Run: $(date)" >> test_summary.md
           echo "- Workflow: PR Quick Check" >> test_summary.md
           echo "" >> test_summary.md
-          
+
           # Parse test results if output exists
           if [ -f test_output.log ]; then
             # Extract test summary from cargo test output
@@ -107,14 +107,14 @@ jobs:
             PASSED_TESTS=$(grep -oE "[0-9]+ passed" test_output.log | tail -1 | grep -oE "[0-9]+" || echo "0")
             FAILED_TESTS=$(grep -oE "[0-9]+ failed" test_output.log | tail -1 | grep -oE "[0-9]+" || echo "0")
             IGNORED_TESTS=$(grep -oE "[0-9]+ ignored" test_output.log | tail -1 | grep -oE "[0-9]+" || echo "0")
-            
+
             echo "### Test Results" >> test_summary.md
             echo "- Total Tests: $TOTAL_TESTS" >> test_summary.md
             echo "- Tests Passed: $PASSED_TESTS" >> test_summary.md
             echo "- Tests Failed: $FAILED_TESTS" >> test_summary.md
             echo "- Tests Ignored: $IGNORED_TESTS" >> test_summary.md
             echo "" >> test_summary.md
-            
+
             # Add status
             if [ -f test_exit_code.txt ] && [ "$(cat test_exit_code.txt)" = "0" ]; then
               echo "- Status: ✅ All tests passed" >> test_summary.md
@@ -124,7 +124,7 @@ jobs:
           else
             echo "- Status: ⚠️ Test output not available" >> test_summary.md
           fi
-          
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4

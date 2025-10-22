@@ -87,7 +87,7 @@ impl BoundedActionHistory {
         self.actions.iter().rev()
     }
 
-    /// Get an iterator over the actions (oldest first)  
+    /// Get an iterator over the actions (oldest first)
     pub fn iter(&self) -> impl Iterator<Item = &Action> {
         self.actions.iter()
     }

@@ -421,8 +421,8 @@ mod tests {
         // Assume jokers cost at least 1, test with limited funds
         let result = shop.gen_moves_buy_joker(3.0, 0, 5);
 
-        if result.is_some() {
-            let moves: Vec<Action> = result.unwrap().collect();
+        if let Some(moves_iter) = result {
+            let moves: Vec<Action> = moves_iter.collect();
             // Should only include affordable jokers
             for action in moves {
                 if let Action::BuyJoker { joker_id, slot: _ } = action {

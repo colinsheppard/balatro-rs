@@ -47,7 +47,7 @@ cargo test --all
    cargo clippy --all -- -D warnings
    ```
 
-3. **Documentation**: 
+3. **Documentation**:
    - All public APIs must have documentation comments
    - Use `///` for public items
    - Include examples where appropriate
