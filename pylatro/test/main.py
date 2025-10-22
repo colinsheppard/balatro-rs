@@ -18,7 +18,10 @@ def test_action_space():
         while True:
             index = random.choice(range(len(action_space)))
             if action_space[index] == 1:
+                print(f"DEBUG: Executing action index {index}")
+                print(f"DEBUG: Game state before: {game.state}")
                 game.handle_action_index(index)
+                print(f"DEBUG: Game state after: {game.state}")
                 break
 
     assert game.is_over

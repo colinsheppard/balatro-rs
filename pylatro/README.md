@@ -138,7 +138,34 @@ python test/test_performance.py       # Performance benchmarks
 
 See the `examples/` directory for complete usage patterns:
 - `simulation.py` - Basic game simulation
+- `python repl/repl.py` - Manual REPL for interactive play (requires activated environment)
 - Advanced RL integration patterns
+
+### Manual Play REPL
+
+For interactive manual play and game mechanics verification:
+
+```bash
+cd pylatro
+./run_repl.sh  # Start interactive REPL (handles environment setup automatically)
+```
+
+Or manually:
+```bash
+cd pylatro
+source .env/bin/activate  # Activate development environment
+python repl/repl.py      # Start interactive REPL
+```
+
+Commands available in the REPL:
+- `help` - Show available commands
+- `state` - Display current game state
+- `hand` - List current hand cards
+- `jokers` - Show current jokers
+- `actions` - List available actions
+- `play <index>` - Execute action by index
+- `restart` - Restart game with same config
+- `quit` - Exit the REPL
 
 ## Documentation
 
