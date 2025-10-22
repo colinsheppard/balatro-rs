@@ -4,6 +4,7 @@
 *.profraw
 
 # Python virtual environments
+.python-version
 .env/
 .venv/
 venv/
@@ -48,3 +49,9 @@ zero_cost_performance.txt
 # Temporary debug files
 test_debug.rs
 issue_*_body.txt
+
+# MacOS
+.DS_Store
+
+# VSCode
+.vscode
